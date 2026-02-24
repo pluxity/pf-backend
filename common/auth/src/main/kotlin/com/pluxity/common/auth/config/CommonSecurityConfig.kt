@@ -3,9 +3,12 @@ package com.pluxity.common.auth.config
 import com.pluxity.common.auth.authentication.security.CustomUserDetails
 import com.pluxity.common.auth.authentication.security.JwtAuthenticationFilter
 import com.pluxity.common.auth.authentication.security.JwtProvider
+import com.pluxity.common.auth.properties.JwtProperties
+import com.pluxity.common.auth.properties.UserProperties
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.constant.ErrorCode
 import com.pluxity.common.core.exception.CustomException
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
@@ -27,6 +30,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
 @EnableWebSecurity
+@EnableConfigurationProperties(JwtProperties::class, UserProperties::class)
 class CommonSecurityConfig(
     private val repository: UserRepository,
     private val jwtProvider: JwtProvider,

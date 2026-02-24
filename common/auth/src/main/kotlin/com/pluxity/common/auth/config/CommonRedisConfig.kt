@@ -1,6 +1,7 @@
 package com.pluxity.common.auth.config
 
 import com.pluxity.common.auth.properties.RedisProperties
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.connection.RedisConnectionFactory
@@ -13,6 +14,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer
 
 @Configuration
 @EnableRedisRepositories(basePackages = ["com.pluxity"])
+@EnableConfigurationProperties(RedisProperties::class)
 class CommonRedisConfig(
     private val redisProperties: RedisProperties,
 ) {

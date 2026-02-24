@@ -233,6 +233,59 @@ user:
   init-password: "changeme123"
 ```
 
+## common/file 제공 기능
+
+### 파일 업로드/다운로드
+
+- `FileController` (`/files/**`) — 업로드, 조회, Pre-signed URL 생성
+- `FileService` — 파일 업로드(MultipartFile / byte[]), 영구 저장(finalize), 조회
+- 파일 상태 관리: `TEMP` → `COMPLETE` (2단계 업로드)
+- ZIP 파일 자동 분석: 루트 항목 메타데이터를 `ZipContentEntry` 테이블에 저장
+
+### Storage Strategy (전략 패턴)
+
+`file.storage-strategy` 설정에 따라 스토리지 구현체가 자동 선택:
+
+| 설정값 | 구현체 | 설명 |
+|---|---|---|
+| `local` | `LocalStorageStrategy` | 로컬 파일시스템 저장 (`/files/**` 정적 리소스 서빙) |
+| `s3` | `S3StorageStrategy` | AWS S3 업로드 (ZIP 자동 해제 + Pre-signed URL) |
+
+### S3 설정
+
+- `S3ClientConfig` — S3Client 빈 (endpoint override, path style, Pinpoint 헤더 제거)
+- `S3PresignerConfig` — S3Presigner 빈 (Pre-signed URL 생성용)
+- `FileWebConfig` — 로컬 모드 시 정적 리소스 핸들러
+
+### 유틸리티
+
+| 클래스 | 기능 |
+|---|---|
+| `FileUtils` | 임시 파일 생성, 디렉토리 삭제, Content-Type 감지, 확장자 추출, 파일명 sanitize |
+| `ZipUtils` | ZIP 압축/해제 (경로 순회 공격 방어 포함) |
+| `UUIDUtils` | UUID 생성, 8자리 Short UUID |
+| `FileServiceExtensions` | `getFileMapById()`, `getFileMapByIds()` 확장 함수 |
+
+### 설정 (application.yml)
+
+```yaml
+# 파일 업로드
+file:
+  storage-strategy: local  # local 또는 s3
+  local:
+    path: /data/uploads     # 로컬 저장 경로
+
+  # S3 설정 (storage-strategy: s3 일 때)
+  s3:
+    bucket: my-bucket
+    region: ap-northeast-2
+    endpoint-url: https://s3.ap-northeast-2.amazonaws.com
+    public-url: https://cdn.example.com
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
+    pre-signed-url-expiration: 3600  # 초 단위
+```
+
 ## 앱별 고유 의존성
 
 | 앱 | 고유 의존성 |
