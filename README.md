@@ -100,6 +100,7 @@ enum class SafersErrorCode(
     override fun getHttpStatus() = httpStatus
     override fun getMessage() = message
     override fun getStatusName() = httpStatus.name
+    override fun getCodeName() = name
 }
 
 throw CustomException(SafersErrorCode.NOT_FOUND_SITE, siteId)
@@ -146,6 +147,90 @@ pluxity:
     exclude-paths:
       - /weather/webhook
       - /health/custom
+```
+
+## common/auth 제공 기능
+
+### 인증 (JWT Cookie 기반)
+
+- 로그인/로그아웃/회원가입/토큰 갱신 API (`/auth/**`)
+- Access Token + Refresh Token (Redis 저장) 쿠키 기반 인증
+- `JwtAuthenticationFilter`로 요청마다 자동 인증
+- `WhiteListPath`에 등록된 경로는 인증 생략
+
+### 사용자 & 역할 관리
+
+- User, Role, UserRole, RolePermission 엔티티
+- `UserController` (`/users/me`) — 본인 정보 조회/수정/비밀번호 변경
+- `AdminUserController` (`/admin/users`) — 관리자용 CRUD
+- `RoleController` (`/roles`) — 역할 CRUD
+
+### 권한 시스템 (RBAC)
+
+```
+User → UserRole → Role → RolePermission → Permission
+                                            ├── DomainPermission (리소스 타입 단위)
+                                            └── ResourcePermission (개별 리소스 단위)
+```
+
+- `PermissionLevel`: READ → WRITE → ADMIN (상위 레벨이 하위 포함)
+- `@CheckPermission` AOP로 컨트롤러 메서드에 권한 검사 적용
+- `PermissionController` (`/permissions`) — 권한 CRUD + 리소스 타입 조회
+
+### ResourceType 확장
+
+`ResourceType`은 앱마다 다르므로 `ResourceTypeRegistry` 인터페이스로 추상화.
+각 앱에서 자체 리소스 타입을 등록:
+
+```kotlin
+// apps/safers에서 ResourceTypeRegistry 구현
+@Component
+class SafersResourceTypeRegistry : ResourceTypeRegistry {
+    enum class SafersResourceType(
+        val resourceName: String,
+        val endpoint: String,
+    ) {
+        USER("사용자관리", "users"),
+        ATTENDANCE_STATUS("출역현황", "attendances"),
+        PROCESS_STATUS("공정현황", "process-statuses"),
+    }
+
+    override fun resolve(name: String): String =
+        SafersResourceType.entries
+            .firstOrNull { it.name.equals(name, ignoreCase = true) }
+            ?.name ?: throw CustomException(ErrorCode.INVALID_RESOURCE_TYPE, name)
+
+    override fun allEntries(): List<ResourceTypeInfo> =
+        SafersResourceType.entries.map {
+            ResourceTypeInfo(key = it.name, resourceName = it.resourceName, endpoint = it.endpoint)
+        }
+}
+```
+
+### 설정 (application.yml)
+
+```yaml
+# JWT
+jwt:
+  access-token:
+    name: access_token
+    secret: your-secret-key
+    expiration: 3600        # 초 단위
+  refresh-token:
+    name: refresh_token
+    secret: your-refresh-secret-key
+    expiration: 604800
+
+# Redis
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+# 비밀번호 초기화 기본값
+user:
+  init-password: "changeme123"
 ```
 
 ## 앱별 고유 의존성

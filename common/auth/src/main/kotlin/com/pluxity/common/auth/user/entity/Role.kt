@@ -1,0 +1,63 @@
+package com.pluxity.common.auth.user.entity
+
+import com.pluxity.common.auth.permission.PermissionLevel
+import com.pluxity.common.core.entity.IdentityIdEntity
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.OneToMany
+import jakarta.persistence.Table
+
+@Entity
+@Table(name = "roles")
+class Role(
+    @Column(name = "name", nullable = false, unique = true)
+    var name: String,
+    @Column(name = "description", length = 100)
+    var description: String?,
+    var auth: String? = RoleType.USER.name,
+) : IdentityIdEntity() {
+    @OneToMany(mappedBy = "role")
+    var userRoles: MutableList<UserRole> = mutableListOf()
+
+    @OneToMany(mappedBy = "role")
+    var rolePermissions: MutableSet<RolePermission> = mutableSetOf()
+
+    fun getAuthority(): String = "ROLE_$auth"
+
+    fun changeRoleName(name: String) {
+        this.name = name
+    }
+
+    fun changeDescription(description: String?) {
+        this.description = description
+    }
+
+    fun hasDomainPermissionFor(
+        resourceName: String,
+        requiredLevel: PermissionLevel,
+    ): Boolean =
+        rolePermissions
+            .asSequence()
+            .map { it.permission }
+            .flatMap { it.domainPermissions.asSequence() }
+            .any { it.allows(resourceName, requiredLevel) }
+
+    fun hasResourcePermissionFor(
+        resourceName: String,
+        resourceId: String,
+        requiredLevel: PermissionLevel,
+    ): Boolean =
+        rolePermissions
+            .asSequence()
+            .map { it.permission }
+            .flatMap { it.resourcePermissions.asSequence() }
+            .any { it.allows(resourceName, resourceId, requiredLevel) }
+
+    fun addRolePermission(rolePermission: RolePermission) {
+        rolePermissions.add(rolePermission)
+    }
+
+    fun removeRolePermission(rolePermission: RolePermission) {
+        rolePermissions.remove(rolePermission)
+    }
+}
