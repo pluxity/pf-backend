@@ -101,8 +101,15 @@ dependencies {
 # 특정 앱 실행
 ./gradlew :apps:safers:bootRun
 
+# 실행 가능한 JAR 생성
+./gradlew :apps:safers:bootJar
+# → apps/safers/build/libs/safers-*.jar
+
 # 코드 포맷 자동 수정 (ktlint)
 ./gradlew spotlessApply
+
+# Docker 이미지 빌드 (프로젝트 루트에서 실행)
+docker build -f apps/safers/Dockerfile -t safers-api .
 ```
 
 ## 패키지 규칙
