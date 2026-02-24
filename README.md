@@ -32,14 +32,62 @@ pf-backend/
 ### 모듈 의존 관계
 
 ```
-apps/*  →  common/auth  →  common/core
-        →  common/file  →  common/core
-        →  common/messaging → common/core
-        →  common/test-support (testImplementation)
+common/messaging ──implementation──→ common/auth ──api──→ common/core
+common/file      ──api─────────────→ common/core
 ```
 
 - `common/` 모듈은 라이브러리로 빌드 (`bootJar` 비활성화)
 - `apps/` 모듈은 배포 가능한 Spring Boot 앱 (`bootJar` 활성화)
+
+### 모듈 구성 가이드
+
+#### `api` vs `implementation` 의존성
+
+| 선언 방식 | 전이 노출 | 용도 |
+|---|---|---|
+| `api` | 의존하는 모듈에도 클래스가 노출됨 | 공개 API에 사용되는 타입 |
+| `implementation` | 내부에서만 사용, 외부에 숨김 | 내부 구현 상세 |
+
+#### 앱 모듈 의존성 설정
+
+각 앱에서 직접 사용하는 모듈은 **명시적으로 선언**해야 합니다:
+
+```kotlin
+// apps/safers/build.gradle.kts
+dependencies {
+    implementation(project(":common:auth"))        // User, Role, Permission, JWT
+    implementation(project(":common:file"))        // FileService, StorageStrategy
+    implementation(project(":common:messaging"))   // WebSocket, SessionManager
+
+    testImplementation(project(":common:test-support"))
+}
+```
+
+> `common/core`는 auth, file이 `api`로 노출하므로 **별도 선언 불필요**.
+> auth나 file을 넣으면 core의 ErrorCode, CustomException, BaseResponse 등이 자동으로 사용 가능.
+
+#### 전이적 의존성 정리
+
+| 앱에서 선언 | core | auth | file | messaging |
+|---|---|---|---|---|
+| `common/auth`만 | O (api 전이) | O | X | X |
+| `common/file`만 | O (api 전이) | X | O | X |
+| `common/messaging`만 | O (전이) | X (implementation 숨김) | X | O |
+| auth + file + messaging | O | O | O | O |
+
+> `common/messaging`은 내부적으로 `common/auth`를 사용하지만 `implementation`으로 선언되어 있어,
+> 앱에서 auth 기능을 직접 사용하려면 **별도로 `common/auth`를 선언**해야 합니다.
+
+#### @ConfigurationProperties 등록
+
+각 common 모듈은 `@EnableConfigurationProperties`로 자체 Properties를 등록하므로,
+앱에서는 `application.yml`에 설정값만 제공하면 됩니다:
+
+| 모듈 | 등록 위치 | Properties |
+|---|---|---|
+| common/auth | `CommonSecurityConfig` | `JwtProperties`, `UserProperties` |
+| common/auth | `CommonRedisConfig` | `RedisProperties` |
+| common/file | `FileStorageConfig` | `FileProperties`, `S3Properties` |
 
 ## 빌드 & 실행
 
@@ -284,6 +332,53 @@ file:
     access-key: ${AWS_ACCESS_KEY}
     secret-key: ${AWS_SECRET_KEY}
     pre-signed-url-expiration: 3600  # 초 단위
+```
+
+## common/messaging 제공 기능
+
+### WebSocket/STOMP 인프라
+
+3개 프로젝트(safers, gs-auth, yongin-platform)에서 동일하게 사용하던 WebSocket 공통 코드를 통합.
+
+| 클래스 | 역할 |
+|---|---|
+| `WebSocketConfig` | STOMP 엔드포인트(`/stomp/platform`), 메시지 브로커(`/topic`, `/queue`), Heartbeat 설정 |
+| `AsyncConfig` | `@EnableAsync` + ThreadPool (core=5, max=10, queue=500) + Heartbeat 스케줄러 |
+| `SessionManager` | 사용자별 WebSocket 세션 관리 (ConcurrentHashMap 기반) |
+| `StompPrincipal` | STOMP 세션 Principal (UUID 기반) |
+| `MyDefaultHandshakeHandler` | JWT 쿠키에서 사용자 인증 후 세션 속성에 username 저장 |
+| `SocketApplicationEventListener` | 세션 연결/해제 이벤트 → SessionManager 등록/해제 |
+
+### 앱별 확장 (각 앱에서 구현)
+
+`StompMessageSender`와 `MessageHandler`는 앱마다 토픽/큐가 다르므로 각 앱에서 직접 구현:
+
+```kotlin
+// apps/safers에서 브로드캐스트 전송
+@Component
+class StompMessageSender(private val messageTemplate: SimpMessagingTemplate) {
+    fun sendEventCreated(payload: EventResponse) {
+        messageTemplate.convertAndSend("/topic/events", payload)
+    }
+}
+
+// apps/gs-auth에서 사용자 대상 전송
+@Component
+class StompMessageSender(
+    private val messageTemplate: SimpMessagingTemplate,
+    private val sessionManager: SessionManager,  // common/messaging에서 제공
+) {
+    fun sendToUser(payload: Any, userIds: List<String>) {
+        userIds.flatMap { sessionManager.findPrincipalByUserId(it) }
+            .forEach { messageTemplate.convertAndSendToUser(it.name, "/queue/messages", payload) }
+    }
+}
+```
+
+### 모듈 의존 관계
+
+```
+common/messaging → common/auth (JWT 인증) → common/core
 ```
 
 ## 앱별 고유 의존성

@@ -2,6 +2,7 @@
 
 dependencies {
     api(project(":common:core"))
+    implementation(project(":common:auth"))
 
     implementation(rootProject.libs.spring.boot.starter.websocket)
     implementation(rootProject.libs.bundles.springwolf)
