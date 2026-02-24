@@ -2,24 +2,21 @@ package com.pluxity.common.core.config
 
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
-import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.info.License
 import org.springdoc.core.models.GroupedOpenApi
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-class CommonApiConfig {
+class CommonApiConfig(
+    private val apiConfigurer: ApiConfigurer,
+) {
     @Bean
-    @ConditionalOnMissingBean(OpenAPI::class)
-    fun commonOpenAPI(): OpenAPI =
+    fun openAPI(): OpenAPI =
         OpenAPI()
             .info(
-                Info()
-                    .title("Pluxity Platform API")
-                    .description("Pluxity Platform API Documentation")
-                    .version("1.0.0")
+                apiConfigurer
+                    .openApiInfo()
                     .contact(Contact().name("Pluxity").email("support@pluxity.com"))
                     .license(
                         License()

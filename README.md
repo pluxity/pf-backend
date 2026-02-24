@@ -154,18 +154,76 @@ enum class SafersErrorCode(
 throw CustomException(SafersErrorCode.NOT_FOUND_SITE, siteId)
 ```
 
-### Swagger (CommonApiConfig)
+### @PlatformApplication
 
-기본 OpenAPI 설정이 `@ConditionalOnMissingBean`으로 등록됨.
-앱에서 자체 `OpenAPI` 빈을 정의하면 자동으로 오버라이드:
+모든 앱 모듈에서 공통으로 필요한 4가지 어노테이션을 묶은 메타 어노테이션:
+
+```kotlin
+@EnableScheduling   // 앱별로 필요한 경우에만 추가
+@PlatformApplication
+class SafersApplication
+```
+
+`@PlatformApplication`은 아래 4개를 포함:
+
+| 포함 어노테이션 | 역할 |
+|---|---|
+| `@SpringBootApplication(scanBasePackages = ["com.pluxity"])` | common 모듈 컴포넌트 스캔 |
+| `@EntityScan(basePackages = ["com.pluxity"])` | common 모듈 JPA Entity 스캔 |
+| `@EnableJpaRepositories(basePackages = ["com.pluxity"])` | common 모듈 JPA Repository 스캔 |
+| `@ConfigurationPropertiesScan` | `@ConfigurationProperties` 자동 등록 |
+
+> `@SpringBootApplication`의 `scanBasePackages`는 `@ComponentScan`만 제어하고, JPA Entity/Repository 스캔은 별도로 지정해야 합니다.
+> `@PlatformApplication`이 이를 한 번에 해결합니다.
+
+### Swagger (ApiConfigurer)
+
+`ApiConfigurer` 인터페이스를 구현하여 앱별 Swagger 설정을 커스터마이징:
 
 ```kotlin
 @Configuration
-class SafersApiConfig {
+class SafersApiConfigurer : ApiConfigurer {
+    override fun openApiInfo(): Info =
+        Info()
+            .title("Safers API")
+            .description("Safers Platform API Documentation")
+            .version("1.0.0")
+
     @Bean
-    fun customOpenAPI(): OpenAPI =
-        OpenAPI().info(Info().title("Safers API").version("1.0.0"))
+    fun siteApi(): GroupedOpenApi = apiGroup("5. 현장", "/sites/**")
+
+    @Bean
+    fun eventApi(): GroupedOpenApi = apiGroup("6. 이벤트", "/events/**")
 }
+```
+
+- `ApiConfigurer`를 구현하지 않으면 `DefaultApiConfigurer`가 기본값("Pluxity Platform API") 제공
+- `CommonApiConfig`가 공통 그룹(전체, 인증, 파일관리, 사용자)을 자동 등록
+- 앱 전용 그룹은 `@Bean` 메서드로 직접 등록
+- `apiGroup()` 헬퍼 함수로 `GroupedOpenApi`를 간결하게 생성
+
+### WebClientFactory
+
+외부 API 호출용 WebClient를 생성하는 팩토리. `spring-boot-starter-webflux`가 클래스패스에 있을 때만 활성화 (`@ConditionalOnClass`):
+
+```kotlin
+@Component
+class WeatherApiClient(
+    private val webClientFactory: WebClientFactory,
+) {
+    private val client = webClientFactory.createClient(
+        baseUrl = "https://api.weather.go.kr",
+        connectionTimeoutMs = 5000,   // 기본값
+        responseTimeoutMs = 30000,    // 기본값
+        maxInMemorySize = 50 * 1024 * 1024, // 기본값 50MB
+    )
+}
+```
+
+앱에서 사용하려면 `build.gradle.kts`에 webflux 의존성 추가:
+
+```kotlin
+implementation(rootProject.libs.spring.boot.starter.webflux)
 ```
 
 ### @ResponseCreated

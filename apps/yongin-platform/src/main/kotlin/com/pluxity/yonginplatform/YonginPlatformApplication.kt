@@ -1,9 +1,9 @@
 package com.pluxity.yonginplatform
 
-import org.springframework.boot.autoconfigure.SpringBootApplication
+import com.pluxity.common.core.annotation.PlatformApplication
 import org.springframework.boot.runApplication
 
-@SpringBootApplication(scanBasePackages = ["com.pluxity"])
+@PlatformApplication
 class YonginPlatformApplication
 
 fun main(args: Array<String>) {

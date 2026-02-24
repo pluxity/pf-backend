@@ -12,6 +12,8 @@ dependencies {
     implementation(project(":common:messaging"))
 
     implementation(rootProject.libs.spring.boot.starter.webflux)
+    implementation(rootProject.libs.spring.boot.starter.websocket)
+    implementation(rootProject.libs.bundles.springwolf)
     implementation(rootProject.libs.bundles.coroutines)
     implementation(rootProject.libs.logbook)
 

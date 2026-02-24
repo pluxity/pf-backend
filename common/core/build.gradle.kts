@@ -9,6 +9,8 @@ dependencies {
     implementation(rootProject.libs.logbook)
     // AuditorAwareImpl uses SecurityContextHolder
     implementation(rootProject.libs.spring.boot.starter.security)
+    // WebClientConfig / WebClientFactory — @ConditionalOnClass(WebClient::class)
+    implementation(rootProject.libs.spring.boot.starter.webflux)
 
     testFixturesImplementation(rootProject.libs.spring.boot.starter.test)
 }
