@@ -32,8 +32,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 @EnableWebSecurity
 @EnableConfigurationProperties(JwtProperties::class, UserProperties::class)
 class CommonSecurityConfig(
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val repository: UserRepository,
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val jwtProvider: JwtProvider,
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
+    private val securityPermitConfigurer: SecurityPermitConfigurer?,
 ) {
     @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
@@ -46,17 +50,7 @@ class CommonSecurityConfig(
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers(
-                        "/actuator/**",
-                        "/health",
-                        "/info",
-                        "/prometheus",
-                        "/error",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html",
-                        "/api-docs/**",
-                        "/swagger-config/**",
-                        "/docs/**",
-                        "/users/usernames",
+                        *buildPermitPaths(),
                     ).permitAll()
                     .requestMatchers(HttpMethod.GET)
                     .permitAll()
@@ -88,6 +82,24 @@ class CommonSecurityConfig(
 
     @Bean
     fun jwtAuthenticationFilter(): JwtAuthenticationFilter = JwtAuthenticationFilter(jwtProvider, userDetailsService())
+
+    private fun buildPermitPaths(): Array<String> {
+        val defaultPaths =
+            listOf(
+                "/actuator/**",
+                "/health",
+                "/info",
+                "/prometheus",
+                "/error",
+                "/swagger-ui/**",
+                "/swagger-ui.html",
+                "/api-docs/**",
+                "/swagger-config/**",
+                "/docs/**",
+            )
+        val appPaths = securityPermitConfigurer?.permitPaths().orEmpty()
+        return (defaultPaths + appPaths).toTypedArray()
+    }
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {

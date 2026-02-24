@@ -320,6 +320,23 @@ class SafersResourceTypeRegistry : ResourceTypeRegistry {
 }
 ```
 
+### Security 허용 경로 확장 (SecurityPermitConfigurer)
+
+`SecurityPermitConfigurer` 인터페이스를 구현하여 앱별로 `permitAll` 경로를 추가:
+
+```kotlin
+@Configuration
+class YonginSecurityPermitConfigurer : SecurityPermitConfigurer {
+    override fun permitPaths(): List<String> =
+        listOf(
+            "/weather/webhook",
+        )
+}
+```
+
+- 구현하지 않으면 기본 경로만 적용 (actuator, swagger, docs 등)
+- 구현하면 `기본 경로 + 앱 경로`가 합쳐져 `permitAll` 처리
+
 ### 설정 (application.yml)
 
 ```yaml

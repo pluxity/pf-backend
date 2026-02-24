@@ -41,3 +41,8 @@ springdoc:
 
 user:
   init-password: qwer1234
+
+pluxity:
+  logbook:
+    exclude-paths:
+      - /weather/webhook

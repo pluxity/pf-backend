@@ -118,7 +118,4 @@ class UserController(
         service.updateUserPassword(authentication.name, dto)
         return ResponseEntity.noContent().build()
     }
-
-    @GetMapping("/usernames")
-    fun findAllUserNames(): ResponseEntity<DataResponseBody<List<String>>> = ResponseEntity.ok(DataResponseBody(service.findAllUserNames()))
 }
