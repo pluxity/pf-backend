@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class CommonApiConfig(
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val apiConfigurer: ApiConfigurer,
 ) {
     @Bean

@@ -1,0 +1,57 @@
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 1000
+  application:
+    name: core
+  datasource:
+    url: jdbc:postgresql://localhost:5432/yongin
+    username: pluxity
+    password: pluxity0304
+    driver-class-name: org.postgresql.Driver
+
+domain:
+  url: ${API_URL:http://localhost:8080}
+
+file:
+  storage-strategy: s3
+  local:
+    path: C:/Dev/Upload/
+  s3:
+    endpoint-url: ${S3_ENDPOINT_URL:http://localhost:9000}
+    public-url: ${S3_PUBLIC_URL:http://localhost:9000}
+    bucket: plug-platform
+    region: ap-northeast-2
+    access-key: pluxity
+    secret-key: pluxity0304
+    pre-signed-url-expiration: 600
+
+springwolf: # socket documentation ui
+  enabled: true
+  docket:
+    default-content-type: application/json
+    base-package: com.pluxity
+    servers:
+      stomp:
+        protocol: stomp
+        host: localhost:8080/stomp/platform
+    info:
+      title: Yongin Platform AsyncAPI Documentation
+      version: 1.0.0
+      description: AsyncAPI Documentation using Springwolf
+  plugin:
+    stomp:
+      endpoint:
+        app: /app
+
+logging:
+  level:
+    com: DEBUG
+
+attendance:
+  url: http://localhost:8080/docs/attendance
+
+media-server:
+  url: http://192.168.10.181:9997

@@ -14,6 +14,7 @@ private val log = KotlinLogging.logger {}
 
 @Component
 class WeatherApiClient(
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     webClientFactory: WebClientFactory,
     private val configurationRepository: ConfigurationRepository,
 ) {

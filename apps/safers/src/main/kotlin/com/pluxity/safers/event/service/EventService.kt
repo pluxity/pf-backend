@@ -26,6 +26,7 @@ import org.springframework.transaction.support.TransactionTemplate
 @Service
 class EventService(
     private val eventRepository: EventRepository,
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val fileService: FileService,
     private val eventFileDownloadService: EventFileDownloadService,
     private val eventPublisher: ApplicationEventPublisher,

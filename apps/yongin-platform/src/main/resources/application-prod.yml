@@ -1,0 +1,56 @@
+server:
+  servlet:
+    context-path: /api
+
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 1000
+  application:
+    name: yongin-api
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/yongin
+    username: ${DB_USERNAME:pluxity}
+    password: ${DB_PASSWORD:pluxity0304}
+
+domain:
+  url: ${API_URL:}
+
+file:
+  storage-strategy: ${FILE_STORAGE_STRATEGY:s3}
+  local:
+    path: ${FILE_LOCAL_PATH:/app/upload}
+  s3:
+    endpoint-url: ${S3_ENDPOINT_URL:http://minio:9000}
+    public-url: ${S3_PUBLIC_URL:http://localhost/files}
+    bucket: ${S3_BUCKET:plug-platform}
+    region: ${S3_REGION:ap-northeast-2}
+    access-key: ${S3_ACCESS_KEY:pluxity}
+    secret-key: ${S3_SECRET_KEY:pluxity0304}
+    pre-signed-url-expiration: 600
+
+springwolf: # socket documentation ui
+  enabled: true
+  docket:
+    default-content-type: application/json
+    base-package: com.pluxity
+    servers:
+      stomp:
+        protocol: stomp
+        host: ${API_URL:}/stomp/platform
+    info:
+      title: Yongin Platform AsyncAPI Documentation
+      version: 1.0.0
+      description: AsyncAPI Documentation using Springwolf
+  plugin:
+    stomp:
+      endpoint:
+        app: /app
+
+attendance:
+  url: ${ATTENDANCE_API:http://localhost:8080/docs/attendance}
+
+media-server:
+  url: ${MEDIA_SERVER_URL:http://192.168.10.181:9997}
