@@ -2,7 +2,9 @@
 
 dependencies {
     api(project(":common:core"))
+    api(testFixtures(project(":common:core")))
     api(project(":common:auth"))
+    api(project(":common:file"))
 
     api(rootProject.libs.spring.boot.starter.test)
     api(rootProject.libs.bundles.kotest)

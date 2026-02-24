@@ -7,5 +7,6 @@ dependencies {
     implementation(rootProject.libs.spring.boot.starter.data.redis)
     implementation(rootProject.libs.bundles.jjwt)
 
+    testImplementation(testFixtures(project(":common:core")))
     testImplementation(rootProject.libs.spring.security.test)
 }
