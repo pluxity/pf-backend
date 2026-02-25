@@ -3,7 +3,6 @@ package com.pluxity.safers.event.service
 import com.linecorp.kotlinjdsl.dsl.jpql.Jpql
 import com.linecorp.kotlinjdsl.querymodel.jpql.JpqlQueryable
 import com.linecorp.kotlinjdsl.querymodel.jpql.select.SelectQuery
-import com.pluxity.common.core.constant.ErrorCode
 import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.file.service.FileService

@@ -122,7 +122,7 @@ docker build -f apps/safers/Dockerfile -t safers-api .
 | common/messaging | `com.pluxity.common.messaging.*` |
 | apps/gs-auth | `com.pluxity.gsauth.*` |
 | apps/safers | `com.pluxity.safers.*` |
-| apps/yongin-platform | `com.pluxity.yonginplatform.*` |
+| apps/yongin-platform | `com.pluxity.yongin.*` |
 
 > ktlint 규칙: 패키지명에 언더스코어(`_`) 사용 금지. `safety_equipment` (X) → `safetyequipment` (O)
 

@@ -12,6 +12,7 @@ private val log = KotlinLogging.logger {}
 
 @Component
 class StompMessageSender(
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val messageTemplate: SimpMessagingTemplate,
 ) {
     companion object {
