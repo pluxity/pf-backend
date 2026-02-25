@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":common:auth"))
     implementation(project(":common:file"))
     implementation(project(":common:messaging"))
+    implementation(project(":shared:cctv"))
 
     implementation(rootProject.libs.spring.boot.starter.webflux)
     implementation(rootProject.libs.spring.boot.starter.websocket)

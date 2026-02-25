@@ -51,3 +51,6 @@ springwolf: # socket documentation ui
 
 event:
   base-url: ${EVENT_BASE_URL:http://192.168.10.182:8001}
+
+media-server:
+  url: ${MEDIA_SERVER_URL:http://192.168.10.181:9997}
