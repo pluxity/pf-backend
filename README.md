@@ -21,6 +21,8 @@ pf-backend/
 │   ├── file/           # S3, Local 파일 업로드
 │   ├── messaging/      # WebSocket, STOMP
 │   └── test-support/   # 테스트 헬퍼, Dummy 팩토리
+├── shared/
+│   └── cctv/           # CCTV 도메인 (여러 앱에서 공유)
 ├── apps/
 │   ├── safers/         # 기존 safers-api
 │   └── yongin-platform/# 기존 plug-siteguard-api
@@ -36,6 +38,7 @@ common/file      ──api─────────────→ common/core
 ```
 
 - `common/` 모듈은 라이브러리로 빌드 (`bootJar` 비활성화)
+- `shared/` 모듈은 여러 앱에서 공유하는 도메인 라이브러리 (`bootJar` 비활성화)
 - `apps/` 모듈은 배포 가능한 Spring Boot 앱 (`bootJar` 활성화)
 
 ### 모듈 구성 가이드
@@ -94,14 +97,15 @@ class WeatherApiClient(
 
 #### @ConfigurationProperties 등록
 
-각 common 모듈은 `@EnableConfigurationProperties`로 자체 Properties를 등록하므로,
+각 common/shared 모듈은 `@EnableConfigurationProperties`로 자체 Properties를 등록하므로,
 앱에서는 `application.yml`에 설정값만 제공하면 됩니다:
 
-| 모듈          | 등록 위치                  | Properties                        |
-|-------------|------------------------|-----------------------------------|
-| common/auth | `CommonSecurityConfig` | `JwtProperties`, `UserProperties` |
-| common/auth | `CommonRedisConfig`    | `RedisProperties`                 |
-| common/file | `FileStorageConfig`    | `FileProperties`, `S3Properties`  |
+| 모듈          | 등록 위치                  | Properties                                |
+|-------------|------------------------|-------------------------------------------|
+| common/auth | `CommonSecurityConfig` | `JwtProperties`, `UserProperties`         |
+| common/auth | `CommonRedisConfig`    | `RedisProperties`                         |
+| common/file | `FileStorageConfig`    | `FileProperties`, `S3Properties`          |
+| shared/cctv | `CctvConfig`           | `CctvProperties`, `MediaServerProperties` |
 
 ## 빌드 & 실행
 
@@ -174,6 +178,7 @@ docker build -f apps/safers/Dockerfile -t safers-api .
 | common/auth          | `com.pluxity.common.auth.*`      |
 | common/file          | `com.pluxity.common.file.*`      |
 | common/messaging     | `com.pluxity.common.messaging.*` |
+| shared/cctv          | `com.pluxity.cctv.*`             |
 | apps/safers          | `com.pluxity.safers.*`           |
 | apps/yongin-platform | `com.pluxity.yongin.*`           |
 
@@ -512,6 +517,32 @@ class StompMessageSender(
 
 ```
 common/messaging → common/auth (JWT 인증) → common/core
+```
+
+## shared/cctv 모듈
+
+CCTV 도메인(엔티티, 서비스, 컨트롤러, 미디어서버 연동)을 여러 앱에서 공유하기 위한 모듈.
+
+### 사용법
+
+`build.gradle.kts`에 의존성 추가:
+
+```kotlin
+implementation(project(":shared:cctv"))
+```
+
+`application.yml`에 미디어서버 URL 설정 (필수):
+
+```yaml
+media-server:
+  url: http://192.168.10.181:9997
+```
+
+즐겨찾기 최대 개수 변경 (선택, 기본값 4):
+
+```yaml
+cctv:
+  max-favorite-count: 4
 ```
 
 ## 앱별 고유 의존성
