@@ -1,7 +1,7 @@
 [
   {
     "name": "safers",
-    "dir": "safers-demo",
+    "dir": "safers_demo",
     "dockerfile": "apps/safers/Dockerfile",
     "image": "safers-api"
   },
