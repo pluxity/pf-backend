@@ -8,7 +8,6 @@ include(":common:messaging")
 include(":common:test-support")
 
 // ── Application Modules ──
-include(":apps:gs-auth")
 include(":apps:safers")
 include(":apps:yongin-platform")
 

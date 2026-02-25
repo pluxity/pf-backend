@@ -1,0 +1,106 @@
+name: Deploy Changed Modules (Docker)
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  # ── 1. 변경된 모듈 감지 (.github/deploy-config.json 기반) ──
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      has_changes: ${{ steps.set-matrix.outputs.has_changes }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed modules
+        id: set-matrix
+        run: |
+          CONFIG=$(cat .github/deploy-config.json)
+
+          # 변경된 파일 목록 (push 이벤트의 before..after 비교)
+          BEFORE="${{ github.event.before }}"
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          else
+            CHANGED_FILES=$(git diff --name-only "$BEFORE" "${{ github.sha }}")
+          fi
+
+          echo "=== Changed files ==="
+          echo "$CHANGED_FILES"
+
+          # common 경로 변경 여부
+          COMMON_CHANGED=false
+          if echo "$CHANGED_FILES" | grep -qE '^(common/|gradle/|build\.gradle\.kts|settings\.gradle\.kts)'; then
+            COMMON_CHANGED=true
+          fi
+
+          # 변경된 모듈만 필터링
+          CHANGED_MODULES="[]"
+          for module in $(echo "$CONFIG" | jq -r '.[].name'); do
+            APP_CHANGED=false
+            if echo "$CHANGED_FILES" | grep -q "^apps/$module/"; then
+              APP_CHANGED=true
+            fi
+
+            if [ "$COMMON_CHANGED" = true ] || [ "$APP_CHANGED" = true ]; then
+              MODULE_JSON=$(echo "$CONFIG" | jq -c ".[] | select(.name == \"$module\")")
+              CHANGED_MODULES=$(echo "$CHANGED_MODULES" | jq -c ". + [$MODULE_JSON]")
+            fi
+          done
+
+          echo "=== Changed modules ==="
+          echo "$CHANGED_MODULES"
+
+          if [ "$CHANGED_MODULES" = "[]" ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "matrix={\"include\":[]}" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "matrix={\"include\":$CHANGED_MODULES}" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ── 2. 변경된 모듈 배포 (matrix) ──
+  deploy:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -f ${{ matrix.dockerfile }} -t ${{ matrix.image }}:latest .
+
+      - name: Save Docker image to tar
+        run: |
+          docker save -o ${{ matrix.image }}.tar ${{ matrix.image }}:latest
+          chmod 644 ${{ matrix.image }}.tar
+
+      - name: Upload Docker image tar to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PLX_DEV_DOMAIN }}
+          username: ${{ secrets.PLX_DEV_USER }}
+          password: ${{ secrets.PLX_DEV_PASSWORD }}
+          port: ${{ secrets.PLX_DEV_SSH_PORT }}
+          source: "${{ matrix.image }}.tar"
+          target: "${{ secrets.DOCKER_PATH }}/${{ matrix.dir }}"
+
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.PLX_DEV_DOMAIN }}
+          username: ${{ secrets.PLX_DEV_USER }}
+          password: ${{ secrets.PLX_DEV_PASSWORD }}
+          port: ${{ secrets.PLX_DEV_SSH_PORT }}
+          script: |
+            cd ${{ secrets.DOCKER_PATH }}/${{ matrix.dir }}
+            chmod +x deploy.sh
+            ./deploy.sh

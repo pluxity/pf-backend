@@ -1,0 +1,14 @@
+[
+  {
+    "name": "safers",
+    "dir": "safers-demo",
+    "dockerfile": "apps/safers/Dockerfile",
+    "image": "safers-api"
+  },
+  {
+    "name": "yongin-platform",
+    "dir": "yonginplatform",
+    "dockerfile": "apps/yongin-platform/Dockerfile",
+    "image": "yongin-platform-api"
+  }
+]
