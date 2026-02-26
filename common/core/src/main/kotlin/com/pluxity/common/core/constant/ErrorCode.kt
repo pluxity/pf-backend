@@ -18,6 +18,8 @@ enum class ErrorCode(
     DUPLICATE_USERNAME(HttpStatus.BAD_REQUEST, "%s는 이미 존재 하는 아이디 입니다."),
     NOT_FOUND_USER(HttpStatus.NOT_FOUND, "%s 을(를) 가진 회원을 찾을 수 없습니다."),
     NOT_FOUND_ROLE(HttpStatus.NOT_FOUND, "ID가 %s인 Role을 찾을 수 없습니다."),
+    DUPLICATE_ROLE(HttpStatus.BAD_REQUEST, "이미 할당된 Role입니다: %s"),
+    NOT_FOUND_USER_ROLE(HttpStatus.NOT_FOUND, "사용자에게 할당되지 않은 Role입니다: %s"),
 
     // ── Permission ──
     DUPLICATE_PERMISSION_NAME(HttpStatus.BAD_REQUEST, "이름이 %s인 권한이 이미 존재합니다."),
