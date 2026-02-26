@@ -1,6 +1,5 @@
 package com.pluxity.safers.weather.service
 
-import com.pluxity.safers.site.entity.Site
 import com.pluxity.safers.site.repository.SiteRepository
 import com.pluxity.safers.weather.client.WeatherApiClient
 import com.pluxity.safers.weather.dto.WeatherApiResponse
@@ -12,6 +11,7 @@ import com.pluxity.safers.weather.repository.WeatherRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import reactor.core.publisher.Flux
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -19,11 +19,11 @@ import java.time.format.DateTimeFormatter
 private val log = KotlinLogging.logger {}
 
 @Service
-@Transactional(readOnly = true)
 class WeatherService(
     private val weatherRepository: WeatherRepository,
     private val weatherApiClient: WeatherApiClient,
     private val siteRepository: SiteRepository,
+    private val transactionTemplate: TransactionTemplate,
 ) {
     companion object {
         private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd")
@@ -31,6 +31,7 @@ class WeatherService(
         private val DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmm")
     }
 
+    @Transactional(readOnly = true)
     fun findDashboard(siteId: Long): List<WeatherTimeGroupResponse> {
         val now = LocalDateTime.now()
         val startDateTime = now.minusHours(4).format(DATE_TIME_FORMATTER)
@@ -54,7 +55,6 @@ class WeatherService(
             }
     }
 
-    @Transactional
     fun collectForecast() {
         val sites = siteRepository.findAll().filter { it.nx != 0 }
         if (sites.isEmpty()) {
@@ -79,31 +79,46 @@ class WeatherService(
                 .collectList()
                 .block() ?: return
 
-        results.forEach { (site, response) ->
-            val items = extractItems(response) ?: return@forEach
+        transactionTemplate.execute {
+            results.forEach { (site, response) ->
+                val items = extractItems(response) ?: return@forEach
+                val fcstDates = items.mapNotNull { it.fcstDate }.toSet()
+                val existingMap =
+                    weatherRepository
+                        .findBySiteAndFcstDateIn(site, fcstDates)
+                        .associateBy { Triple(it.fcstDate, it.fcstTime, it.category) }
 
-            items.forEach { item ->
-                val category = WeatherCategory.fromName(item.category) ?: return@forEach
-                val fcstDate = item.fcstDate ?: return@forEach
-                val fcstTime = item.fcstTime ?: return@forEach
-                val fcstValue = item.fcstValue ?: return@forEach
+                items.forEach { item ->
+                    val category = WeatherCategory.fromName(item.category) ?: return@forEach
+                    val fcstDate = item.fcstDate ?: return@forEach
+                    val fcstTime = item.fcstTime ?: return@forEach
+                    val fcstValue = item.fcstValue ?: return@forEach
 
-                upsertWeather(
-                    site = site,
-                    baseDate = item.baseDate,
-                    baseTime = item.baseTime,
-                    category = category,
-                    fcstDate = fcstDate,
-                    fcstTime = fcstTime,
-                    fcstValue = fcstValue,
-                )
+                    val existing = existingMap[Triple(fcstDate, fcstTime, category)]
+                    if (existing != null) {
+                        existing.baseDate = item.baseDate
+                        existing.baseTime = item.baseTime
+                        existing.fcstValue = fcstValue
+                    } else {
+                        weatherRepository.save(
+                            Weather(
+                                site = site,
+                                baseDate = item.baseDate,
+                                baseTime = item.baseTime,
+                                category = category,
+                                fcstDate = fcstDate,
+                                fcstTime = fcstTime,
+                                fcstValue = fcstValue,
+                            ),
+                        )
+                    }
+                }
+
+                log.info { "초단기 예보 수집 완료 - 현장: ${site.name}, nx: ${site.nx}, ny: ${site.ny}" }
             }
-
-            log.info { "초단기 예보 수집 완료 - 현장: ${site.name}, nx: ${site.nx}, ny: ${site.ny}" }
         }
     }
 
-    @Transactional
     fun collectObservation() {
         val sites = siteRepository.findAll().filter { it.nx != 0 }
         if (sites.isEmpty()) {
@@ -128,25 +143,41 @@ class WeatherService(
                 .collectList()
                 .block() ?: return
 
-        results.forEach { (site, response) ->
-            val items = extractItems(response) ?: return@forEach
+        transactionTemplate.execute {
+            results.forEach { (site, response) ->
+                val items = extractItems(response) ?: return@forEach
+                val fcstDates = items.map { it.baseDate }.toSet()
+                val existingMap =
+                    weatherRepository
+                        .findBySiteAndFcstDateIn(site, fcstDates)
+                        .associateBy { Triple(it.fcstDate, it.fcstTime, it.category) }
 
-            items.forEach { item ->
-                val category = WeatherCategory.fromName(item.category) ?: return@forEach
-                val obsrValue = item.obsrValue ?: return@forEach
+                items.forEach { item ->
+                    val category = WeatherCategory.fromName(item.category) ?: return@forEach
+                    val obsrValue = item.obsrValue ?: return@forEach
 
-                upsertWeather(
-                    site = site,
-                    baseDate = item.baseDate,
-                    baseTime = item.baseTime,
-                    category = category,
-                    fcstDate = item.baseDate,
-                    fcstTime = item.baseTime,
-                    fcstValue = obsrValue,
-                )
+                    val existing = existingMap[Triple(item.baseDate, item.baseTime, category)]
+                    if (existing != null) {
+                        existing.baseDate = item.baseDate
+                        existing.baseTime = item.baseTime
+                        existing.fcstValue = obsrValue
+                    } else {
+                        weatherRepository.save(
+                            Weather(
+                                site = site,
+                                baseDate = item.baseDate,
+                                baseTime = item.baseTime,
+                                category = category,
+                                fcstDate = item.baseDate,
+                                fcstTime = item.baseTime,
+                                fcstValue = obsrValue,
+                            ),
+                        )
+                    }
+                }
+
+                log.info { "초단기 실황 수집 완료 - 현장: ${site.name}, nx: ${site.nx}, ny: ${site.ny}" }
             }
-
-            log.info { "초단기 실황 수집 완료 - 현장: ${site.name}, nx: ${site.nx}, ny: ${site.ny}" }
         }
     }
 
@@ -159,41 +190,5 @@ class WeatherService(
         return response.response.body
             ?.items
             ?.item
-    }
-
-    private fun upsertWeather(
-        site: Site,
-        baseDate: String,
-        baseTime: String,
-        category: WeatherCategory,
-        fcstDate: String,
-        fcstTime: String,
-        fcstValue: String,
-    ) {
-        val existing =
-            weatherRepository.findByFcstDateAndFcstTimeAndCategoryAndSite(
-                fcstDate = fcstDate,
-                fcstTime = fcstTime,
-                category = category,
-                site = site,
-            )
-
-        if (existing != null) {
-            existing.baseDate = baseDate
-            existing.baseTime = baseTime
-            existing.fcstValue = fcstValue
-        } else {
-            weatherRepository.save(
-                Weather(
-                    site = site,
-                    baseDate = baseDate,
-                    baseTime = baseTime,
-                    category = category,
-                    fcstDate = fcstDate,
-                    fcstTime = fcstTime,
-                    fcstValue = fcstValue,
-                ),
-            )
-        }
     }
 }
