@@ -1,16 +1,13 @@
 package com.pluxity.common.auth.properties
 
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.bind.ConstructorBinding
 import java.util.Base64
 
 @ConfigurationProperties(prefix = "jwt")
-data class JwtProperties
-    @ConstructorBinding
-    constructor(
-        val accessToken: TokenProperties,
-        val refreshToken: TokenProperties,
-    )
+data class JwtProperties(
+    val accessToken: TokenProperties,
+    val refreshToken: TokenProperties,
+)
 
 data class TokenProperties(
     val name: String,
