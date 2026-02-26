@@ -1,11 +1,11 @@
 package com.pluxity.cctv.dto
 
-import com.pluxity.cctv.entity.CctvFavorite
+import com.pluxity.cctv.entity.CctvBookmark
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
 @Schema(description = "CCTV 즐겨찾기 응답")
-data class CctvFavoriteResponse(
+data class CctvBookmarkResponse(
     @field:Schema(description = "ID", example = "1")
     val id: Long,
     @field:Schema(description = "CCTV 스트림명", example = "CCTV-001")
@@ -18,8 +18,8 @@ data class CctvFavoriteResponse(
     val createdBy: String?,
 )
 
-fun CctvFavorite.toResponse(): CctvFavoriteResponse =
-    CctvFavoriteResponse(
+fun CctvBookmark.toResponse(): CctvBookmarkResponse =
+    CctvBookmarkResponse(
         id = this.requiredId,
         streamName = this.streamName,
         displayOrder = this.displayOrder,

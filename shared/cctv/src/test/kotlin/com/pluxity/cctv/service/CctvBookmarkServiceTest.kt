@@ -2,10 +2,10 @@ package com.pluxity.cctv.service
 
 import com.pluxity.cctv.config.CctvErrorCode
 import com.pluxity.cctv.config.CctvProperties
-import com.pluxity.cctv.dto.CctvFavoriteOrderRequest
-import com.pluxity.cctv.dto.CctvFavoriteRequest
-import com.pluxity.cctv.entity.dummyCctvFavorite
-import com.pluxity.cctv.repository.CctvFavoriteRepository
+import com.pluxity.cctv.dto.CctvBookmarkOrderRequest
+import com.pluxity.cctv.dto.CctvBookmarkRequest
+import com.pluxity.cctv.entity.dummyCctvBookmark
+import com.pluxity.cctv.repository.CctvBookmarkRepository
 import com.pluxity.common.core.exception.CustomException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -15,20 +15,20 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.springframework.data.repository.findByIdOrNull
 
-class CctvFavoriteServiceTest :
+class CctvBookmarkServiceTest :
     BehaviorSpec({
 
-        val repository: CctvFavoriteRepository = mockk(relaxed = true)
-        val cctvProperties = CctvProperties(maxFavoriteCount = 4)
-        val service = CctvFavoriteService(repository, cctvProperties)
+        val repository: CctvBookmarkRepository = mockk(relaxed = true)
+        val cctvProperties = CctvProperties(maxBookmarkCount = 4)
+        val service = CctvBookmarkService(repository, cctvProperties)
 
         Given("즐겨찾기 목록 조회") {
 
             When("즐겨찾기가 있으면") {
                 val entities =
                     listOf(
-                        dummyCctvFavorite(id = 1L, streamName = "cam1", displayOrder = 1),
-                        dummyCctvFavorite(id = 2L, streamName = "cam2", displayOrder = 2),
+                        dummyCctvBookmark(id = 1L, streamName = "cam1", displayOrder = 1),
+                        dummyCctvBookmark(id = 2L, streamName = "cam2", displayOrder = 2),
                     )
 
                 every { repository.findAllByOrderByDisplayOrderAsc() } returns entities
@@ -56,8 +56,8 @@ class CctvFavoriteServiceTest :
         Given("즐겨찾기 등록") {
 
             When("정상적으로 등록하면") {
-                val request = CctvFavoriteRequest(streamName = "cam1")
-                val saved = dummyCctvFavorite(id = 1L, streamName = "cam1", displayOrder = 1)
+                val request = CctvBookmarkRequest(streamName = "cam1")
+                val saved = dummyCctvBookmark(id = 1L, streamName = "cam1", displayOrder = 1)
 
                 every { repository.existsByStreamName("cam1") } returns false
                 every { repository.count() } returns 0
@@ -71,31 +71,31 @@ class CctvFavoriteServiceTest :
             }
 
             When("이미 즐겨찾기된 경로를 등록하면") {
-                val request = CctvFavoriteRequest(streamName = "cam1")
+                val request = CctvBookmarkRequest(streamName = "cam1")
 
                 every { repository.existsByStreamName("cam1") } returns true
 
-                Then("ALREADY_FAVORITE 예외가 발생한다") {
+                Then("ALREADY_BOOKMARK 예외가 발생한다") {
                     val exception =
                         shouldThrow<CustomException> {
                             service.create(request)
                         }
-                    exception.code shouldBe CctvErrorCode.ALREADY_FAVORITE
+                    exception.code shouldBe CctvErrorCode.ALREADY_BOOKMARK
                 }
             }
 
             When("즐겨찾기가 4개인 상태에서 등록하면") {
-                val request = CctvFavoriteRequest(streamName = "cam5")
+                val request = CctvBookmarkRequest(streamName = "cam5")
 
                 every { repository.existsByStreamName("cam5") } returns false
                 every { repository.count() } returns 4
 
-                Then("EXCEED_FAVORITE_LIMIT 예외가 발생한다") {
+                Then("EXCEED_BOOKMARK_LIMIT 예외가 발생한다") {
                     val exception =
                         shouldThrow<CustomException> {
                             service.create(request)
                         }
-                    exception.code shouldBe CctvErrorCode.EXCEED_FAVORITE_LIMIT
+                    exception.code shouldBe CctvErrorCode.EXCEED_BOOKMARK_LIMIT
                 }
             }
         }
@@ -103,7 +103,7 @@ class CctvFavoriteServiceTest :
         Given("즐겨찾기 삭제") {
 
             When("존재하는 즐겨찾기를 삭제하면") {
-                val entity = dummyCctvFavorite(id = 1L, streamName = "cam1")
+                val entity = dummyCctvBookmark(id = 1L, streamName = "cam1")
 
                 every { repository.findByIdOrNull(1L) } returns entity
 
@@ -117,12 +117,12 @@ class CctvFavoriteServiceTest :
             When("존재하지 않는 즐겨찾기를 삭제하면") {
                 every { repository.findByIdOrNull(999L) } returns null
 
-                Then("NOT_FOUND_CCTV_FAVORITE 예외가 발생한다") {
+                Then("NOT_FOUND_CCTV_BOOKMARK 예외가 발생한다") {
                     val exception =
                         shouldThrow<CustomException> {
                             service.delete(999L)
                         }
-                    exception.code shouldBe CctvErrorCode.NOT_FOUND_CCTV_FAVORITE
+                    exception.code shouldBe CctvErrorCode.NOT_FOUND_CCTV_BOOKMARK
                 }
             }
         }
@@ -130,48 +130,48 @@ class CctvFavoriteServiceTest :
         Given("즐겨찾기 순서 변경") {
 
             When("순서를 변경하면") {
-                val fav1 = dummyCctvFavorite(id = 1L, streamName = "cam1", displayOrder = 1)
-                val fav2 = dummyCctvFavorite(id = 2L, streamName = "cam2", displayOrder = 2)
-                val request = CctvFavoriteOrderRequest(ids = listOf(2L, 1L))
+                val bm1 = dummyCctvBookmark(id = 1L, streamName = "cam1", displayOrder = 1)
+                val bm2 = dummyCctvBookmark(id = 2L, streamName = "cam2", displayOrder = 2)
+                val request = CctvBookmarkOrderRequest(ids = listOf(2L, 1L))
 
                 every { repository.count() } returns 2
-                every { repository.findAllById(listOf(2L, 1L)) } returns listOf(fav1, fav2)
+                every { repository.findAllById(listOf(2L, 1L)) } returns listOf(bm1, bm2)
 
                 service.updateOrder(request)
 
                 Then("순서가 변경된다") {
-                    fav2.displayOrder shouldBe 1
-                    fav1.displayOrder shouldBe 2
+                    bm2.displayOrder shouldBe 1
+                    bm1.displayOrder shouldBe 2
                 }
             }
 
             When("일부 ID만 포함되면") {
-                val request = CctvFavoriteOrderRequest(ids = listOf(1L))
+                val request = CctvBookmarkOrderRequest(ids = listOf(1L))
 
                 every { repository.count() } returns 3
 
-                Then("INVALID_FAVORITE_ORDER_COUNT 예외가 발생한다") {
+                Then("INVALID_BOOKMARK_ORDER_COUNT 예외가 발생한다") {
                     val exception =
                         shouldThrow<CustomException> {
                             service.updateOrder(request)
                         }
-                    exception.code shouldBe CctvErrorCode.INVALID_FAVORITE_ORDER_COUNT
+                    exception.code shouldBe CctvErrorCode.INVALID_BOOKMARK_ORDER_COUNT
                 }
             }
 
             When("존재하지 않는 ID가 포함되면") {
-                val fav1 = dummyCctvFavorite(id = 1L, streamName = "cam1", displayOrder = 1)
-                val request = CctvFavoriteOrderRequest(ids = listOf(1L, 999L))
+                val bm1 = dummyCctvBookmark(id = 1L, streamName = "cam1", displayOrder = 1)
+                val request = CctvBookmarkOrderRequest(ids = listOf(1L, 999L))
 
                 every { repository.count() } returns 2
-                every { repository.findAllById(listOf(1L, 999L)) } returns listOf(fav1)
+                every { repository.findAllById(listOf(1L, 999L)) } returns listOf(bm1)
 
-                Then("NOT_FOUND_CCTV_FAVORITE 예외가 발생한다") {
+                Then("NOT_FOUND_CCTV_BOOKMARK 예외가 발생한다") {
                     val exception =
                         shouldThrow<CustomException> {
                             service.updateOrder(request)
                         }
-                    exception.code shouldBe CctvErrorCode.NOT_FOUND_CCTV_FAVORITE
+                    exception.code shouldBe CctvErrorCode.NOT_FOUND_CCTV_BOOKMARK
                 }
             }
         }

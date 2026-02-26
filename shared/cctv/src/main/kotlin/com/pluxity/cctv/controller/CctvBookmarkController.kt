@@ -1,9 +1,9 @@
 package com.pluxity.cctv.controller
 
-import com.pluxity.cctv.dto.CctvFavoriteOrderRequest
-import com.pluxity.cctv.dto.CctvFavoriteRequest
-import com.pluxity.cctv.dto.CctvFavoriteResponse
-import com.pluxity.cctv.service.CctvFavoriteService
+import com.pluxity.cctv.dto.CctvBookmarkOrderRequest
+import com.pluxity.cctv.dto.CctvBookmarkRequest
+import com.pluxity.cctv.dto.CctvBookmarkResponse
+import com.pluxity.cctv.service.CctvBookmarkService
 import com.pluxity.common.core.response.DataResponseBody
 import com.pluxity.common.core.response.ErrorResponseBody
 import io.swagger.v3.oas.annotations.Operation
@@ -24,10 +24,10 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/cctv-favorites")
-@Tag(name = "CCTV Favorite Controller", description = "CCTV 즐겨찾기 관리 API")
-class CctvFavoriteController(
-    private val service: CctvFavoriteService,
+@RequestMapping("/cctv-bookmarks")
+@Tag(name = "CCTV Bookmark Controller", description = "CCTV 즐겨찾기 관리 API")
+class CctvBookmarkController(
+    private val service: CctvBookmarkService,
 ) {
     @Operation(summary = "CCTV 즐겨찾기 목록 조회", description = "즐겨찾기 등록된 CCTV 목록을 표시 순서대로 조회합니다")
     @ApiResponses(
@@ -36,7 +36,7 @@ class CctvFavoriteController(
         ],
     )
     @GetMapping
-    fun findAll(): ResponseEntity<DataResponseBody<List<CctvFavoriteResponse>>> = ResponseEntity.ok(DataResponseBody(service.findAll()))
+    fun findAll(): ResponseEntity<DataResponseBody<List<CctvBookmarkResponse>>> = ResponseEntity.ok(DataResponseBody(service.findAll()))
 
     @Operation(summary = "CCTV 즐겨찾기 등록", description = "CCTV를 즐겨찾기에 등록합니다 (최대 개수는 설정에 따름)")
     @ApiResponses(
@@ -56,7 +56,7 @@ class CctvFavoriteController(
     )
     @PostMapping
     fun create(
-        @RequestBody @Valid request: CctvFavoriteRequest,
+        @RequestBody @Valid request: CctvBookmarkRequest,
     ): ResponseEntity<DataResponseBody<Long>> = ResponseEntity.ok(DataResponseBody(service.create(request)))
 
     @Operation(summary = "CCTV 즐겨찾기 삭제", description = "CCTV 즐겨찾기를 삭제합니다")
@@ -101,7 +101,7 @@ class CctvFavoriteController(
     )
     @PatchMapping("/order")
     fun updateOrder(
-        @RequestBody @Valid request: CctvFavoriteOrderRequest,
+        @RequestBody @Valid request: CctvBookmarkOrderRequest,
     ): ResponseEntity<Void> {
         service.updateOrder(request)
         return ResponseEntity.noContent().build()

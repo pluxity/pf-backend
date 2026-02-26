@@ -4,5 +4,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties(prefix = "cctv")
 data class CctvProperties(
-    val maxFavoriteCount: Int = 4,
+    val maxBookmarkCount: Int = 4,
 )

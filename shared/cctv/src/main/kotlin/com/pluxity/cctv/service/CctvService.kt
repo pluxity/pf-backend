@@ -6,7 +6,7 @@ import com.pluxity.cctv.dto.CctvResponse
 import com.pluxity.cctv.dto.CctvUpdateRequest
 import com.pluxity.cctv.dto.toResponse
 import com.pluxity.cctv.entity.Cctv
-import com.pluxity.cctv.repository.CctvFavoriteRepository
+import com.pluxity.cctv.repository.CctvBookmarkRepository
 import com.pluxity.cctv.repository.CctvRepository
 import com.pluxity.common.core.exception.CustomException
 import org.springframework.data.repository.findByIdOrNull
@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class CctvService(
     private val repository: CctvRepository,
-    private val favoriteRepository: CctvFavoriteRepository,
+    private val bookmarkRepository: CctvBookmarkRepository,
     private val apiClient: CctvApiClient,
 ) {
     @Transactional
@@ -44,18 +44,18 @@ class CctvService(
     }
 
     fun findAll(): List<CctvResponse> {
-        val favorites = favoriteRepository.findAllByOrderByDisplayOrderAsc()
-        val favoriteStreamNames = favorites.map { it.streamName }.toSet()
+        val bookmarks = bookmarkRepository.findAllByOrderByDisplayOrderAsc()
+        val bookmarkStreamNames = bookmarks.map { it.streamName }.toSet()
 
         val cctvMap = repository.findAll().associateBy { it.streamName }
 
-        val favoriteCctvList = favoriteStreamNames.mapNotNull { cctvMap[it] }
-        val nonFavoriteCctvList =
+        val bookmarkedCctvList = bookmarkStreamNames.mapNotNull { cctvMap[it] }
+        val nonBookmarkedCctvList =
             cctvMap.values
-                .filter { it.streamName !in favoriteStreamNames }
+                .filter { it.streamName !in bookmarkStreamNames }
                 .sortedBy { it.name }
 
-        return (favoriteCctvList + nonFavoriteCctvList).map { it.toResponse() }
+        return (bookmarkedCctvList + nonBookmarkedCctvList).map { it.toResponse() }
     }
 
     @Transactional
