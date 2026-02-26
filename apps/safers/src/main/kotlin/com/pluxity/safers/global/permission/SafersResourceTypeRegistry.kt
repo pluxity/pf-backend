@@ -13,10 +13,7 @@ class SafersResourceTypeRegistry : ResourceTypeRegistry {
         val endpoint: String,
     ) {
         USER("사용자관리", "users"),
-        ATTENDANCE_STATUS("출역현황", "attendances"),
-        PROCESS_STATUS("공정현황", "process-statuses"),
-        KEY_MANAGEMENT("주요관리사항", "key-management"),
-        GOAL("목표관리", "goals"),
+        SITE("현장", "sites"),
     }
 
     override fun resolve(name: String): String =

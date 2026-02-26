@@ -17,6 +17,8 @@ class YonginResourceTypeRegistry : ResourceTypeRegistry {
         PROCESS_STATUS("공정현황", "process-statuses"),
         KEY_MANAGEMENT("주요관리사항", "key-management"),
         GOAL("목표관리", "goals"),
+        NOTICE("공지사항관리", "notices"),
+        SAFETY_EQUIPMENT("안전장비관리", "safety-equipments"),
     }
 
     override fun resolve(name: String): String =
