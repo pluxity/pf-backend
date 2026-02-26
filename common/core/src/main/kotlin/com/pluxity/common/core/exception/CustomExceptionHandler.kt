@@ -15,6 +15,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.servlet.resource.NoResourceFoundException
+import java.sql.SQLException
 
 private val log = KotlinLogging.logger {}
 
@@ -136,19 +137,33 @@ class CustomExceptionHandler {
             ).also { log.error(e) { "handleMissingServletRequestParameterException: ${e.message}" } }
 
     @ExceptionHandler(DataIntegrityViolationException::class)
-    fun handleDataIntegrityViolationException(e: DataIntegrityViolationException): ResponseEntity<ErrorResponseBody> =
-        ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
+    fun handleDataIntegrityViolationException(e: DataIntegrityViolationException): ResponseEntity<ErrorResponseBody> {
+        val errorCode =
+            when (extractSqlState(e)) {
+                "23505" -> ErrorCode.DUPLICATE_RESOURCE_ID
+                "23503" -> ErrorCode.REFERENCED_RESOURCE_NOT_FOUND
+                "23502" -> ErrorCode.MISSING_REQUIRED_VALUE
+                else -> ErrorCode.DATA_INTEGRITY_VIOLATION
+            }
+
+        return ResponseEntity
+            .status(errorCode.getHttpStatus())
             .body(
                 ErrorResponseBody(
-                    status = ErrorCode.DUPLICATE_RESOURCE_ID.getHttpStatus(),
-                    message = ErrorCode.DUPLICATE_RESOURCE_ID.getMessage(),
-                    code =
-                        ErrorCode.DUPLICATE_RESOURCE_ID
-                            .getHttpStatus()
-                            .value()
-                            .toString(),
-                    error = ErrorCode.DUPLICATE_RESOURCE_ID.getStatusName(),
+                    status = errorCode.getHttpStatus(),
+                    message = errorCode.getMessage(),
+                    code = errorCode.getHttpStatus().value().toString(),
+                    error = errorCode.getCodeName(),
                 ),
-            ).also { log.error(e) { "handleDataIntegrityViolationException: ${e.message}" } }
+            ).also { log.error(e) { "DataIntegrityViolationException [${extractSqlState(e)}]: ${e.message}" } }
+    }
+
+    private fun extractSqlState(e: DataIntegrityViolationException): String? {
+        var cause: Throwable? = e.cause
+        while (cause != null) {
+            if (cause is SQLException) return cause.sqlState
+            cause = cause.cause
+        }
+        return null
+    }
 }
