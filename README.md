@@ -542,7 +542,7 @@ media-server:
 
 ```yaml
 cctv:
-  max-favorite-count: 4
+  max-bookmark-count: 4
 ```
 
 ## 앱별 고유 의존성

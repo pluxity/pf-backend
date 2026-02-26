@@ -18,11 +18,11 @@ fun dummyCctv(
     alt = alt,
 ).withId(id).withAudit()
 
-fun dummyCctvFavorite(
+fun dummyCctvBookmark(
     id: Long? = null,
     streamName: String = "cam1",
     displayOrder: Int = 1,
-) = CctvFavorite(
+) = CctvBookmark(
     streamName = streamName,
     displayOrder = displayOrder,
 ).withId(id).withAudit()

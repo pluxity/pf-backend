@@ -6,8 +6,8 @@ import com.pluxity.cctv.dto.CctvUpdateRequest
 import com.pluxity.cctv.dto.MediaServerPathItem
 import com.pluxity.cctv.entity.Cctv
 import com.pluxity.cctv.entity.dummyCctv
-import com.pluxity.cctv.entity.dummyCctvFavorite
-import com.pluxity.cctv.repository.CctvFavoriteRepository
+import com.pluxity.cctv.entity.dummyCctvBookmark
+import com.pluxity.cctv.repository.CctvBookmarkRepository
 import com.pluxity.cctv.repository.CctvRepository
 import com.pluxity.common.core.exception.CustomException
 import io.kotest.assertions.throwables.shouldThrow
@@ -23,9 +23,9 @@ class CctvServiceTest :
     BehaviorSpec({
 
         val repository: CctvRepository = mockk(relaxed = true)
-        val favoriteRepository: CctvFavoriteRepository = mockk(relaxed = true)
+        val bookmarkRepository: CctvBookmarkRepository = mockk(relaxed = true)
         val apiClient: CctvApiClient = mockk()
-        val service = CctvService(repository, favoriteRepository, apiClient)
+        val service = CctvService(repository, bookmarkRepository, apiClient)
 
         Given("CCTV 동기화") {
 
@@ -90,14 +90,14 @@ class CctvServiceTest :
                         dummyCctv(id = 2L, streamName = "cam2", name = "B 카메라"),
                         dummyCctv(id = 3L, streamName = "cam3", name = "C 카메라"),
                     )
-                val favorites =
+                val bookmarks =
                     listOf(
-                        dummyCctvFavorite(id = 1L, streamName = "cam3", displayOrder = 1),
-                        dummyCctvFavorite(id = 2L, streamName = "cam1", displayOrder = 2),
+                        dummyCctvBookmark(id = 1L, streamName = "cam3", displayOrder = 1),
+                        dummyCctvBookmark(id = 2L, streamName = "cam1", displayOrder = 2),
                     )
 
                 every { repository.findAll() } returns entities
-                every { favoriteRepository.findAllByOrderByDisplayOrderAsc() } returns favorites
+                every { bookmarkRepository.findAllByOrderByDisplayOrderAsc() } returns bookmarks
 
                 val result = service.findAll()
 
@@ -117,7 +117,7 @@ class CctvServiceTest :
                     )
 
                 every { repository.findAll() } returns entities
-                every { favoriteRepository.findAllByOrderByDisplayOrderAsc() } returns emptyList()
+                every { bookmarkRepository.findAllByOrderByDisplayOrderAsc() } returns emptyList()
 
                 val result = service.findAll()
 
@@ -130,7 +130,7 @@ class CctvServiceTest :
 
             When("CCTV가 없으면") {
                 every { repository.findAll() } returns emptyList()
-                every { favoriteRepository.findAllByOrderByDisplayOrderAsc() } returns emptyList()
+                every { bookmarkRepository.findAllByOrderByDisplayOrderAsc() } returns emptyList()
 
                 val result = service.findAll()
 

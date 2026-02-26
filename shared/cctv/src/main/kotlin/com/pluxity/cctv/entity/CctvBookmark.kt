@@ -8,12 +8,12 @@ import jakarta.persistence.UniqueConstraint
 
 @Entity
 @Table(
-    name = "cctv_favorite",
+    name = "cctv_bookmark",
     uniqueConstraints = [
-        UniqueConstraint(name = "uk_cctv_favorite_stream_name", columnNames = ["stream_name"]),
+        UniqueConstraint(name = "uk_cctv_bookmark_stream_name", columnNames = ["stream_name"]),
     ],
 )
-class CctvFavorite(
+class CctvBookmark(
     @Column(name = "stream_name", nullable = false)
     val streamName: String,
     @Column(name = "display_order", nullable = false)

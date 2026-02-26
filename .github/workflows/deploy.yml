@@ -33,21 +33,40 @@ jobs:
           echo "=== Changed files ==="
           echo "$CHANGED_FILES"
 
-          # common 경로 변경 여부
-          COMMON_CHANGED=false
-          if echo "$CHANGED_FILES" | grep -qE '^(common/|gradle/|build\.gradle\.kts|settings\.gradle\.kts)'; then
-            COMMON_CHANGED=true
+          # 빌드 인프라 변경 여부 (gradle, 루트 빌드 설정)
+          INFRA_CHANGED=false
+          if echo "$CHANGED_FILES" | grep -qE '^(gradle/|build\.gradle\.kts|settings\.gradle\.kts)'; then
+            INFRA_CHANGED=true
           fi
 
-          # 변경된 모듈만 필터링
+          # 변경된 모듈만 필터링 (build.gradle.kts에서 의존성 자동 파싱)
           CHANGED_MODULES="[]"
           for module in $(echo "$CONFIG" | jq -r '.[].name'); do
-            APP_CHANGED=false
+            SHOULD_DEPLOY=false
+
+            # 앱 자체 변경
             if echo "$CHANGED_FILES" | grep -q "^apps/$module/"; then
-              APP_CHANGED=true
+              SHOULD_DEPLOY=true
             fi
 
-            if [ "$COMMON_CHANGED" = true ] || [ "$APP_CHANGED" = true ]; then
+            # 빌드 인프라 변경
+            if [ "$INFRA_CHANGED" = true ]; then
+              SHOULD_DEPLOY=true
+            fi
+
+            # build.gradle.kts에서 project(":xxx:yyy") 의존성을 파싱하여 경로 변환
+            GRADLE_FILE="apps/$module/build.gradle.kts"
+            if [ -f "$GRADLE_FILE" ]; then
+              DEPS=$(grep -oP 'project\(":([^"]+)"\)' "$GRADLE_FILE" | sed 's/project("://;s/")//' | tr ':' '/')
+              for dep in $DEPS; do
+                if echo "$CHANGED_FILES" | grep -q "^$dep/"; then
+                  SHOULD_DEPLOY=true
+                  break
+                fi
+              done
+            fi
+
+            if [ "$SHOULD_DEPLOY" = true ]; then
               MODULE_JSON=$(echo "$CONFIG" | jq -c ".[] | select(.name == \"$module\")")
               CHANGED_MODULES=$(echo "$CHANGED_MODULES" | jq -c ". + [$MODULE_JSON]")
             fi

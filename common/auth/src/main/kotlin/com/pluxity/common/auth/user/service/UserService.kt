@@ -195,6 +195,5 @@ class UserService(
     fun findAllUserNames(): List<String> =
         userRepository
             .findAll()
-            .filter { !it.isAdmin() }
             .map { it.username }
 }
