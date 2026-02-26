@@ -133,29 +133,44 @@ class S3StorageStrategy(
         dir: Path,
         s3BaseKey: String,
     ) {
+        val uploadedKeys = mutableListOf<String>()
         try {
             Files.walk(dir).use { paths ->
                 paths
                     .filter { path: Path -> Files.isRegularFile(path) }
                     .forEach { path: Path ->
-                        try {
-                            val relativePath = dir.relativize(path).toString().replace("\\", "/")
-                            val key = "$s3BaseKey/$relativePath"
-                            val putObjectRequest =
-                                PutObjectRequest
-                                    .builder()
-                                    .bucket(s3Properties.bucket)
-                                    .key(key)
-                                    .build()
-                            s3Client.putObject(putObjectRequest, RequestBody.fromFile(path.toFile()))
-                        } catch (e: Exception) {
-                            log.error(e) { "Failed to upload file $path: $e.message" }
-                        }
+                        val relativePath = dir.relativize(path).toString().replace("\\", "/")
+                        val key = "$s3BaseKey/$relativePath"
+                        val putObjectRequest =
+                            PutObjectRequest
+                                .builder()
+                                .bucket(s3Properties.bucket)
+                                .key(key)
+                                .build()
+                        s3Client.putObject(putObjectRequest, RequestBody.fromFile(path.toFile()))
+                        uploadedKeys.add(key)
                     }
             }
-        } catch (e: IOException) {
-            log.error { "압축 해제 된 파일 업로드 실패 $dir: $e.message" }
+        } catch (e: Exception) {
+            log.error(e) { "파일 업로드 실패, 업로드된 ${uploadedKeys.size}개 파일 롤백 시작" }
+            deleteUploadedKeys(uploadedKeys)
             throw CustomException(ErrorCode.FAILED_TO_UPLOAD_FILE)
+        }
+    }
+
+    private fun deleteUploadedKeys(keys: List<String>) {
+        keys.forEach { key ->
+            try {
+                val deleteRequest =
+                    DeleteObjectRequest
+                        .builder()
+                        .bucket(s3Properties.bucket)
+                        .key(key)
+                        .build()
+                s3Client.deleteObject(deleteRequest)
+            } catch (e: Exception) {
+                log.warn(e) { "롤백 중 S3 객체 삭제 실패: $key" }
+            }
         }
     }
 }
