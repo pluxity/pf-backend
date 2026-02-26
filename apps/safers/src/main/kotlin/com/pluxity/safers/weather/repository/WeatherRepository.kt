@@ -2,17 +2,14 @@ package com.pluxity.safers.weather.repository
 
 import com.pluxity.safers.site.entity.Site
 import com.pluxity.safers.weather.entity.Weather
-import com.pluxity.safers.weather.entity.WeatherCategory
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 
 interface WeatherRepository : JpaRepository<Weather, Long> {
-    fun findByFcstDateAndFcstTimeAndCategoryAndSite(
-        fcstDate: String,
-        fcstTime: String,
-        category: WeatherCategory,
+    fun findBySiteAndFcstDateIn(
         site: Site,
-    ): Weather?
+        fcstDates: Set<String>,
+    ): List<Weather>
 
     @Query(
         """
