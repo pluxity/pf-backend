@@ -21,6 +21,7 @@ import io.mockk.verify
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDate
 
 class AttendanceServiceTest :
@@ -28,7 +29,14 @@ class AttendanceServiceTest :
 
         val repository: AttendanceRepository = mockk(relaxed = true)
         val apiClient: AttendanceApiClient = mockk()
-        val service = AttendanceService(repository, apiClient)
+        val transactionTemplate: TransactionTemplate =
+            mockk {
+                every { execute<Any>(any()) } answers {
+                    val callback = firstArg<org.springframework.transaction.support.TransactionCallback<Any>>()
+                    callback.doInTransaction(mockk())
+                }
+            }
+        val service = AttendanceService(repository, apiClient, transactionTemplate)
 
         Given("최신 출역현황 조회") {
 
