@@ -10,8 +10,11 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest
+import software.amazon.awssdk.services.s3.model.Delete
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
+import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import java.io.IOException
 import java.nio.file.Files
@@ -159,17 +162,23 @@ class S3StorageStrategy(
     }
 
     private fun deleteUploadedKeys(keys: List<String>) {
-        keys.forEach { key ->
+        keys.chunked(1000).forEach { chunk ->
             try {
+                val objectIds = chunk.map { key -> ObjectIdentifier.builder().key(key).build() }
                 val deleteRequest =
-                    DeleteObjectRequest
+                    DeleteObjectsRequest
                         .builder()
                         .bucket(s3Properties.bucket)
-                        .key(key)
-                        .build()
-                s3Client.deleteObject(deleteRequest)
+                        .delete(
+                            Delete
+                                .builder()
+                                .objects(objectIds)
+                                .quiet(true)
+                                .build(),
+                        ).build()
+                s3Client.deleteObjects(deleteRequest)
             } catch (e: Exception) {
-                log.warn(e) { "롤백 중 S3 객체 삭제 실패: $key" }
+                log.warn(e) { "롤백 중 S3 객체 배치 삭제 실패: ${chunk.size}개" }
             }
         }
     }
