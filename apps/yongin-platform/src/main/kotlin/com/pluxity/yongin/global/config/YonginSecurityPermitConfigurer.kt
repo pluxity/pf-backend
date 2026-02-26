@@ -9,5 +9,6 @@ class YonginSecurityPermitConfigurer : SecurityPermitConfigurer {
         listOf(
             "/weather/webhook",
             "/users/usernames",
+            "/cctv-bookmarks/*",
         )
 }
