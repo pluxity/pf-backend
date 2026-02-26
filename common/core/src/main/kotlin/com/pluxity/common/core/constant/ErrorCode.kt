@@ -36,6 +36,9 @@ enum class ErrorCode(
     INVALID_FORMAT(HttpStatus.BAD_REQUEST, "유효하지 않은 요청입니다."),
     FAILED_TO_SAVE_ENTITY(HttpStatus.INTERNAL_SERVER_ERROR, "엔티티 저장에 실패했습니다."),
     DUPLICATE_RESOURCE_ID(HttpStatus.BAD_REQUEST, "중복된 리소스 ID가 포함되어 있습니다."),
+    REFERENCED_RESOURCE_NOT_FOUND(HttpStatus.BAD_REQUEST, "참조 대상이 존재하지 않습니다."),
+    MISSING_REQUIRED_VALUE(HttpStatus.BAD_REQUEST, "필수 값이 누락되었습니다."),
+    DATA_INTEGRITY_VIOLATION(HttpStatus.BAD_REQUEST, "데이터 무결성 제약 조건 위반입니다."),
     ;
 
     override fun getHttpStatus(): HttpStatus = httpStatus
