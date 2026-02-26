@@ -1,7 +1,9 @@
 package com.pluxity.common.auth.user.entity
 
 import com.pluxity.common.auth.permission.PermissionLevel
+import com.pluxity.common.core.constant.ErrorCode
 import com.pluxity.common.core.entity.IdentityIdEntity
+import com.pluxity.common.core.exception.CustomException
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -38,14 +40,14 @@ class User(
 
         if (duplicateRoles.isNotEmpty()) {
             val duplicateNames = duplicateRoles.joinToString(", ") { it.name }
-            throw IllegalStateException("Some roles already exist for this user: $duplicateNames")
+            throw CustomException(ErrorCode.DUPLICATE_ROLE, duplicateNames)
         }
 
         roles.forEach { addRole(it) }
     }
 
     fun addRole(role: Role) {
-        check(!hasRole(role)) { "Role already exists for this user: ${role.name}" }
+        if (hasRole(role)) throw CustomException(ErrorCode.DUPLICATE_ROLE, role.name)
         val userRole = UserRole(user = this, role = role)
         this.userRoles.add(userRole)
     }
@@ -54,7 +56,7 @@ class User(
         val userRoleToRemove =
             userRoles
                 .firstOrNull { it.role == role }
-                ?: throw IllegalStateException("Role not found for this user: ${role.name}")
+                ?: throw CustomException(ErrorCode.NOT_FOUND_USER_ROLE, role.name)
 
         this.userRoles.remove(userRoleToRemove)
     }
