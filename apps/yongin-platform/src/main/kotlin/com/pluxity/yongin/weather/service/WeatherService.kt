@@ -1,6 +1,5 @@
 package com.pluxity.yongin.weather.service
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.pluxity.yongin.weather.dto.WeatherDataDto
 import com.pluxity.yongin.weather.dto.WeatherResponse
 import com.pluxity.yongin.weather.dto.toResponse
@@ -9,6 +8,7 @@ import com.pluxity.yongin.weather.repository.WeatherRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import tools.jackson.databind.ObjectMapper
 
 private val log = KotlinLogging.logger {}
 
