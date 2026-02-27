@@ -67,7 +67,7 @@ class RoleServiceKoTest :
                 every { rolePermissionRepository.saveAll(any<List<RolePermission>>()) } returns listOf()
 
                 Then("성공") {
-                    val result = roleService.save(createRequest, UsernamePasswordAuthenticationToken("testUser", null, null))
+                    val result = roleService.save(createRequest, UsernamePasswordAuthenticationToken("testUser", null, emptyList()))
                     result shouldBe 1L
                 }
             }
@@ -90,7 +90,7 @@ class RoleServiceKoTest :
                 every { roleRepository.save(any()) } returns savedRole
 
                 Then("성공") {
-                    val result = roleService.save(createRequest, UsernamePasswordAuthenticationToken("testUser", null, null))
+                    val result = roleService.save(createRequest, UsernamePasswordAuthenticationToken("testUser", null, emptyList()))
                     result shouldBe 2L
                 }
             }

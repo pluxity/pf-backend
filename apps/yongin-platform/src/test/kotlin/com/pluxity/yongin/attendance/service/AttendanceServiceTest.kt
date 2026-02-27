@@ -18,6 +18,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -122,7 +123,7 @@ class AttendanceServiceTest :
                         any<Pageable>(),
                         any<Jpql.() -> JpqlQueryable<SelectQuery<Attendance>>>(),
                     )
-                } returns PageImpl(savedEntities)
+                } returns (PageImpl(savedEntities) as Page<Attendance?>)
 
                 val result = service.findAllWithSync(request)
 
@@ -146,7 +147,7 @@ class AttendanceServiceTest :
                         any<Pageable>(),
                         any<Jpql.() -> JpqlQueryable<SelectQuery<Attendance>>>(),
                     )
-                } returns PageImpl(listOf(existingEntity))
+                } returns (PageImpl(listOf(existingEntity)) as Page<Attendance?>)
 
                 service.findAllWithSync(request)
 
@@ -163,7 +164,7 @@ class AttendanceServiceTest :
                         any<Pageable>(),
                         any<Jpql.() -> JpqlQueryable<SelectQuery<Attendance>>>(),
                     )
-                } returns PageImpl(emptyList())
+                } returns (PageImpl(emptyList<Attendance>()) as Page<Attendance?>)
 
                 service.findAllWithSync(request)
 
