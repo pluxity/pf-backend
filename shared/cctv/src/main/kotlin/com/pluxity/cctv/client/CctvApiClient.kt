@@ -11,7 +11,7 @@ import org.springframework.web.reactive.function.client.bodyToMono
 @Component
 class CctvApiClient(
     webClientFactory: WebClientFactory,
-    private val mediaServerProperties: MediaServerProperties,
+    mediaServerProperties: MediaServerProperties,
 ) {
     private val client: WebClient = webClientFactory.createClient(mediaServerProperties.url)
 

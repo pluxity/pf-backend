@@ -16,6 +16,7 @@ import java.net.URI
 
 @Configuration
 class S3ClientConfig(
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val s3Properties: S3Properties,
 ) {
     @Bean

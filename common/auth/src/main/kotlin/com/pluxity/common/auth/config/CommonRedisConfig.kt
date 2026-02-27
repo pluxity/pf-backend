@@ -36,7 +36,7 @@ class CommonRedisConfig(
         redisTemplate.hashKeySerializer = StringRedisSerializer()
         redisTemplate.hashValueSerializer = jacksonSerializer
 
-        redisTemplate.setDefaultSerializer(jacksonSerializer)
+        redisTemplate.defaultSerializer = jacksonSerializer
 
         redisTemplate.afterPropertiesSet()
         return redisTemplate

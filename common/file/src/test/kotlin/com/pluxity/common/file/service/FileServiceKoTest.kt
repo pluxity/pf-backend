@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner
 class FileServiceKoTest :
     BehaviorSpec({
         val s3Presigner: S3Presigner = mockk()
-        val s3Properties: S3Properties =
+        val s3Properties =
             S3Properties(
                 bucket = "my-bucket",
                 region = "ap-northeast-2",
@@ -37,7 +37,7 @@ class FileServiceKoTest :
         val storageStrategy: StorageStrategy = mockk()
         val repository: FileRepository = mockk()
         val zipContentEntryRepository: ZipContentEntryRepository = mockk()
-        val fileProperties: FileProperties = FileProperties("local", LocalProperties("/tmp/files"))
+        val fileProperties = FileProperties("local", LocalProperties("/tmp/files"))
 
         val fileService =
             FileService(

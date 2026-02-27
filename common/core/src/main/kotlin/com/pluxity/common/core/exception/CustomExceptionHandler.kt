@@ -96,7 +96,7 @@ class CustomExceptionHandler {
         val errorMessage =
             fieldErrors.joinToString { error: FieldError -> "$error.field: $error.defaultMessage" }
 
-        return ResponseEntity<ErrorResponseBody>(
+        return ResponseEntity(
             ErrorResponseBody(
                 status = HttpStatus.BAD_REQUEST,
                 message = errorMessage,
@@ -109,7 +109,7 @@ class CustomExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException::class)
     fun handleHttpMessageNotReadableException(e: HttpMessageNotReadableException): ResponseEntity<ErrorResponseBody> =
-        ResponseEntity<ErrorResponseBody>(
+        ResponseEntity(
             ErrorResponseBody(
                 status = HttpStatus.BAD_REQUEST,
                 message =

@@ -167,7 +167,7 @@ class AttendanceServiceTest :
                         any<Pageable>(),
                         any<Jpql.() -> JpqlQueryable<SelectQuery<Attendance>>>(),
                     )
-                } returns PageImpl(emptyList<Attendance>())
+                } returns PageImpl(emptyList())
 
                 service.findAllWithSync(request)
 
