@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 @Schema(description = "시스템 설정 응답")
 data class SystemSettingResponse(
     @field:Schema(description = "롤링 간격(초)")
-    val rollingIntervalSeconds: Int? = null,
+    val rollingIntervalSeconds: Int = 0,
     @field:Schema(description = "BIM 썸네일 파일 정보")
     val bimThumbnailFile: FileResponse = FileResponse(),
     @field:Schema(description = "조감도 파일 정보")
@@ -17,9 +17,8 @@ data class SystemSettingResponse(
 fun SystemSetting.toResponse(
     bimThumbnailFile: FileResponse? = null,
     aerialViewFile: FileResponse? = null,
-): SystemSettingResponse =
-    SystemSettingResponse(
-        rollingIntervalSeconds = rollingIntervalSeconds,
-        bimThumbnailFile = bimThumbnailFile ?: FileResponse(),
-        aerialViewFile = aerialViewFile ?: FileResponse(),
-    )
+) = SystemSettingResponse(
+    rollingIntervalSeconds = rollingIntervalSeconds,
+    bimThumbnailFile = bimThumbnailFile ?: FileResponse(),
+    aerialViewFile = aerialViewFile ?: FileResponse(),
+)
