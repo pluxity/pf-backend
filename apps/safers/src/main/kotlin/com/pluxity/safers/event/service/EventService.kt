@@ -1,6 +1,5 @@
 package com.pluxity.safers.event.service
 
-import com.pluxity.common.core.constant.ErrorCode
 import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.PageResponse
@@ -66,7 +65,7 @@ class EventService(
             eventPublisher.publishEvent(EventCreated(savedEvent.toResponse(fileResponse)))
 
             savedEvent.requiredId
-        } ?: throw CustomException(ErrorCode.FAILED_TO_SAVE_ENTITY)
+        }
     }
 
     fun uploadVideo(

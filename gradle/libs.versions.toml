@@ -1,7 +1,7 @@
 [versions]
 # Language & Platform
 kotlin = "2.3.10"
-java = "21"
+java = "25"
 
 # Spring
 spring-boot = "4.0.3"
@@ -16,13 +16,13 @@ aws-s3 = "2.30.24"
 
 # API Documentation
 springdoc = "3.0.1"
-springwolf = "1.19.0"
+springwolf = "2.0.0"
 
 # Kotlin JDSL
 kotlin-jdsl = "3.8.0"
 
 # Logging & Monitoring
-kotlin-logging = "7.0.12"
+kotlin-logging = "8.0.01"
 logbook = "4.0.2"
 p6spy = "2.0.0"
 

@@ -248,7 +248,7 @@ class PermissionServiceKoTest :
                     )
 
                 every { permissionRepository.findByIdOrNull(validId) } returns permission
-                every { permissionRepository.existsByNameAndIdNot(request.name!!, validId) } returns false
+                every { permissionRepository.existsByNameAndIdNot(requireNotNull(request.name), validId) } returns false
 
                 val exception = shouldThrow<CustomException> { permissionService.update(validId, request) }
 
@@ -271,7 +271,7 @@ class PermissionServiceKoTest :
                             ),
                     )
                 every { permissionRepository.findByIdOrNull(validId) } returns permission
-                every { permissionRepository.existsByNameAndIdNot(request.name!!, validId) } returns false
+                every { permissionRepository.existsByNameAndIdNot(requireNotNull(request.name), validId) } returns false
 
                 val exception = shouldThrow<CustomException> { permissionService.update(validId, request) }
 
