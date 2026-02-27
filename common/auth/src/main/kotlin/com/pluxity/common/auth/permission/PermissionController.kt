@@ -113,9 +113,9 @@ class PermissionController(
     @DeleteMapping("/{id}")
     fun deletePermission(
         @Parameter(description = "권한 ID", required = true) @PathVariable id: Long,
-    ): ResponseEntity<Void?> {
+    ): ResponseEntity<Void> {
         permissionService.delete(id)
-        return ResponseEntity.noContent().build<Void?>()
+        return ResponseEntity.noContent().build()
     }
 
     @GetMapping("/resource-types")
