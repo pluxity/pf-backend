@@ -21,9 +21,12 @@ class FileStorageConfig {
     @Bean
     fun fileService(
         storageStrategy: StorageStrategy,
+        @Suppress("SpringJavaInjectionPointsAutowiringInspection")
         fileRepository: FileRepository,
+        @Suppress("SpringJavaInjectionPointsAutowiringInspection")
         zipContentEntryRepository: ZipContentEntryRepository,
         s3Properties: S3Properties,
+        @Suppress("SpringJavaInjectionPointsAutowiringInspection")
         s3Presigner: S3Presigner,
         fileProperties: FileProperties,
     ): FileService = FileService(s3Presigner, s3Properties, storageStrategy, fileRepository, zipContentEntryRepository, fileProperties)

@@ -18,6 +18,7 @@ import java.util.concurrent.Executor
 @EnableWebSocketMessageBroker
 class WebSocketConfig(
     private val heartBeatScheduler: TaskScheduler,
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val myDefaultHandshakeHandler: DefaultHandshakeHandler,
 ) : WebSocketMessageBrokerConfigurer {
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {

@@ -62,9 +62,7 @@ class PermissionCheckAspect(
 
             PermissionAction.READ_SINGLE,
             PermissionAction.READ_LIST,
-            -> {
-                Unit
-            }
+            -> Unit
         }
     }
 
@@ -126,9 +124,7 @@ class PermissionCheckAspect(
             when (checkPermission.action) {
                 PermissionAction.CREATE -> returnObject?.toString()
                 PermissionAction.DELETE -> joinPoint.args.firstOrNull()?.toString()
-                else -> null
-            }
-                ?: return
+            } ?: return
 
         when (checkPermission.action) {
             PermissionAction.CREATE -> {
@@ -137,10 +133,6 @@ class PermissionCheckAspect(
 
             PermissionAction.DELETE -> {
                 userResourcePermissionService.delete(checkPermission.resourceType, resourceId)
-            }
-
-            else -> {
-                Unit
             }
         }
     }
