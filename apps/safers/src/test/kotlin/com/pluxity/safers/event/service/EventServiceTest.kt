@@ -5,6 +5,7 @@ import com.linecorp.kotlinjdsl.querymodel.jpql.JpqlQueryable
 import com.linecorp.kotlinjdsl.querymodel.jpql.select.SelectQuery
 import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.common.file.service.FileService
 import com.pluxity.common.test.dto.dummyFileResponse
 import com.pluxity.safers.event.dto.dummyEventCreateRequest
@@ -19,9 +20,9 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.verify
 import org.springframework.context.ApplicationEventPublisher
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -32,6 +33,8 @@ import java.util.function.Consumer
 
 class EventServiceTest :
     BehaviorSpec({
+
+        mockkStatic("com.pluxity.common.core.utils.KotlinJdslExtensionsKt")
 
         val eventRepository: EventRepository = mockk(relaxed = true)
         val fileService: FileService = mockk(relaxed = true)
@@ -205,11 +208,10 @@ class EventServiceTest :
                         dummyEvent(id = 3L, name = "이벤트 3", snapshotFileId = 12L),
                     )
 
-                @Suppress("UNCHECKED_CAST")
-                val page = PageImpl(events) as Page<Event?>
+                val page = PageImpl(events)
 
                 every {
-                    eventRepository.findPage(
+                    eventRepository.findPageNotNull(
                         any<Pageable>(),
                         any<Jpql.() -> JpqlQueryable<SelectQuery<Event>>>(),
                     )
@@ -230,11 +232,10 @@ class EventServiceTest :
             }
 
             When("이벤트가 없으면") {
-                @Suppress("UNCHECKED_CAST")
-                val page = PageImpl(emptyList<Event>()) as Page<Event?>
+                val page = PageImpl(emptyList<Event>())
 
                 every {
-                    eventRepository.findPage(
+                    eventRepository.findPageNotNull(
                         any<Pageable>(),
                         any<Jpql.() -> JpqlQueryable<SelectQuery<Event>>>(),
                     )
