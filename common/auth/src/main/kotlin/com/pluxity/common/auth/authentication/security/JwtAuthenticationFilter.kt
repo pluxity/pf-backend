@@ -1,6 +1,5 @@
 package com.pluxity.common.auth.authentication.security
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.ErrorResponseBody
 import jakarta.servlet.FilterChain
@@ -13,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
 import org.springframework.web.filter.OncePerRequestFilter
+import tools.jackson.databind.json.JsonMapper
 
 class JwtAuthenticationFilter(
     private val jwtProvider: JwtProvider,
@@ -51,7 +51,7 @@ class JwtAuthenticationFilter(
         response: HttpServletResponse,
         exception: CustomException,
     ) {
-        val objectMapper = ObjectMapper()
+        val objectMapper = JsonMapper()
         response.status = exception.code.getHttpStatus().value()
         response.contentType = MediaType.APPLICATION_JSON_VALUE
         response.characterEncoding = "UTF-8"
