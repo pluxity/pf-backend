@@ -12,8 +12,6 @@ hibernate-spatial = "6.6.26.Final"
 jts = "1.20.0"
 flyway = "11.8.0"
 
-# Security & JWT
-jjwt = "0.12.6"
 
 # AWS
 aws-s3 = "2.30.24"
@@ -77,10 +75,6 @@ flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }
 hibernate-spatial = { module = "org.hibernate:hibernate-spatial", version.ref = "hibernate-spatial" }
 jts-core = { module = "org.locationtech.jts:jts-core", version.ref = "jts" }
 
-# Security & JWT
-jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
-jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt" }
-jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
 
 # AWS S3
 aws-s3 = { module = "software.amazon.awssdk:s3", version.ref = "aws-s3" }
@@ -118,7 +112,6 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 springmockk = { module = "com.ninja-squad:springmockk", version.ref = "springmockk" }
 
 [bundles]
-jjwt = ["jjwt-api", "jjwt-impl", "jjwt-jackson"]
 kotlin-jdsl = ["kotlin-jdsl-jpql-dsl", "kotlin-jdsl-jpql-render", "kotlin-jdsl-spring-data-jpa"]
 springdoc = ["springdoc-webmvc-ui", "springdoc-common"]
 springwolf = ["springwolf-core", "springwolf-stomp"]
