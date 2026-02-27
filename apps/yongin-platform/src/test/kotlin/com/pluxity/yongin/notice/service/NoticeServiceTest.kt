@@ -5,6 +5,7 @@ import com.linecorp.kotlinjdsl.querymodel.jpql.JpqlQueryable
 import com.linecorp.kotlinjdsl.querymodel.jpql.select.SelectQuery
 import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.yongin.global.constant.YonginErrorCode
 import com.pluxity.yongin.notice.dto.dummyNoticeRequest
 import com.pluxity.yongin.notice.entity.Notice
@@ -16,9 +17,9 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.verify
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -27,6 +28,8 @@ import java.time.LocalDate
 
 class NoticeServiceTest :
     BehaviorSpec({
+
+        mockkStatic("com.pluxity.common.core.utils.KotlinJdslExtensionsKt")
 
         val repository: NoticeRepository = mockk()
         val service = NoticeService(repository)
@@ -42,11 +45,10 @@ class NoticeServiceTest :
                     )
                 val pageable = PageRequest.of(0, 9999)
 
-                @Suppress("UNCHECKED_CAST")
-                val page = PageImpl(entities, pageable, entities.size.toLong()) as Page<Notice?>
+                val page = PageImpl(entities, pageable, entities.size.toLong())
 
                 every {
-                    repository.findPage(
+                    repository.findPageNotNull(
                         any<Pageable>(),
                         any<Jpql.() -> JpqlQueryable<SelectQuery<Notice>>>(),
                     )

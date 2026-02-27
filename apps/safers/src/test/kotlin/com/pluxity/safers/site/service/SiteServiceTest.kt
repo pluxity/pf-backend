@@ -5,6 +5,7 @@ import com.linecorp.kotlinjdsl.querymodel.jpql.JpqlQueryable
 import com.linecorp.kotlinjdsl.querymodel.jpql.select.SelectQuery
 import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.common.file.service.FileService
 import com.pluxity.common.test.dto.dummyFileResponse
 import com.pluxity.safers.global.constant.SafersErrorCode
@@ -19,14 +20,16 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.verify
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 
 class SiteServiceTest :
     BehaviorSpec({
+
+        mockkStatic("com.pluxity.common.core.utils.KotlinJdslExtensionsKt")
 
         val siteRepository: SiteRepository = mockk(relaxed = true)
         val fileService: FileService = mockk(relaxed = true)
@@ -112,11 +115,10 @@ class SiteServiceTest :
                         dummySite(id = 3L, name = "현장 3", thumbnailImageId = 12L),
                     )
 
-                @Suppress("UNCHECKED_CAST")
-                val page = PageImpl(sites) as Page<Site?>
+                val page = PageImpl(sites)
 
                 every {
-                    siteRepository.findPage(
+                    siteRepository.findPageNotNull(
                         any<Pageable>(),
                         any<Jpql.() -> JpqlQueryable<SelectQuery<Site>>>(),
                     )
@@ -139,11 +141,10 @@ class SiteServiceTest :
             }
 
             When("현장이 없으면") {
-                @Suppress("UNCHECKED_CAST")
-                val page = PageImpl(emptyList<Site>()) as Page<Site?>
+                val page = PageImpl(emptyList<Site>())
 
                 every {
-                    siteRepository.findPage(
+                    siteRepository.findPageNotNull(
                         any<Pageable>(),
                         any<Jpql.() -> JpqlQueryable<SelectQuery<Site>>>(),
                     )

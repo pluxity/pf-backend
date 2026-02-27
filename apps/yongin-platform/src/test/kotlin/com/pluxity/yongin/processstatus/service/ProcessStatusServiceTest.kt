@@ -4,6 +4,7 @@ import com.linecorp.kotlinjdsl.dsl.jpql.Jpql
 import com.linecorp.kotlinjdsl.querymodel.jpql.JpqlQueryable
 import com.linecorp.kotlinjdsl.querymodel.jpql.select.SelectQuery
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.yongin.processstatus.dto.dummyPageSearchRequest
 import com.pluxity.yongin.processstatus.dto.dummyProcessStatusBulkRequest
 import com.pluxity.yongin.processstatus.dto.dummyProcessStatusRequest
@@ -18,9 +19,9 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.verify
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -28,6 +29,8 @@ import java.time.LocalDate
 
 class ProcessStatusServiceTest :
     BehaviorSpec({
+
+        mockkStatic("com.pluxity.common.core.utils.KotlinJdslExtensionsKt")
 
         val repository: ProcessStatusRepository = mockk()
         val workTypeRepository: WorkTypeRepository = mockk()
@@ -48,16 +51,14 @@ class ProcessStatusServiceTest :
                         dummyProcessStatus(id = 3L, workType = nonOpenCut, workDate = LocalDate.of(2026, 1, 13)),
                     )
 
-                @Suppress("UNCHECKED_CAST")
                 val page =
                     PageImpl(
                         entities,
                         PageRequest.of(0, 10),
                         entities.size.toLong(),
-                    ) as Page<ProcessStatus?>
-
+                    )
                 every {
-                    repository.findPage(
+                    repository.findPageNotNull(
                         any<Pageable>(),
                         any<Jpql.() -> JpqlQueryable<SelectQuery<ProcessStatus>>>(),
                     )
@@ -76,11 +77,9 @@ class ProcessStatusServiceTest :
             When("빈 목록을 조회하면") {
                 val pageable = PageRequest.of(0, 10)
 
-                @Suppress("UNCHECKED_CAST")
-                val page = PageImpl(emptyList<ProcessStatus>(), pageable, 0) as Page<ProcessStatus?>
-
+                val page = PageImpl(emptyList<ProcessStatus>(), pageable, 0)
                 every {
-                    repository.findPage(
+                    repository.findPageNotNull(
                         any<Pageable>(),
                         any<
                             Jpql.() ->
@@ -100,11 +99,9 @@ class ProcessStatusServiceTest :
             When("페이지 번호를 지정하여 조회하면") {
                 val entities = (11L..15L).map { dummyProcessStatus(id = it, workType = bridgeRetainingWall) }
 
-                @Suppress("UNCHECKED_CAST")
-                val page = PageImpl(entities, PageRequest.of(1, 10), 15) as Page<ProcessStatus?>
-
+                val page = PageImpl(entities, PageRequest.of(1, 10), 15)
                 every {
-                    repository.findPage(
+                    repository.findPageNotNull(
                         any<Pageable>(),
                         any<Jpql.() -> JpqlQueryable<SelectQuery<ProcessStatus>>>(),
                     )
