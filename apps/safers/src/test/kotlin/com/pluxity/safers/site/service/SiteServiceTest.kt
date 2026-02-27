@@ -20,6 +20,7 @@ import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -110,7 +111,9 @@ class SiteServiceTest :
                         dummySite(id = 2L, name = "현장 2", thumbnailImageId = 11L),
                         dummySite(id = 3L, name = "현장 3", thumbnailImageId = 12L),
                     )
-                val page = PageImpl(sites)
+
+                @Suppress("UNCHECKED_CAST")
+                val page = PageImpl(sites) as Page<Site?>
 
                 every {
                     siteRepository.findPage(
@@ -136,7 +139,8 @@ class SiteServiceTest :
             }
 
             When("현장이 없으면") {
-                val page = PageImpl(emptyList<Site>())
+                @Suppress("UNCHECKED_CAST")
+                val page = PageImpl(emptyList<Site>()) as Page<Site?>
 
                 every {
                     siteRepository.findPage(

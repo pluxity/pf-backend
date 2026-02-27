@@ -18,6 +18,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -40,7 +41,9 @@ class NoticeServiceTest :
                         dummyNotice(id = 3L, title = "공지사항 3"),
                     )
                 val pageable = PageRequest.of(0, 9999)
-                val page = PageImpl(entities, pageable, entities.size.toLong())
+
+                @Suppress("UNCHECKED_CAST")
+                val page = PageImpl(entities, pageable, entities.size.toLong()) as Page<Notice?>
 
                 every {
                     repository.findPage(

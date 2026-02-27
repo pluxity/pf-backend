@@ -20,6 +20,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -45,12 +46,14 @@ class GoalServiceTest :
                         dummyGoal(id = 2L, constructionSection = section2),
                         dummyGoal(id = 3L, constructionSection = section3),
                     )
+
+                @Suppress("UNCHECKED_CAST")
                 val page =
                     PageImpl(
                         entities,
                         PageRequest.of(0, 10),
                         entities.size.toLong(),
-                    )
+                    ) as Page<Goal?>
 
                 every {
                     repository.findPage(
@@ -71,12 +74,13 @@ class GoalServiceTest :
             }
 
             When("빈 목록을 조회하면") {
+                @Suppress("UNCHECKED_CAST")
                 val page =
                     PageImpl(
                         emptyList<Goal>(),
                         PageRequest.of(0, 10),
                         0,
-                    )
+                    ) as Page<Goal?>
 
                 every {
                     repository.findPage(
@@ -99,12 +103,14 @@ class GoalServiceTest :
                     (11L..15L).map {
                         dummyGoal(id = it, constructionSection = section1)
                     }
+
+                @Suppress("UNCHECKED_CAST")
                 val page =
                     PageImpl(
                         entities,
                         PageRequest.of(1, 10),
                         15,
-                    )
+                    ) as Page<Goal?>
 
                 every {
                     repository.findPage(

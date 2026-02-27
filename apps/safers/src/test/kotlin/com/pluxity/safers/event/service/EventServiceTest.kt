@@ -21,6 +21,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -203,7 +204,9 @@ class EventServiceTest :
                         dummyEvent(id = 2L, name = "이벤트 2", snapshotFileId = 11L),
                         dummyEvent(id = 3L, name = "이벤트 3", snapshotFileId = 12L),
                     )
-                val page = PageImpl(events)
+
+                @Suppress("UNCHECKED_CAST")
+                val page = PageImpl(events) as Page<Event?>
 
                 every {
                     eventRepository.findPage(
@@ -227,7 +230,8 @@ class EventServiceTest :
             }
 
             When("이벤트가 없으면") {
-                val page = PageImpl(emptyList<Event>())
+                @Suppress("UNCHECKED_CAST")
+                val page = PageImpl(emptyList<Event>()) as Page<Event?>
 
                 every {
                     eventRepository.findPage(

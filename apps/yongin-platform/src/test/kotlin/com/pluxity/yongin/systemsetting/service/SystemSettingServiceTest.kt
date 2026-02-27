@@ -40,7 +40,7 @@ class SystemSettingServiceTest :
                 val result = service.find()
 
                 Then("기본 응답이 반환된다") {
-                    result.rollingIntervalSeconds shouldBe null
+                    result.rollingIntervalSeconds shouldBe 0
                 }
             }
         }

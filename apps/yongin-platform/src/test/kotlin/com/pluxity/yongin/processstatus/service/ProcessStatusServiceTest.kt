@@ -20,6 +20,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -46,12 +47,14 @@ class ProcessStatusServiceTest :
                         dummyProcessStatus(id = 2L, workType = road, workDate = LocalDate.of(2026, 1, 14)),
                         dummyProcessStatus(id = 3L, workType = nonOpenCut, workDate = LocalDate.of(2026, 1, 13)),
                     )
+
+                @Suppress("UNCHECKED_CAST")
                 val page =
                     PageImpl(
                         entities,
                         PageRequest.of(0, 10),
                         entities.size.toLong(),
-                    )
+                    ) as Page<ProcessStatus?>
 
                 every {
                     repository.findPage(
@@ -72,7 +75,9 @@ class ProcessStatusServiceTest :
 
             When("빈 목록을 조회하면") {
                 val pageable = PageRequest.of(0, 10)
-                val page = PageImpl(emptyList<ProcessStatus>(), pageable, 0)
+
+                @Suppress("UNCHECKED_CAST")
+                val page = PageImpl(emptyList<ProcessStatus>(), pageable, 0) as Page<ProcessStatus?>
 
                 every {
                     repository.findPage(
@@ -94,7 +99,9 @@ class ProcessStatusServiceTest :
 
             When("페이지 번호를 지정하여 조회하면") {
                 val entities = (11L..15L).map { dummyProcessStatus(id = it, workType = bridgeRetainingWall) }
-                val page = PageImpl(entities, PageRequest.of(1, 10), 15)
+
+                @Suppress("UNCHECKED_CAST")
+                val page = PageImpl(entities, PageRequest.of(1, 10), 15) as Page<ProcessStatus?>
 
                 every {
                     repository.findPage(
