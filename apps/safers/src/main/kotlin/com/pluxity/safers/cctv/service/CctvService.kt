@@ -122,6 +122,8 @@ class CctvService(
             lon = request.lon,
             lat = request.lat,
             alt = request.alt,
+            nvrName = request.nvrName,
+            channel = request.channel,
         )
     }
 

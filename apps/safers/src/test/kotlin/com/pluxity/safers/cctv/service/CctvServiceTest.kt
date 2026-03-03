@@ -164,17 +164,19 @@ class CctvServiceTest :
 
             When("존재하는 CCTV를 수정하면") {
                 val entity = dummyCctv(id = 1L, site = site, streamName = "cam1")
-                val request = CctvUpdateRequest(name = "1번 카메라", lon = 127.0, lat = 37.0, alt = 50.0)
+                val request = CctvUpdateRequest(name = "1번 카메라", lon = 127.0, lat = 37.0, alt = 50.0, nvrName = "NVR-01", channel = 1)
 
                 every { repository.findByIdOrNull(1L) } returns entity
 
                 service.update(1L, request)
 
-                Then("name, lon, lat, alt가 수정된다") {
+                Then("name, lon, lat, alt, nvrName, channel이 수정된다") {
                     entity.name shouldBe "1번 카메라"
                     entity.lon shouldBe 127.0
                     entity.lat shouldBe 37.0
                     entity.alt shouldBe 50.0
+                    entity.nvrName shouldBe "NVR-01"
+                    entity.channel shouldBe 1
                 }
             }
 
@@ -184,7 +186,10 @@ class CctvServiceTest :
                 Then("NOT_FOUND_CCTV 예외가 발생한다") {
                     val exception =
                         shouldThrow<CustomException> {
-                            service.update(999L, CctvUpdateRequest(name = "test", lon = null, lat = null, alt = null))
+                            service.update(
+                                999L,
+                                CctvUpdateRequest(name = "test", lon = null, lat = null, alt = null, nvrName = null, channel = null),
+                            )
                         }
                     exception.code shouldBe CctvErrorCode.NOT_FOUND_CCTV
                 }
