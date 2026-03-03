@@ -53,7 +53,7 @@ class CctvService(
                     .map { (site, baseUrl) ->
                         async {
                             try {
-                                site to apiClient.fetchPaths(baseUrl)
+                                site to apiClient.fetchPaths(baseUrl, site.requiredId)
                             } catch (e: Exception) {
                                 log.warn(e) { "Site ${site.requiredId}(${site.name})의 미디어서버($baseUrl) 경로 조회 실패" }
                                 null

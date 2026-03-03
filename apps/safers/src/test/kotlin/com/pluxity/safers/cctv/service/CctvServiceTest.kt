@@ -53,7 +53,7 @@ class CctvServiceTest :
                     )
 
                 every { siteRepository.findByIdOrNull(1L) } returns site
-                every { apiClient.fetchPaths("http://media-server:9997") } returns externalPaths
+                every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns externalPaths
                 every { repository.findBySiteId(1L) } returns emptyList()
 
                 service.sync(siteId = 1L)
@@ -70,7 +70,7 @@ class CctvServiceTest :
                     )
 
                 every { siteRepository.findAll() } returns listOf(site)
-                every { apiClient.fetchPaths("http://media-server:9997") } returns externalPaths
+                every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns externalPaths
                 every { repository.findBySiteId(1L) } returns emptyList()
 
                 service.sync()
@@ -84,7 +84,7 @@ class CctvServiceTest :
                 val existingCctv = dummyCctv(id = 1L, site = site, streamName = "cam_old")
 
                 every { siteRepository.findByIdOrNull(1L) } returns site
-                every { apiClient.fetchPaths("http://media-server:9997") } returns
+                every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns
                     listOf(
                         MediaServerPathItem(name = "cam_new", confName = "conf1", ready = true),
                     )
@@ -102,7 +102,7 @@ class CctvServiceTest :
                 val existingCctv = dummyCctv(id = 1L, site = site, streamName = "cam1")
 
                 every { siteRepository.findByIdOrNull(1L) } returns site
-                every { apiClient.fetchPaths("http://media-server:9997") } returns
+                every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns
                     listOf(
                         MediaServerPathItem(name = "cam1", confName = "conf1", ready = true),
                     )
