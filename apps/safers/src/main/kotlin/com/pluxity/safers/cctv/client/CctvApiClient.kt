@@ -11,8 +11,26 @@ class CctvApiClient(
     @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val webClientFactory: WebClientFactory,
 ) {
-    fun fetchPaths(baseUrl: String): List<MediaServerPathItem> {
-        val client = webClientFactory.createClient(baseUrl)
+    private val sitePortMap =
+        mapOf(
+            9L to 9904,
+            11L to 9901,
+            13L to 9902,
+            17L to 9903,
+            16L to 9905,
+            10L to 9906,
+            12L to 9907,
+            15L to 9908,
+            14L to 9909,
+        )
+
+    fun fetchPaths(
+        baseUrl: String,
+        siteId: Long,
+    ): List<MediaServerPathItem> {
+        val port = sitePortMap[siteId]
+        val url = if (port != null) "$baseUrl:$port" else baseUrl
+        val client = webClientFactory.createClient(url)
         val response =
             client
                 .get()
