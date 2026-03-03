@@ -29,6 +29,8 @@ class Site(
     var thumbnailImageId: Long? = null,
     @Column(name = "location", columnDefinition = "geometry(Polygon, 4326)")
     var location: Polygon,
+    @Column(name = "base_url")
+    var baseUrl: String? = null,
     @Column(name = "nx", nullable = false)
     var nx: Int,
     @Column(name = "ny", nullable = false)
@@ -45,6 +47,7 @@ class Site(
         location: Polygon,
         nx: Int,
         ny: Int,
+        baseUrl: String?,
     ) {
         this.name = name
         this.constructionStartDate = constructionStartDate
@@ -56,5 +59,6 @@ class Site(
         this.location = location
         this.nx = nx
         this.ny = ny
+        this.baseUrl = baseUrl
     }
 }

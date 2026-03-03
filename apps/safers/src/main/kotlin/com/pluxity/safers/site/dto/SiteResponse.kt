@@ -25,6 +25,8 @@ data class SiteResponse(
     val region: Region?,
     @field:Schema(description = "주소")
     val address: String?,
+    @field:Schema(description = "Base URL")
+    val baseUrl: String?,
     @field:Schema(description = "위치 (WKT 형식)")
     val location: String,
     @field:Schema(description = "썸네일 이미지")
@@ -42,6 +44,7 @@ fun Site.toResponse(thumbnailFileResponse: FileResponse?): SiteResponse =
         description = description,
         region = region,
         address = address,
+        baseUrl = baseUrl,
         location = location.toText(),
         thumbnailImage = thumbnailFileResponse,
         baseResponse = toBaseResponse(),

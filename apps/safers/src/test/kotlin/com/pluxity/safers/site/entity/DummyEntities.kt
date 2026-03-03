@@ -24,6 +24,7 @@ fun dummySite(
     description: String? = "서울역 리모델링 현장",
     region: Region? = Region.SEOUL,
     address: String? = "서울특별시 용산구 한강대로 405",
+    baseUrl: String? = "https://example.com/api",
     thumbnailImageId: Long? = null,
     location: Polygon = dummyPolygon(),
     nx: Int = 55,
@@ -40,4 +41,5 @@ fun dummySite(
         location = location,
         nx = nx,
         ny = ny,
+        baseUrl = baseUrl,
     ).withId(id).withAudit()
