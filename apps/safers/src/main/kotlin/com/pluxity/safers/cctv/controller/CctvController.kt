@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -44,8 +45,10 @@ class CctvController(
         ],
     )
     @PostMapping("/sync")
-    fun sync(): ResponseEntity<Void> {
-        service.sync()
+    fun sync(
+        @RequestParam(required = false) siteId: Long?,
+    ): ResponseEntity<Void> {
+        service.sync(siteId)
         return ResponseEntity.noContent().build()
     }
 
@@ -66,7 +69,9 @@ class CctvController(
         ],
     )
     @GetMapping
-    fun findAll(): ResponseEntity<DataResponseBody<List<CctvResponse>>> = ResponseEntity.ok(DataResponseBody(service.findAll()))
+    fun findAll(
+        @RequestParam(required = false) siteId: Long?,
+    ): ResponseEntity<DataResponseBody<List<CctvResponse>>> = ResponseEntity.ok(DataResponseBody(service.findAll(siteId)))
 
     @Operation(summary = "CCTV 수정", description = "CCTV의 이름, 경도, 위도를 수정합니다")
     @ApiResponses(

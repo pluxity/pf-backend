@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.bodyToMono
 
 @Component
 class CctvApiClient(
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     webClientFactory: WebClientFactory,
     mediaServerProperties: MediaServerProperties,
 ) {

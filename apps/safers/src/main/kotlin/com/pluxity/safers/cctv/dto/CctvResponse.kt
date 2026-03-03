@@ -3,13 +3,18 @@ package com.pluxity.safers.cctv.dto
 import com.fasterxml.jackson.annotation.JsonUnwrapped
 import com.pluxity.common.core.response.BaseResponse
 import com.pluxity.common.core.response.toBaseResponse
+import com.pluxity.common.file.dto.FileResponse
 import com.pluxity.safers.cctv.entity.Cctv
+import com.pluxity.safers.site.dto.SiteResponse
+import com.pluxity.safers.site.dto.toResponse
 import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(description = "CCTV 응답")
 data class CctvResponse(
     @field:Schema(description = "ID", example = "1")
     val id: Long,
+    @field:Schema(description = "현장")
+    val site: SiteResponse,
     @field:Schema(description = "스트림명", example = "cam1")
     val streamName: String,
     @field:Schema(description = "이름", example = "1번 카메라")
@@ -24,9 +29,10 @@ data class CctvResponse(
     val baseResponse: BaseResponse,
 )
 
-fun Cctv.toResponse(): CctvResponse =
+fun Cctv.toResponse(thumbnailFileMap: Map<Long, FileResponse> = emptyMap()): CctvResponse =
     CctvResponse(
         id = this.requiredId,
+        site = this.site.toResponse(thumbnailFileResponse = this.site.thumbnailImageId?.let { thumbnailFileMap[it] }),
         streamName = this.streamName,
         name = this.name,
         lon = this.lon,
