@@ -14,14 +14,19 @@ import com.pluxity.safers.cctv.entity.Cctv
 import com.pluxity.safers.cctv.repository.CctvRepository
 import com.pluxity.safers.site.entity.Site
 import com.pluxity.safers.site.repository.SiteRepository
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
-import java.util.concurrent.ConcurrentHashMap
+
+private val log = KotlinLogging.logger {}
 
 @Service
-@Transactional(readOnly = true)
 class CctvService(
     private val repository: CctvRepository,
     private val siteRepository: SiteRepository,
@@ -41,12 +46,22 @@ class CctvService(
                 siteRepository.findAll()
             }
 
-        val siteBaseUrlMap = sites.mapNotNull { site -> site.baseUrl?.let { site to it } }
-
-        val sitePathsMap = ConcurrentHashMap<Site, List<MediaServerPathItem>>()
-        siteBaseUrlMap.parallelStream().forEach { (site, baseUrl) ->
-            sitePathsMap[site] = apiClient.fetchPaths(baseUrl)
-        }
+        val sitePathsMap =
+            runBlocking(Dispatchers.IO) {
+                sites
+                    .mapNotNull { site -> site.baseUrl?.let { site to it } }
+                    .map { (site, baseUrl) ->
+                        async {
+                            try {
+                                site to apiClient.fetchPaths(baseUrl)
+                            } catch (e: Exception) {
+                                log.warn(e) { "Site ${site.requiredId}(${site.name})의 미디어서버($baseUrl) 경로 조회 실패" }
+                                null
+                            }
+                        }
+                    }.awaitAll()
+                    .filterNotNull()
+            }
 
         transactionTemplate.executeWithoutResult {
             sitePathsMap.forEach { (site, externalPaths) ->
@@ -79,6 +94,7 @@ class CctvService(
         }
     }
 
+    @Transactional(readOnly = true)
     fun findAll(siteId: Long? = null): List<CctvResponse> {
         val cctvList =
             repository.findAllNotNull {
