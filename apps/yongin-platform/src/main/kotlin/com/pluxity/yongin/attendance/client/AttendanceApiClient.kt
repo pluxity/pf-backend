@@ -13,7 +13,6 @@ private val log = KotlinLogging.logger {}
 
 @Component
 class AttendanceApiClient(
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     webClientFactory: WebClientFactory,
     private val attendanceProperties: AttendanceProperties,
 ) {

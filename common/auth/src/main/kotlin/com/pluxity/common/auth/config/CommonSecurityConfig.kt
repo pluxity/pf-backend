@@ -32,11 +32,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 @EnableWebSecurity
 @EnableConfigurationProperties(JwtProperties::class, UserProperties::class)
 class CommonSecurityConfig(
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val repository: UserRepository,
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val jwtProvider: JwtProvider,
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val securityPermitConfigurer: SecurityPermitConfigurer?,
 ) {
     @Bean

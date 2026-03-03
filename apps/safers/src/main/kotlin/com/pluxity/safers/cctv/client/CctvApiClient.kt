@@ -8,7 +8,6 @@ import org.springframework.web.reactive.function.client.bodyToMono
 
 @Component
 class CctvApiClient(
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val webClientFactory: WebClientFactory,
 ) {
     private val sitePortMap =

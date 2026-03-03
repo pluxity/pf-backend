@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class SystemSettingService(
     private val systemSettingRepository: SystemSettingRepository,
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val fileService: FileService,
 ) {
     companion object {

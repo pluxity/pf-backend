@@ -28,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class SiteService(
     private val siteRepository: SiteRepository,
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val fileService: FileService,
 ) {
     companion object {

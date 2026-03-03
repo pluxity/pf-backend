@@ -42,7 +42,14 @@ class JwtProvider(
                 if (isRefreshToken) ErrorCode.INVALID_REFRESH_TOKEN else ErrorCode.INVALID_ACCESS_TOKEN,
             )
         }
-        return signedJWT.jwtClaimsSet
+        val claims = signedJWT.jwtClaimsSet
+        val expirationTime = claims.expirationTime
+        if (expirationTime != null && expirationTime.before(Date())) {
+            throw CustomException(
+                if (isRefreshToken) ErrorCode.EXPIRED_REFRESH_TOKEN else ErrorCode.EXPIRED_ACCESS_TOKEN,
+            )
+        }
+        return claims
     }
 
     fun generateAccessToken(
@@ -73,64 +80,19 @@ class JwtProvider(
         return signedJWT.serialize()
     }
 
-    fun isAccessTokenValid(token: String): Boolean =
-        runCatching {
-            val signedJWT = SignedJWT.parse(token)
-            val verifier = MACVerifier(getSecretKeyBytes(false))
-            if (!signedJWT.verify(verifier)) {
-                throw CustomException(ErrorCode.INVALID_ACCESS_TOKEN)
-            }
-            val expirationTime = signedJWT.jwtClaimsSet.expirationTime
-            if (expirationTime != null && expirationTime.before(Date())) {
-                throw CustomException(ErrorCode.EXPIRED_ACCESS_TOKEN)
-            }
-        }.fold(
-            onSuccess = { true },
-            onFailure = { exception ->
-                when (exception) {
-                    is CustomException -> throw exception
-                    is ParseException, is JOSEException, is IllegalArgumentException -> {
-                        throw CustomException(ErrorCode.INVALID_ACCESS_TOKEN)
-                    }
-                    else -> throw exception
-                }
-            },
-        )
+    fun validateRefreshToken(token: String?) {
+        if (token.isNullOrBlank()) throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
 
-    fun isRefreshTokenValid(token: String?): Boolean {
-        if (token.isNullOrBlank()) return false
+        val refreshToken =
+            refreshTokenRepository
+                .findByToken(token)
+                ?: throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
 
-        return runCatching {
-            val refreshToken =
-                refreshTokenRepository
-                    .findByToken(token)
-                    ?: throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
+        if (!refreshToken.isValidToken()) {
+            throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
+        }
 
-            if (!refreshToken.isValidToken()) {
-                throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
-            }
-
-            val signedJWT = SignedJWT.parse(refreshToken.token)
-            val verifier = MACVerifier(getSecretKeyBytes(true))
-            if (!signedJWT.verify(verifier)) {
-                throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
-            }
-            val expirationTime = signedJWT.jwtClaimsSet.expirationTime
-            if (expirationTime != null && expirationTime.before(Date())) {
-                throw CustomException(ErrorCode.EXPIRED_REFRESH_TOKEN)
-            }
-        }.fold(
-            onSuccess = { true },
-            onFailure = { exception ->
-                when (exception) {
-                    is CustomException -> throw exception
-                    is ParseException, is JOSEException, is IllegalArgumentException -> {
-                        throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
-                    }
-                    else -> throw exception
-                }
-            },
-        )
+        extractAllClaims(refreshToken.token, true)
     }
 
     private fun getSecretKeyBytes(isRefreshToken: Boolean): ByteArray {

@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/users")
 @Tag(name = "User Controller", description = "사용자 정보 관리 API")
 class UserNameController(
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val userService: UserService,
 ) {
     @Operation(summary = "전체 사용자 이름 목록 조회", description = "등록된 모든 사용자의 username 목록을 조회합니다")

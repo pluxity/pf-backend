@@ -30,7 +30,6 @@ private val log = KotlinLogging.logger {}
 class CctvService(
     private val repository: CctvRepository,
     private val siteRepository: SiteRepository,
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val fileService: FileService,
     private val apiClient: CctvApiClient,
     private val transactionTemplate: TransactionTemplate,

@@ -82,19 +82,6 @@ dependencies {
 
 #### Cross-module 빈 주입 경고 suppress
 
-멀티모듈 구조에서 `common/` 모듈의 빈을 `apps/`에서 주입받을 때, IntelliJ가 빈을 찾지 못한다는 경고를 표시합니다.
-런타임에는 `@PlatformApplication`의 `scanBasePackages`로 정상 주입되므로 `@Suppress`로 경고를 무시합니다:
-
-```kotlin
-@Component
-class WeatherApiClient(
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
-    webClientFactory: WebClientFactory,  // common/core에서 제공
-)
-```
-
-> `@Suppress("SpringJavaInjectionPointsAutowiringInspection")`는 다른 모듈의 빈을 주입받는 생성자 파라미터에 붙입니다.
-
 #### @ConfigurationProperties 등록
 
 각 common/shared 모듈은 `@EnableConfigurationProperties`로 자체 Properties를 등록하므로,

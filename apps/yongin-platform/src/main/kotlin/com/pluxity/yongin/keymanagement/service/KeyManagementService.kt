@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class KeyManagementService(
     private val repository: KeyManagementRepository,
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val fileService: FileService,
 ) {
     companion object {
