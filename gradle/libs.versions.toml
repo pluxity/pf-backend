@@ -88,7 +88,7 @@ springwolf-ui = { module = "io.github.springwolf:springwolf-ui", version.ref = "
 # Kotlin JDSL
 kotlin-jdsl-jpql-dsl = { module = "com.linecorp.kotlin-jdsl:jpql-dsl", version.ref = "kotlin-jdsl" }
 kotlin-jdsl-jpql-render = { module = "com.linecorp.kotlin-jdsl:jpql-render", version.ref = "kotlin-jdsl" }
-kotlin-jdsl-spring-data-jpa = { module = "com.linecorp.kotlin-jdsl:spring-data-jpa-support", version.ref = "kotlin-jdsl" }
+kotlin-jdsl-spring-data-jpa = { module = "com.linecorp.kotlin-jdsl:spring-data-jpa-boot4-support", version.ref = "kotlin-jdsl" }
 
 # Logging & Monitoring
 kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
