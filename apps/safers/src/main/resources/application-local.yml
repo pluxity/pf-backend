@@ -7,7 +7,7 @@ spring:
   application:
     name: core
   datasource:
-    url: jdbc:postgresql://localhost:5432/safers
+    url: jdbc:postgresql://192.168.10.181:8602/safers
     username: pluxity
     password: pluxity0304
     driver-class-name: org.postgresql.Driver
@@ -53,6 +53,3 @@ logging:
 
 event:
   base-url: ${EVENT_BASE_URL:http://192.168.10.182:8001}
-
-media-server:
-  url: http://192.168.10.181:9997
