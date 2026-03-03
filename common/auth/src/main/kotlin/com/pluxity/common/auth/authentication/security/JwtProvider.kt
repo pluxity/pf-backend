@@ -1,6 +1,5 @@
 package com.pluxity.common.auth.authentication.security
 
-import com.nimbusds.jose.JOSEException
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.JWSHeader
 import com.nimbusds.jose.crypto.MACSigner
@@ -14,7 +13,6 @@ import com.pluxity.common.core.exception.CustomException
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.stereotype.Service
 import org.springframework.web.util.WebUtils
-import java.text.ParseException
 import java.util.Base64
 import java.util.Date
 
@@ -35,21 +33,26 @@ class JwtProvider(
         token: String,
         isRefreshToken: Boolean,
     ): JWTClaimsSet {
-        val signedJWT = SignedJWT.parse(token)
-        val verifier = MACVerifier(getSecretKeyBytes(isRefreshToken))
-        if (!signedJWT.verify(verifier)) {
-            throw CustomException(
-                if (isRefreshToken) ErrorCode.INVALID_REFRESH_TOKEN else ErrorCode.INVALID_ACCESS_TOKEN,
-            )
+        val errorCode = if (isRefreshToken) ErrorCode.INVALID_REFRESH_TOKEN else ErrorCode.INVALID_ACCESS_TOKEN
+        try {
+            val signedJWT = SignedJWT.parse(token)
+            val verifier = MACVerifier(getSecretKeyBytes(isRefreshToken))
+            if (!signedJWT.verify(verifier)) {
+                throw CustomException(errorCode)
+            }
+            val claims = signedJWT.jwtClaimsSet
+            val expirationTime = claims.expirationTime
+            if (expirationTime != null && expirationTime.before(Date())) {
+                throw CustomException(
+                    if (isRefreshToken) ErrorCode.EXPIRED_REFRESH_TOKEN else ErrorCode.EXPIRED_ACCESS_TOKEN,
+                )
+            }
+            return claims
+        } catch (e: CustomException) {
+            throw e
+        } catch (_: Exception) {
+            throw CustomException(errorCode)
         }
-        val claims = signedJWT.jwtClaimsSet
-        val expirationTime = claims.expirationTime
-        if (expirationTime != null && expirationTime.before(Date())) {
-            throw CustomException(
-                if (isRefreshToken) ErrorCode.EXPIRED_REFRESH_TOKEN else ErrorCode.EXPIRED_ACCESS_TOKEN,
-            )
-        }
-        return claims
     }
 
     fun generateAccessToken(
