@@ -33,9 +33,12 @@ class SystemSettingService(
 
     @Transactional
     fun update(request: SystemSettingRequest) {
+        val existing = systemSettingRepository.findByIdOrNull(SystemSetting.SINGLETON_ID)
+        val oldBimThumbnailFileId = existing?.bimThumbnailFileId
+        val oldAerialViewFileId = existing?.aerialViewFileId
+
         val setting =
-            systemSettingRepository
-                .findByIdOrNull(SystemSetting.SINGLETON_ID)
+            existing
                 ?.apply {
                     update(
                         rollingIntervalSeconds = request.rollingIntervalSeconds,
@@ -51,11 +54,11 @@ class SystemSettingService(
                     ),
                 )
 
-        request.bimThumbnailFileId?.let {
-            fileService.finalizeUpload(it, "$BIM_THUMBNAIL_PATH${setting.id}/")
-        }
-        request.aerialViewFileId?.let {
-            fileService.finalizeUpload(it, "$AERIAL_VIEW_PATH${setting.id}/")
-        }
+        request.bimThumbnailFileId
+            ?.takeIf { it != oldBimThumbnailFileId }
+            ?.let { fileService.finalizeUpload(it, "$BIM_THUMBNAIL_PATH${setting.id}/") }
+        request.aerialViewFileId
+            ?.takeIf { it != oldAerialViewFileId }
+            ?.let { fileService.finalizeUpload(it, "$AERIAL_VIEW_PATH${setting.id}/") }
     }
 }

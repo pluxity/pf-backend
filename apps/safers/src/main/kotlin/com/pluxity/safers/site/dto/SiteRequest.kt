@@ -20,6 +20,8 @@ data class SiteRequest(
     val region: Region? = null,
     @field:Schema(description = "주소", example = "서울특별시 용산구 한강대로 405")
     val address: String? = null,
+    @field:Schema(description = "Base URL", example = "https://example.com/api")
+    val baseUrl: String? = null,
     @field:NotBlank(message = "위치 정보는 필수입니다.")
     @field:Schema(
         description = "위치 (WKT 형식)",

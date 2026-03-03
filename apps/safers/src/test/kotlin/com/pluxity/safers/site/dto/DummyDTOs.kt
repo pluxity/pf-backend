@@ -12,6 +12,7 @@ fun dummySiteRequest(
     address: String? = "서울특별시 용산구 한강대로 405",
     location: String = "POLYGON ((126.96 37.55, 126.98 37.55, 126.98 37.56, 126.96 37.56, 126.96 37.55))",
     thumbnailImageId: Long? = null,
+    baseUrl: String? = "https://example.com/api",
 ): SiteRequest =
     SiteRequest(
         name = name,
@@ -22,4 +23,5 @@ fun dummySiteRequest(
         address = address,
         location = location,
         thumbnailImageId = thumbnailImageId,
+        baseUrl = baseUrl,
     )

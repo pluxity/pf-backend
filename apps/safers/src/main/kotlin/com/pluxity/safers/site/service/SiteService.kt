@@ -50,6 +50,7 @@ class SiteService(
                 description = request.description,
                 region = request.region,
                 address = request.address,
+                baseUrl = request.baseUrl,
                 thumbnailImageId = request.thumbnailImageId,
                 location = polygon,
                 nx = nx,
@@ -111,6 +112,7 @@ class SiteService(
             location = polygon,
             nx = nx,
             ny = ny,
+            baseUrl = request.baseUrl,
         )
 
         if (request.thumbnailImageId != null && request.thumbnailImageId != oldThumbnailImageId) {

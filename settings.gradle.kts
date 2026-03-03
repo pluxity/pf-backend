@@ -7,9 +7,6 @@ include(":common:file")
 include(":common:messaging")
 include(":common:test-support")
 
-// ── Shared Modules ──
-include(":shared:cctv")
-
 // ── Application Modules ──
 include(":apps:safers")
 include(":apps:yongin-platform")
