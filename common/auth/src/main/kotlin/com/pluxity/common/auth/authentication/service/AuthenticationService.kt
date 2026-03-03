@@ -79,9 +79,7 @@ class AuthenticationService(
             jwtProvider.getJwtFromRequest(jwtProperties.refreshToken.name, request)
                 ?: throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
 
-        if (!jwtProvider.isRefreshTokenValid(refreshToken)) {
-            throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
-        }
+        jwtProvider.validateRefreshToken(refreshToken)
 
         val username = jwtProvider.extractUsername(refreshToken, true)
         val user = findUserByUsername(username)

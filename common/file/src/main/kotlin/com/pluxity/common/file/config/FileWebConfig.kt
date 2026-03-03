@@ -8,7 +8,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 @Configuration
 class FileWebConfig(
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val fileProperties: FileProperties,
 ) : WebMvcConfigurer {
     override fun addResourceHandlers(registry: ResourceHandlerRegistry) {

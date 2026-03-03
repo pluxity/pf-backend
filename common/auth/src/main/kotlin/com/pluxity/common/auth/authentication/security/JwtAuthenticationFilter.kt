@@ -40,7 +40,7 @@ class JwtAuthenticationFilter(
     private fun authenticateRequest(request: HttpServletRequest) {
         val token = jwtProvider.getAccessTokenFromRequest(request)
 
-        if (token != null && jwtProvider.isAccessTokenValid(token)) {
+        if (token != null) {
             val username = jwtProvider.extractUsername(token)
             val userDetails = userDetailsService.loadUserByUsername(username)
             setAuthenticationContext(request, userDetails)

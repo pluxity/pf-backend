@@ -13,10 +13,8 @@ private val log = KotlinLogging.logger {}
 
 @Service
 class EventFileDownloadService(
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val fileService: FileService,
     eventProperties: EventProperties,
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     webClientFactory: WebClientFactory,
 ) {
     private val webClient: WebClient = webClientFactory.createClient(eventProperties.baseUrl)

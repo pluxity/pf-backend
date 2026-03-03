@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class ProcessStatusImageService(
     private val repository: ProcessStatusImageRepository,
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val fileService: FileService,
 ) {
     companion object {

@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class ObservationService(
     private val repository: ObservationRepository,
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val fileService: FileService,
 ) {
     companion object {
