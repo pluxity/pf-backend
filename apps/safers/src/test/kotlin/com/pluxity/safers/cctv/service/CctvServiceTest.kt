@@ -41,8 +41,8 @@ class CctvServiceTest :
             When("siteId를 지정하면 해당 site만 동기화한다") {
                 val externalPaths =
                     listOf(
-                        MediaServerPathItem(name = "cam1", confName = "conf1", ready = true),
-                        MediaServerPathItem(name = "cam2", confName = "conf2", ready = true),
+                        MediaServerPathItem(name = "cam1"),
+                        MediaServerPathItem(name = "cam2"),
                     )
 
                 every { siteRepository.findByIdOrNull(1L) } returns site
@@ -59,7 +59,7 @@ class CctvServiceTest :
             When("siteId 없이 호출하면 전체 site를 순회한다") {
                 val externalPaths =
                     listOf(
-                        MediaServerPathItem(name = "cam1", confName = "conf1", ready = true),
+                        MediaServerPathItem(name = "cam1"),
                     )
 
                 every { siteRepository.findAll() } returns listOf(site)
@@ -79,7 +79,7 @@ class CctvServiceTest :
                 every { siteRepository.findByIdOrNull(1L) } returns site
                 every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns
                     listOf(
-                        MediaServerPathItem(name = "cam_new", confName = "conf1", ready = true),
+                        MediaServerPathItem(name = "cam_new"),
                     )
                 every { repository.findBySiteId(1L) } returns listOf(existingCctv)
 
@@ -97,7 +97,7 @@ class CctvServiceTest :
                 every { siteRepository.findByIdOrNull(1L) } returns site
                 every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns
                     listOf(
-                        MediaServerPathItem(name = "cam1", confName = "conf1", ready = true),
+                        MediaServerPathItem(name = "cam1"),
                     )
                 every { repository.findBySiteId(1L) } returns listOf(existingCctv)
 
@@ -157,19 +157,17 @@ class CctvServiceTest :
 
             When("존재하는 CCTV를 수정하면") {
                 val entity = dummyCctv(id = 1L, site = site, streamName = "cam1")
-                val request = CctvUpdateRequest(name = "1번 카메라", lon = 127.0, lat = 37.0, alt = 50.0, nvrName = "NVR-01", channel = 1)
+                val request = CctvUpdateRequest(name = "1번 카메라", lon = 127.0, lat = 37.0, alt = 50.0)
 
                 every { repository.findByIdOrNull(1L) } returns entity
 
                 service.update(1L, request)
 
-                Then("name, lon, lat, alt, nvrName, channel이 수정된다") {
+                Then("name, lon, lat, alt가 수정된다") {
                     entity.name shouldBe "1번 카메라"
                     entity.lon shouldBe 127.0
                     entity.lat shouldBe 37.0
                     entity.alt shouldBe 50.0
-                    entity.nvrName shouldBe "NVR-01"
-                    entity.channel shouldBe 1
                 }
             }
 
@@ -181,7 +179,7 @@ class CctvServiceTest :
                         shouldThrow<CustomException> {
                             service.update(
                                 999L,
-                                CctvUpdateRequest(name = "test", lon = null, lat = null, alt = null, nvrName = null, channel = null),
+                                CctvUpdateRequest(name = "test", lon = null, lat = null, alt = null),
                             )
                         }
                     exception.code shouldBe CctvErrorCode.NOT_FOUND_CCTV

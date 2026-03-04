@@ -12,8 +12,4 @@ data class CctvUpdateRequest(
     val lat: Double?,
     @field:Schema(description = "고도", example = "50.0")
     val alt: Double?,
-    @field:Schema(description = "NVR 이름", example = "NVR-01")
-    val nvrName: String?,
-    @field:Schema(description = "채널", example = "1")
-    val channel: Int?,
 )

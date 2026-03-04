@@ -25,10 +25,6 @@ data class CctvResponse(
     val lat: Double?,
     @field:Schema(description = "고도", example = "50.0")
     val alt: Double?,
-    @field:Schema(description = "NVR 이름", example = "NVR-01")
-    val nvrName: String?,
-    @field:Schema(description = "채널", example = "1")
-    val channel: Int?,
     @field:JsonUnwrapped
     val baseResponse: BaseResponse,
 )
@@ -42,7 +38,5 @@ fun Cctv.toResponse(thumbnailFileMap: Map<Long, FileResponse> = emptyMap()): Cct
         lon = this.lon,
         lat = this.lat,
         alt = this.alt,
-        nvrName = this.nvrName,
-        channel = this.channel,
         baseResponse = this.toBaseResponse(),
     )
