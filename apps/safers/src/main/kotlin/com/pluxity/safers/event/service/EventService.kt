@@ -21,6 +21,8 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @Service
 class EventService(
@@ -101,13 +103,24 @@ class EventService(
     }
 
     @Transactional(readOnly = true)
-    fun findAll(request: PageSearchRequest): PageResponse<EventResponse> {
+    fun findAll(
+        request: PageSearchRequest,
+        startDate: String? = null,
+        endDate: String? = null,
+    ): PageResponse<EventResponse> {
+        val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+        val start = startDate?.let { LocalDateTime.parse(it, formatter) }
+        val end = endDate?.let { LocalDateTime.parse(it, formatter) }
+
         val pageable = PageRequest.of(request.page - 1, request.size)
         val page =
             eventRepository.findPageNotNull(pageable) {
                 select(entity(Event::class))
                     .from(entity(Event::class))
-                    .orderBy(path(Event::id).desc())
+                    .whereAnd(
+                        start?.let { path(Event::eventTimestamp).greaterThanOrEqualTo(it) },
+                        end?.let { path(Event::eventTimestamp).lessThanOrEqualTo(it) },
+                    ).orderBy(path(Event::id).desc())
             }
 
         val fileMap = fileService.getFileMapByIds(page.content) { listOf(it.snapshotFileId, it.videoFileId) }
