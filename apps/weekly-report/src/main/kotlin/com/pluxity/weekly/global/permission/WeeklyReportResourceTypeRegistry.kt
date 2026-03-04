@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class WeeklyReportResourceTypeRegistry : ResourceTypeRegistry {
-    enum class ReportResourceType(
+    enum class WeeklyReportResourceType(
         val resourceName: String,
         val endpoint: String,
     ) {
@@ -16,19 +16,17 @@ class WeeklyReportResourceTypeRegistry : ResourceTypeRegistry {
     }
 
     override fun resolve(name: String): String =
-        ReportResourceType.entries
+        WeeklyReportResourceType.entries
             .firstOrNull { it.name.equals(name, ignoreCase = true) }
             ?.name
             ?: throw CustomException(ErrorCode.INVALID_RESOURCE_TYPE, name)
 
     override fun allEntries(): List<ResourceTypeInfo> =
-        ReportResourceType.entries.map {
+        WeeklyReportResourceType.entries.map {
             ResourceTypeInfo(
                 key = it.name,
                 resourceName = it.resourceName,
                 endpoint = it.endpoint,
             )
         }
-
-
 }
