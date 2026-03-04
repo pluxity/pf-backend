@@ -36,18 +36,13 @@ class CctvService(
         site: Site,
         externalPaths: List<MediaServerPathItem>,
     ) {
-        val (validPaths, invalidPaths) = externalPaths.partition { !it.nvrId.isNullOrBlank() }
-        if (invalidPaths.isNotEmpty()) {
-            log.warn { "Site ${site.requiredId}(${site.name}): nvrId가 없는 ${invalidPaths.size}건 제외 - ${invalidPaths.map { it.name }}" }
-        }
-
-        val externalPathMap = validPaths.associateBy { it.name }
+        val externalPathMap = externalPaths.associateBy { it.name }
 
         val existingCctvList = repository.findBySiteId(site.requiredId)
         val existingStreamNameMap = existingCctvList.associateBy { it.streamName }
 
         val newCctvList =
-            validPaths
+            externalPaths
                 .filter { it.name !in existingStreamNameMap }
                 .map {
                     Cctv(
@@ -55,7 +50,6 @@ class CctvService(
                         streamName = it.name,
                         name = it.cctvName ?: it.name,
                         nvrId = it.nvrId,
-                        nvrName = it.nvrName,
                         channel = it.nvrChannel,
                     )
                 }
@@ -67,7 +61,6 @@ class CctvService(
             externalPathMap[cctv.streamName]?.let { path ->
                 cctv.name = path.cctvName ?: cctv.name
                 cctv.nvrId = path.nvrId
-                cctv.nvrName = path.nvrName
                 cctv.channel = path.nvrChannel
             }
         }
@@ -108,7 +101,7 @@ class CctvService(
         )
     }
 
-    private fun getById(id: Long): Cctv =
+    fun getById(id: Long): Cctv =
         repository.findByIdOrNull(id)
             ?: throw CustomException(CctvErrorCode.NOT_FOUND_CCTV, id)
 }

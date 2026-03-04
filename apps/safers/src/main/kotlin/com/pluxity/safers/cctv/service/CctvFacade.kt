@@ -3,6 +3,8 @@ package com.pluxity.safers.cctv.service
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.safers.cctv.client.CctvApiClient
 import com.pluxity.safers.cctv.config.CctvErrorCode
+import com.pluxity.safers.cctv.dto.CctvPlaybackRequest
+import com.pluxity.safers.cctv.dto.CctvPlaybackResponse
 import com.pluxity.safers.cctv.dto.CctvResponse
 import com.pluxity.safers.cctv.dto.CctvUpdateRequest
 import com.pluxity.safers.site.repository.SiteRepository
@@ -13,6 +15,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 private val log = KotlinLogging.logger {}
 
@@ -59,4 +63,29 @@ class CctvFacade(
         id: Long,
         request: CctvUpdateRequest,
     ) = cctvService.update(id, request)
+
+    fun playback(
+        cctvId: Long,
+        request: CctvPlaybackRequest,
+    ): CctvPlaybackResponse {
+        val cctv = cctvService.getById(cctvId)
+        val site = cctv.site
+
+        val baseUrl =
+            site.baseUrl
+                ?: throw CustomException(CctvErrorCode.MISSING_BASE_URL, site.requiredId)
+        val nvrId =
+            cctv.nvrId
+                ?: throw CustomException(CctvErrorCode.MISSING_NVR_INFO, cctvId)
+        val channel =
+            cctv.channel
+                ?: throw CustomException(CctvErrorCode.MISSING_NVR_INFO, cctvId)
+
+        val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+        val startTime = LocalDateTime.parse(request.startDate, formatter)
+        val endTime = LocalDateTime.parse(request.endDate, formatter)
+
+        val response = apiClient.requestPlayback(baseUrl, site.requiredId, nvrId, channel, startTime, endTime)
+        return CctvPlaybackResponse(pathName = response.pathName)
+    }
 }
