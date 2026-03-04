@@ -14,7 +14,6 @@ fun dummyCctv(
     lat: Double? = null,
     alt: Double? = null,
     nvrId: String? = null,
-    nvrName: String? = null,
     channel: Int? = null,
 ) = Cctv(
     site = site,
@@ -24,6 +23,5 @@ fun dummyCctv(
     lat = lat,
     alt = alt,
     nvrId = nvrId,
-    nvrName = nvrName,
     channel = channel,
 ).withId(id).withAudit()

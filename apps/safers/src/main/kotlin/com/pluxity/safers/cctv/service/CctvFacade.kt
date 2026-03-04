@@ -17,6 +17,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 private val log = KotlinLogging.logger {}
 
@@ -72,7 +73,7 @@ class CctvFacade(
         cctvId: Long,
         request: CctvPlaybackRequest,
     ): CctvPlaybackResponse {
-        val cctv = cctvService.findById(cctvId)
+        val cctv = cctvService.findByIdWithSite(cctvId)
         val site = cctv.site
 
         val baseUrl =
@@ -85,10 +86,17 @@ class CctvFacade(
             cctv.channel
                 ?: throw CustomException(CctvErrorCode.MISSING_NVR_INFO, cctvId)
 
-        val startTime = LocalDateTime.parse(request.startDate, DATE_FORMATTER)
-        val endTime = LocalDateTime.parse(request.endDate, DATE_FORMATTER)
+        val startTime = parseDateTime(request.startDate)
+        val endTime = parseDateTime(request.endDate)
 
         val response = apiClient.requestPlayback(baseUrl, site.requiredId, nvrId, channel, startTime, endTime)
         return CctvPlaybackResponse(pathName = response.pathName)
     }
+
+    private fun parseDateTime(value: String): LocalDateTime =
+        try {
+            LocalDateTime.parse(value, DATE_FORMATTER)
+        } catch (_: DateTimeParseException) {
+            throw CustomException(CctvErrorCode.INVALID_DATE_FORMAT)
+        }
 }

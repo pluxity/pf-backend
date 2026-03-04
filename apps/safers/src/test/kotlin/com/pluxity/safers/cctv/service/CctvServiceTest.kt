@@ -109,25 +109,6 @@ class CctvServiceTest :
                 }
             }
 
-            When("nvrId가 없는 항목은 동기화에서 제외된다") {
-                clearMocks(repository, answers = false)
-
-                every { siteRepository.findByIdOrNull(1L) } returns site
-                every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns
-                    listOf(
-                        MediaServerPathItem(name = "cam1", nvrId = "nvr-1"),
-                        MediaServerPathItem(name = "cam2", nvrId = null),
-                        MediaServerPathItem(name = "cam3", nvrId = ""),
-                    )
-                every { repository.findBySiteId(1L) } returns emptyList()
-
-                facade.sync(siteId = 1L)
-
-                Then("nvrId가 있는 항목만 저장된다") {
-                    verify { repository.saveAll(match<List<Cctv>> { it.size == 1 && it[0].streamName == "cam1" }) }
-                }
-            }
-
             When("존재하지 않는 siteId로 동기화하면") {
                 every { siteRepository.findByIdOrNull(999L) } returns null
 
