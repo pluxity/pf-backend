@@ -1,9 +1,9 @@
 package com.pluxity.safers.event.service
 
+import com.pluxity.common.core.config.WebClientFactory
 import com.pluxity.common.file.service.FileService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Service
-import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import java.net.URI
 
@@ -12,16 +12,18 @@ private val log = KotlinLogging.logger {}
 @Service
 class EventFileDownloadService(
     private val fileService: FileService,
+    private val webClientFactory: WebClientFactory,
 ) {
     fun downloadAndInitiateUpload(fileUrl: String): Long? =
         try {
             val uri = URI.create(fileUrl)
             val fileName = uri.path.substringAfterLast('/')
+            val baseUrl = "${uri.scheme}://${uri.authority}"
             val fileBytes =
-                WebClient
-                    .create()
+                webClientFactory
+                    .createClient(baseUrl)
                     .get()
-                    .uri(uri)
+                    .uri(uri.path)
                     .retrieve()
                     .bodyToMono<ByteArray>()
                     .block()
