@@ -21,9 +21,6 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.verify
 import org.springframework.data.repository.findByIdOrNull
-import org.springframework.transaction.TransactionStatus
-import org.springframework.transaction.support.TransactionTemplate
-import java.util.function.Consumer
 
 class CctvServiceTest :
     BehaviorSpec({
@@ -32,12 +29,8 @@ class CctvServiceTest :
         val siteRepository: SiteRepository = mockk(relaxed = true)
         val fileService: FileService = mockk(relaxed = true)
         val apiClient: CctvApiClient = mockk()
-        val transactionTemplate: TransactionTemplate = mockk()
-        val service = CctvService(repository, siteRepository, fileService, apiClient, transactionTemplate)
-
-        every { transactionTemplate.executeWithoutResult(any()) } answers {
-            firstArg<Consumer<TransactionStatus>>().accept(mockk())
-        }
+        val service = CctvService(repository, fileService)
+        val facade = CctvFacade(service, siteRepository, apiClient)
 
         val site = dummySite(id = 1L, baseUrl = "http://media-server:9997")
 
@@ -56,7 +49,7 @@ class CctvServiceTest :
                 every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns externalPaths
                 every { repository.findBySiteId(1L) } returns emptyList()
 
-                service.sync(siteId = 1L)
+                facade.sync(siteId = 1L)
 
                 Then("새로운 CCTV가 저장된다") {
                     verify { repository.saveAll(match<List<Cctv>> { it.size == 2 }) }
@@ -73,7 +66,7 @@ class CctvServiceTest :
                 every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns externalPaths
                 every { repository.findBySiteId(1L) } returns emptyList()
 
-                service.sync()
+                facade.sync()
 
                 Then("전체 site에 대해 동기화가 수행된다") {
                     verify { repository.saveAll(match<List<Cctv>> { it.size == 1 }) }
@@ -90,7 +83,7 @@ class CctvServiceTest :
                     )
                 every { repository.findBySiteId(1L) } returns listOf(existingCctv)
 
-                service.sync(siteId = 1L)
+                facade.sync(siteId = 1L)
 
                 Then("해당 CCTV가 삭제된다") {
                     verify { repository.deleteAllInBatch(match<List<Cctv>> { it.size == 1 && it[0].streamName == "cam_old" }) }
@@ -108,7 +101,7 @@ class CctvServiceTest :
                     )
                 every { repository.findBySiteId(1L) } returns listOf(existingCctv)
 
-                service.sync(siteId = 1L)
+                facade.sync(siteId = 1L)
 
                 Then("저장이나 삭제가 수행되지 않는다") {
                     verify(exactly = 0) { repository.saveAll(any<List<Cctv>>()) }
@@ -122,7 +115,7 @@ class CctvServiceTest :
                 Then("NOT_FOUND_SITE 예외가 발생한다") {
                     val exception =
                         shouldThrow<CustomException> {
-                            service.sync(siteId = 999L)
+                            facade.sync(siteId = 999L)
                         }
                     exception.code shouldBe CctvErrorCode.NOT_FOUND_SITE
                 }

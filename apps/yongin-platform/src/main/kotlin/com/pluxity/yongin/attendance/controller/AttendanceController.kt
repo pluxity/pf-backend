@@ -6,7 +6,7 @@ import com.pluxity.common.core.response.ErrorResponseBody
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.yongin.attendance.dto.AttendanceResponse
 import com.pluxity.yongin.attendance.dto.AttendanceUpdateRequest
-import com.pluxity.yongin.attendance.service.AttendanceService
+import com.pluxity.yongin.attendance.service.AttendanceFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/attendances")
 @Tag(name = "Attendance Controller", description = "출역현황 관리 API")
 class AttendanceController(
-    private val service: AttendanceService,
+    private val service: AttendanceFacade,
 ) {
     @Operation(summary = "출역현황 전체 조회", description = "외부 API를 호출하여 데이터를 동기화한 후 출역현황을 조회합니다")
     @ApiResponses(
