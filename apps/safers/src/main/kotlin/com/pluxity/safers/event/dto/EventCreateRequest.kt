@@ -26,7 +26,7 @@ data class EventCreateRequest(
     @field:Schema(description = "이벤트 이름", example = "헬멧 미착용 감지")
     val name: String,
     @field:NotBlank
-    @field:Schema(description = "스냅샷 파일명", example = "snapshot_001.jpg")
+    @field:Schema(description = "스냅샷 URL", example = "http://localhost:8080/snapshots/snapshot_001.jpg")
     val snapshot: String,
     @field:Schema(description = "바운딩 박스 좌표 [x1, y1, x2, y2]", example = "[100, 200, 300, 400]")
     val bbox: List<Int>? = null,

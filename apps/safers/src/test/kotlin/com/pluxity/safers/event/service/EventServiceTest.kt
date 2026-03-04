@@ -58,7 +58,7 @@ class EventServiceTest :
                 val snapshotFileId = 10L
                 val snapshotFileResponse = dummyFileResponse(id = snapshotFileId)
 
-                every { eventFileDownloadService.downloadAndInitiateUpload("/snapshots/", request.snapshot) } returns snapshotFileId
+                every { eventFileDownloadService.downloadAndInitiateUpload(request.snapshot) } returns snapshotFileId
                 every { eventRepository.save(any()) } returns savedEvent
                 every { fileService.getFileResponse(snapshotFileId) } returns snapshotFileResponse
 
@@ -81,7 +81,7 @@ class EventServiceTest :
                 val request = dummyEventCreateRequest()
                 val savedEvent = dummyEvent(id = 2L)
 
-                every { eventFileDownloadService.downloadAndInitiateUpload("/snapshots/", request.snapshot) } returns null
+                every { eventFileDownloadService.downloadAndInitiateUpload(request.snapshot) } returns null
                 every { eventRepository.save(any()) } returns savedEvent
                 every { fileService.getFileResponse(null) } returns null
 
@@ -102,7 +102,7 @@ class EventServiceTest :
                 val snapshotFileResponse = dummyFileResponse(id = 10L)
                 val videoFileResponse = dummyFileResponse(id = videoFileId, originalFileName = "video.mp4", contentType = "video/mp4")
 
-                every { eventFileDownloadService.downloadAndInitiateUpload("/videos/", "video.mp4") } returns videoFileId
+                every { eventFileDownloadService.downloadAndInitiateUpload("video.mp4") } returns videoFileId
                 every { eventRepository.findByIdOrNull(1L) } returns event
                 every { fileService.finalizeUpload(videoFileId, "events/1/") } returns mockk()
                 every { fileService.getFileResponse(10L) } returns snapshotFileResponse
@@ -124,7 +124,7 @@ class EventServiceTest :
             }
 
             When("존재하지 않는 이벤트에 영상을 등록하면") {
-                every { eventFileDownloadService.downloadAndInitiateUpload("/videos/", "video.mp4") } returns 20L
+                every { eventFileDownloadService.downloadAndInitiateUpload("video.mp4") } returns 20L
                 every { eventRepository.findByIdOrNull(999L) } returns null
 
                 Then("CustomException이 발생한다") {
@@ -139,7 +139,7 @@ class EventServiceTest :
             When("영상 파일 다운로드에 실패하면") {
                 val event = dummyEvent(id = 1L)
 
-                every { eventFileDownloadService.downloadAndInitiateUpload("/videos/", "video.mp4") } returns null
+                every { eventFileDownloadService.downloadAndInitiateUpload("video.mp4") } returns null
                 every { eventRepository.findByIdOrNull(1L) } returns event
 
                 facade.uploadVideo(1L, "video.mp4")

@@ -12,15 +12,15 @@ class EventFacade(
     private val eventFileDownloadService: EventFileDownloadService,
 ) {
     fun create(request: EventCreateRequest): Long {
-        val snapshotFileId = eventFileDownloadService.downloadAndInitiateUpload("/snapshots/", request.snapshot)
+        val snapshotFileId = eventFileDownloadService.downloadAndInitiateUpload(request.snapshot)
         return eventService.create(request, snapshotFileId)
     }
 
     fun uploadVideo(
         eventId: Long,
-        videoFileName: String,
+        videoUrl: String,
     ) {
-        val videoFileId = eventFileDownloadService.downloadAndInitiateUpload("/videos/", videoFileName)
+        val videoFileId = eventFileDownloadService.downloadAndInitiateUpload(videoUrl)
         eventService.uploadVideo(eventId, videoFileId)
     }
 

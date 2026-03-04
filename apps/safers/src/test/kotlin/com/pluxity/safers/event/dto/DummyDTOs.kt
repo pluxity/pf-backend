@@ -11,7 +11,7 @@ fun dummyEventCreateRequest(
     type: EventType = EventType.NO_HELMET,
     trackId: Long = 12345L,
     name: String = "헬멧 미착용 감지",
-    snapshot: String = "snapshot_001.jpg",
+    snapshot: String = "http://localhost:8080/snapshots/snapshot_001.jpg",
     bbox: List<Int>? = listOf(100, 200, 300, 400),
     center: EventCreateRequest.Center? = EventCreateRequest.Center(150.5, 200.0),
     confidence: Double? = 0.95,

@@ -50,6 +50,3 @@ springwolf: # socket documentation ui
 logging:
   level:
     com: DEBUG
-
-event:
-  base-url: ${EVENT_BASE_URL:http://192.168.10.182:8001}

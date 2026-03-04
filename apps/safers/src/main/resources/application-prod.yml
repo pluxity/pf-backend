@@ -48,6 +48,3 @@ springwolf: # socket documentation ui
     stomp:
       endpoint:
         app: /app
-
-event:
-  base-url: ${EVENT_BASE_URL:http://192.168.10.182:8001}
