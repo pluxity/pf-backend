@@ -67,8 +67,9 @@ class TeamService(
     // ── TeamMember ──
 
     fun findMembers(teamId: Long): List<TeamMemberResponse> {
-        if(existsById(teamId))
+        if (existsById(teamId)) {
             throw CustomException(WeeklyReportErrorCode.NOT_FOUND_TEAM, teamId)
+        }
 
         return memberRepository.findByTeamId(teamId).map { it.toResponse() }
     }
@@ -78,8 +79,9 @@ class TeamService(
         teamId: Long,
         userId: Long,
     ): Long {
-        if(existsById(teamId))
+        if (existsById(teamId)) {
             throw CustomException(WeeklyReportErrorCode.NOT_FOUND_TEAM, teamId)
+        }
 
         if (memberRepository.existsByTeamIdAndUserId(teamId, userId)) {
             throw CustomException(WeeklyReportErrorCode.DUPLICATE_TEAM_MEMBER, userId, teamId)
@@ -103,7 +105,5 @@ class TeamService(
         teamRepository.findByIdOrNull(id)
             ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_TEAM, id)
 
-    private fun existsById(id: Long): Boolean =
-        teamRepository.existsById(id)
-
+    private fun existsById(id: Long): Boolean = teamRepository.existsById(id)
 }
