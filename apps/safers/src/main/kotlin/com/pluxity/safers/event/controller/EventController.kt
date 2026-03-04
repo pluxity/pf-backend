@@ -11,7 +11,7 @@ import com.pluxity.safers.event.dto.EventResponse
 import com.pluxity.safers.event.dto.EventVideoUploadRequest
 import com.pluxity.safers.event.dto.toResponse
 import com.pluxity.safers.event.entity.EventCategory
-import com.pluxity.safers.event.service.EventService
+import com.pluxity.safers.event.service.EventFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/events")
 @Tag(name = "Event Controller", description = "이벤트 관리 API")
 class EventController(
-    private val eventService: EventService,
+    private val eventFacade: EventFacade,
 ) {
     @Operation(summary = "이벤트 등록", description = "외부 시스템에서 감지된 이벤트를 등록합니다")
     @ApiResponses(
@@ -71,7 +71,7 @@ class EventController(
         @RequestBody
         @Valid
         request: EventCreateRequest,
-    ): ResponseEntity<Long> = ResponseEntity.ok(eventService.create(request))
+    ): ResponseEntity<Long> = ResponseEntity.ok(eventFacade.create(request))
 
     @Operation(summary = "이벤트 목록 조회", description = "모든 이벤트 목록을 조회합니다")
     @ApiResponses(
@@ -107,7 +107,7 @@ class EventController(
         @RequestParam(required = false)
         endDate: String? = null,
     ): ResponseEntity<DataResponseBody<PageResponse<EventResponse>>> =
-        ResponseEntity.ok(DataResponseBody(eventService.findAll(PageSearchRequest(page, size), startDate, endDate)))
+        ResponseEntity.ok(DataResponseBody(eventFacade.findAll(PageSearchRequest(page, size), startDate, endDate)))
 
     @Operation(summary = "이벤트 상세 조회", description = "ID로 특정 이벤트의 상세 정보를 조회합니다")
     @ApiResponses(
@@ -143,7 +143,7 @@ class EventController(
         @PathVariable
         @Parameter(description = "이벤트 ID", required = true)
         id: Long,
-    ): ResponseEntity<DataResponseBody<EventResponse>> = ResponseEntity.ok(DataResponseBody(eventService.findById(id)))
+    ): ResponseEntity<DataResponseBody<EventResponse>> = ResponseEntity.ok(DataResponseBody(eventFacade.findById(id)))
 
     @Operation(summary = "이벤트 영상 등록", description = "외부 시스템의 영상 파일을 다운로드하여 이벤트에 등록합니다")
     @ApiResponses(
@@ -183,7 +183,7 @@ class EventController(
         @Valid
         request: EventVideoUploadRequest,
     ): ResponseEntity<Void> {
-        eventService.uploadVideo(eventId, request.video)
+        eventFacade.uploadVideo(eventId, request.video)
         return ResponseEntity.ok().build()
     }
 

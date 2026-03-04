@@ -20,78 +20,72 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Service
+@Transactional(readOnly = true)
 class EventService(
     private val eventRepository: EventRepository,
     private val fileService: FileService,
-    private val eventFileDownloadService: EventFileDownloadService,
     private val eventPublisher: ApplicationEventPublisher,
-    private val transactionTemplate: TransactionTemplate,
 ) {
     companion object {
         private const val EVENT_PATH = "events/"
     }
 
-    fun create(request: EventCreateRequest): Long {
-        val snapshotFileId = eventFileDownloadService.downloadAndInitiateUpload("/snapshots/", request.snapshot)
+    @Transactional
+    fun create(
+        request: EventCreateRequest,
+        snapshotFileId: Long?,
+    ): Long {
+        val event =
+            Event(
+                eventId = request.eventId,
+                eventTimestamp = request.timestamp,
+                category = request.category,
+                type = request.type,
+                trackId = request.trackId,
+                name = request.name,
+                bbox = request.bbox?.toString(),
+                centerX = request.center?.x,
+                centerY = request.center?.y,
+                confidence = request.confidence,
+                path = request.path,
+            )
 
-        return transactionTemplate.execute {
-            val event =
-                Event(
-                    eventId = request.eventId,
-                    eventTimestamp = request.timestamp,
-                    category = request.category,
-                    type = request.type,
-                    trackId = request.trackId,
-                    name = request.name,
-                    bbox = request.bbox?.toString(),
-                    centerX = request.center?.x,
-                    centerY = request.center?.y,
-                    confidence = request.confidence,
-                    path = request.path,
-                )
+        val savedEvent = eventRepository.save(event)
 
-            val savedEvent = eventRepository.save(event)
-
-            snapshotFileId?.let {
-                fileService.finalizeUpload(it, "$EVENT_PATH${savedEvent.requiredId}/")
-            }
-            savedEvent.assignSnapshotFile(snapshotFileId)
-
-            val fileResponse = fileService.getFileResponse(snapshotFileId)
-            eventPublisher.publishEvent(EventCreated(savedEvent.toResponse(fileResponse)))
-
-            savedEvent.requiredId
+        snapshotFileId?.let {
+            fileService.finalizeUpload(it, "$EVENT_PATH${savedEvent.requiredId}/")
         }
+        savedEvent.assignSnapshotFile(snapshotFileId)
+
+        val fileResponse = fileService.getFileResponse(snapshotFileId)
+        eventPublisher.publishEvent(EventCreated(savedEvent.toResponse(fileResponse)))
+
+        return savedEvent.requiredId
     }
 
+    @Transactional
     fun uploadVideo(
         eventId: Long,
-        videoFileName: String,
+        videoFileId: Long?,
     ) {
-        val videoFileId = eventFileDownloadService.downloadAndInitiateUpload("/videos/", videoFileName)
+        val event =
+            eventRepository.findByIdOrNull(eventId)
+                ?: throw CustomException(SafersErrorCode.NOT_FOUND_EVENT, eventId)
 
-        transactionTemplate.executeWithoutResult {
-            val event =
-                eventRepository.findByIdOrNull(eventId)
-                    ?: throw CustomException(SafersErrorCode.NOT_FOUND_EVENT, eventId)
+        event.assignVideoFile(videoFileId)
 
-            event.assignVideoFile(videoFileId)
-
-            videoFileId?.let {
-                fileService.finalizeUpload(it, "$EVENT_PATH$eventId/")
-                val snapshotFileResponse = fileService.getFileResponse(event.snapshotFileId)
-                val videoFileResponse = fileService.getFileResponse(it)
-                eventPublisher.publishEvent(EventVideoRegistered(event.toResponse(snapshotFileResponse, videoFileResponse)))
-            }
+        videoFileId?.let {
+            fileService.finalizeUpload(it, "$EVENT_PATH$eventId/")
+            val snapshotFileResponse = fileService.getFileResponse(event.snapshotFileId)
+            val videoFileResponse = fileService.getFileResponse(it)
+            eventPublisher.publishEvent(EventVideoRegistered(event.toResponse(snapshotFileResponse, videoFileResponse)))
         }
     }
 
-    @Transactional(readOnly = true)
     fun findById(id: Long): EventResponse {
         val event =
             eventRepository.findByIdOrNull(id)
@@ -102,7 +96,6 @@ class EventService(
         return event.toResponse(snapshotFileResponse, videoFileResponse)
     }
 
-    @Transactional(readOnly = true)
     fun findAll(
         request: PageSearchRequest,
         startDate: String? = null,

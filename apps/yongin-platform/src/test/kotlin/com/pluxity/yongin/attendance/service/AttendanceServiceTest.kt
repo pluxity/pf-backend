@@ -23,7 +23,6 @@ import io.mockk.verify
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
-import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDate
 
 class AttendanceServiceTest :
@@ -33,14 +32,8 @@ class AttendanceServiceTest :
 
         val repository: AttendanceRepository = mockk(relaxed = true)
         val apiClient: AttendanceApiClient = mockk()
-        val transactionTemplate: TransactionTemplate =
-            mockk {
-                every { execute<Any>(any()) } answers {
-                    val callback = firstArg<org.springframework.transaction.support.TransactionCallback<Any>>()
-                    callback.doInTransaction(mockk())
-                }
-            }
-        val service = AttendanceService(repository, apiClient, transactionTemplate)
+        val service = AttendanceService(repository)
+        val facade = AttendanceFacade(service, apiClient)
 
         Given("최신 출역현황 조회") {
 
@@ -128,7 +121,7 @@ class AttendanceServiceTest :
                     )
                 } returns PageImpl(savedEntities)
 
-                val result = service.findAllWithSync(request)
+                val result = facade.findAllWithSync(request)
 
                 Then("동기화 후 목록이 반환된다") {
                     result.content.size shouldBe 2
@@ -152,7 +145,7 @@ class AttendanceServiceTest :
                     )
                 } returns PageImpl(listOf(existingEntity))
 
-                service.findAllWithSync(request)
+                facade.findAllWithSync(request)
 
                 Then("기존 데이터가 수정된다") {
                     existingEntity.attendanceCount shouldBe 15
@@ -169,7 +162,7 @@ class AttendanceServiceTest :
                     )
                 } returns PageImpl(emptyList())
 
-                service.findAllWithSync(request)
+                facade.findAllWithSync(request)
 
                 Then("동기화가 수행되지 않는다") {
                     verify(exactly = 0) { repository.saveAll(any<List<Attendance>>()) }

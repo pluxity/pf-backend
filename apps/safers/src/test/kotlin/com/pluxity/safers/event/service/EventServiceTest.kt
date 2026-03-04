@@ -26,10 +26,6 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
-import org.springframework.transaction.TransactionStatus
-import org.springframework.transaction.support.TransactionCallback
-import org.springframework.transaction.support.TransactionTemplate
-import java.util.function.Consumer
 
 class EventServiceTest :
     BehaviorSpec({
@@ -40,24 +36,19 @@ class EventServiceTest :
         val fileService: FileService = mockk(relaxed = true)
         val eventFileDownloadService: EventFileDownloadService = mockk()
         val eventPublisher: ApplicationEventPublisher = mockk(relaxed = true)
-        val transactionTemplate: TransactionTemplate = mockk()
 
         val service =
             EventService(
                 eventRepository,
                 fileService,
-                eventFileDownloadService,
                 eventPublisher,
-                transactionTemplate,
             )
 
-        every { transactionTemplate.execute(any<TransactionCallback<Long>>()) } answers {
-            firstArg<TransactionCallback<Long>>().doInTransaction(mockk())
-        }
-
-        every { transactionTemplate.executeWithoutResult(any()) } answers {
-            firstArg<Consumer<TransactionStatus>>().accept(mockk())
-        }
+        val facade =
+            EventFacade(
+                service,
+                eventFileDownloadService,
+            )
 
         Given("이벤트 생성") {
 
@@ -71,7 +62,7 @@ class EventServiceTest :
                 every { eventRepository.save(any()) } returns savedEvent
                 every { fileService.getFileResponse(snapshotFileId) } returns snapshotFileResponse
 
-                val result = service.create(request)
+                val result = facade.create(request)
 
                 Then("이벤트 ID가 반환된다") {
                     result shouldBe 1L
@@ -94,7 +85,7 @@ class EventServiceTest :
                 every { eventRepository.save(any()) } returns savedEvent
                 every { fileService.getFileResponse(null) } returns null
 
-                val result = service.create(request)
+                val result = facade.create(request)
 
                 Then("이벤트는 저장되지만 파일 업로드는 수행되지 않는다") {
                     result shouldBe 2L
@@ -117,7 +108,7 @@ class EventServiceTest :
                 every { fileService.getFileResponse(10L) } returns snapshotFileResponse
                 every { fileService.getFileResponse(videoFileId) } returns videoFileResponse
 
-                service.uploadVideo(1L, "video.mp4")
+                facade.uploadVideo(1L, "video.mp4")
 
                 Then("영상 파일이 할당된다") {
                     event.videoFileId shouldBe videoFileId
@@ -139,7 +130,7 @@ class EventServiceTest :
                 Then("CustomException이 발생한다") {
                     val exception =
                         shouldThrow<CustomException> {
-                            service.uploadVideo(999L, "video.mp4")
+                            facade.uploadVideo(999L, "video.mp4")
                         }
                     exception.code shouldBe SafersErrorCode.NOT_FOUND_EVENT
                 }
@@ -151,7 +142,7 @@ class EventServiceTest :
                 every { eventFileDownloadService.downloadAndInitiateUpload("/videos/", "video.mp4") } returns null
                 every { eventRepository.findByIdOrNull(1L) } returns event
 
-                service.uploadVideo(1L, "video.mp4")
+                facade.uploadVideo(1L, "video.mp4")
 
                 Then("파일 업로드가 수행되지 않는다") {
                     verify(exactly = 0) { fileService.finalizeUpload(any(), eq("events/1/")) }

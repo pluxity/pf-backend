@@ -4,7 +4,7 @@ import com.pluxity.common.core.response.DataResponseBody
 import com.pluxity.common.core.response.ErrorResponseBody
 import com.pluxity.safers.cctv.dto.CctvResponse
 import com.pluxity.safers.cctv.dto.CctvUpdateRequest
-import com.pluxity.safers.cctv.service.CctvService
+import com.pluxity.safers.cctv.service.CctvFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/cctvs")
 @Tag(name = "CCTV Controller", description = "CCTV 관리 API")
 class CctvController(
-    private val service: CctvService,
+    private val service: CctvFacade,
 ) {
     @Operation(summary = "CCTV 동기화", description = "미디어서버에서 CCTV 경로 목록을 가져와 DB에 동기화합니다")
     @ApiResponses(
