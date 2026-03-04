@@ -1,0 +1,23 @@
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 1000
+  application:
+    name: core
+  datasource:
+    url: jdbc:postgresql://localhost:5432/weekly_report
+    username: pluxity
+    password: pluxity0304
+    driver-class-name: org.postgresql.Driver
+
+domain:
+  url: ${API_URL:http://localhost:8080}
+
+logging:
+  level:
+    com: DEBUG
+
+event:
+  base-url: ${EVENT_BASE_URL:http://192.168.10.182:8001}
