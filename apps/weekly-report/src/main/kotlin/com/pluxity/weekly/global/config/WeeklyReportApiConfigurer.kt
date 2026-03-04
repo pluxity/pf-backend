@@ -6,10 +6,9 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class WeeklyReportApiConfigurer : ApiConfigurer {
-    override fun openApiInfo(): Info {
-        return Info()
+    override fun openApiInfo(): Info =
+        Info()
             .title("Weekly Report API")
             .description("Weekly Report Platform API Documentation")
             .version("1.0.0")
-    }
 }
