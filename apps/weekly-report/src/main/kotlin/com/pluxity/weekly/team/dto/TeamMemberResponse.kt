@@ -19,4 +19,3 @@ fun TeamMember.toResponse(): TeamMemberResponse =
         teamId = this.teamId,
         userId = this.userId,
     )
-
