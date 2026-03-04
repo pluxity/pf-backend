@@ -9,9 +9,9 @@ spring:
       port: ${REDIS_PORT:6379}
       timeout: 1000
   application:
-    name: yongin-api
+    name: weekly-report
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/safers
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/weekly_report
     username: ${DB_USERNAME:pluxity}
     password: ${DB_PASSWORD:pluxity0304}
 
