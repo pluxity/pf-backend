@@ -41,8 +41,8 @@ class CctvServiceTest :
             When("siteId를 지정하면 해당 site만 동기화한다") {
                 val externalPaths =
                     listOf(
-                        MediaServerPathItem(name = "cam1"),
-                        MediaServerPathItem(name = "cam2"),
+                        MediaServerPathItem(name = "cam1", nvrId = "nvr-1"),
+                        MediaServerPathItem(name = "cam2", nvrId = "nvr-2"),
                     )
 
                 every { siteRepository.findByIdOrNull(1L) } returns site
@@ -59,7 +59,7 @@ class CctvServiceTest :
             When("siteId 없이 호출하면 전체 site를 순회한다") {
                 val externalPaths =
                     listOf(
-                        MediaServerPathItem(name = "cam1"),
+                        MediaServerPathItem(name = "cam1", nvrId = "nvr-1"),
                     )
 
                 every { siteRepository.findAll() } returns listOf(site)
@@ -79,7 +79,7 @@ class CctvServiceTest :
                 every { siteRepository.findByIdOrNull(1L) } returns site
                 every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns
                     listOf(
-                        MediaServerPathItem(name = "cam_new"),
+                        MediaServerPathItem(name = "cam_new", nvrId = "nvr-new"),
                     )
                 every { repository.findBySiteId(1L) } returns listOf(existingCctv)
 
@@ -97,7 +97,7 @@ class CctvServiceTest :
                 every { siteRepository.findByIdOrNull(1L) } returns site
                 every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns
                     listOf(
-                        MediaServerPathItem(name = "cam1"),
+                        MediaServerPathItem(name = "cam1", nvrId = "nvr-1"),
                     )
                 every { repository.findBySiteId(1L) } returns listOf(existingCctv)
 
@@ -106,6 +106,25 @@ class CctvServiceTest :
                 Then("저장이나 삭제가 수행되지 않는다") {
                     verify(exactly = 0) { repository.saveAll(any<List<Cctv>>()) }
                     verify(exactly = 0) { repository.deleteAllInBatch(any<List<Cctv>>()) }
+                }
+            }
+
+            When("nvrId가 없는 항목은 동기화에서 제외된다") {
+                clearMocks(repository, answers = false)
+
+                every { siteRepository.findByIdOrNull(1L) } returns site
+                every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns
+                    listOf(
+                        MediaServerPathItem(name = "cam1", nvrId = "nvr-1"),
+                        MediaServerPathItem(name = "cam2", nvrId = null),
+                        MediaServerPathItem(name = "cam3", nvrId = ""),
+                    )
+                every { repository.findBySiteId(1L) } returns emptyList()
+
+                facade.sync(siteId = 1L)
+
+                Then("nvrId가 있는 항목만 저장된다") {
+                    verify { repository.saveAll(match<List<Cctv>> { it.size == 1 && it[0].streamName == "cam1" }) }
                 }
             }
 
