@@ -93,7 +93,7 @@ class CctvService(
         id: Long,
         request: CctvUpdateRequest,
     ) {
-        getById(id).update(
+        findById(id).update(
             name = request.name,
             lon = request.lon,
             lat = request.lat,
@@ -101,7 +101,7 @@ class CctvService(
         )
     }
 
-    fun getById(id: Long): Cctv =
+    fun findById(id: Long): Cctv =
         repository.findByIdOrNull(id)
             ?: throw CustomException(CctvErrorCode.NOT_FOUND_CCTV, id)
 }

@@ -5,7 +5,9 @@ import com.pluxity.common.core.exception.CustomException
 import com.pluxity.safers.cctv.config.CctvErrorCode
 import com.pluxity.safers.cctv.dto.MediaServerPathItem
 import com.pluxity.safers.cctv.dto.MediaServerPathListResponse
+import com.pluxity.safers.cctv.dto.MediaServerPlaybackResponse
 import org.springframework.stereotype.Component
+import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -39,9 +41,7 @@ class CctvApiClient(
         startTime: LocalDateTime,
         endTime: LocalDateTime,
     ): MediaServerPlaybackResponse {
-        val port = sitePortMap[siteId]
-        val url = if (port != null) "$baseUrl:$port" else baseUrl
-        val client = webClientFactory.createClient(url)
+        val client = createClientForSite(baseUrl, siteId)
         return client
             .post()
             .uri("/v3/nvr/$nvrId/playback")
@@ -61,9 +61,7 @@ class CctvApiClient(
         baseUrl: String,
         siteId: Long,
     ): List<MediaServerPathItem> {
-        val port = sitePortMap[siteId]
-        val url = if (port != null) "$baseUrl:$port" else baseUrl
-        val client = webClientFactory.createClient(url)
+        val client = createClientForSite(baseUrl, siteId)
         val response =
             client
                 .get()
@@ -73,12 +71,13 @@ class CctvApiClient(
                 .block()
         return response?.items ?: emptyList()
     }
-}
 
-data class MediaServerPlaybackResponse(
-    val sessionId: String,
-    val pathName: String,
-    val hlsUrl: String,
-    val webrtcUrl: String,
-    val expiresAt: String,
-)
+    private fun createClientForSite(
+        baseUrl: String,
+        siteId: Long,
+    ): WebClient {
+        val port = sitePortMap[siteId]
+        val url = if (port != null) "$baseUrl:$port" else baseUrl
+        return webClientFactory.createClient(url)
+    }
+}
