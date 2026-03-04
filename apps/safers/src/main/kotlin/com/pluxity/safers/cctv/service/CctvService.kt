@@ -33,21 +33,38 @@ class CctvService(
         site: Site,
         externalPaths: List<MediaServerPathItem>,
     ) {
-        val externalPathNames = externalPaths.map { it.name }
+        val externalPathMap = externalPaths.associateBy { it.name }
 
         val existingCctvList = repository.findBySiteId(site.requiredId)
         val existingStreamNameMap = existingCctvList.associateBy { it.streamName }
 
         val newCctvList =
-            externalPathNames
-                .filter { it !in existingStreamNameMap }
-                .map { Cctv(site = site, streamName = it, name = it) }
+            externalPaths
+                .filter { it.name !in existingStreamNameMap }
+                .map {
+                    Cctv(
+                        site = site,
+                        streamName = it.name,
+                        name = it.cctvName ?: it.name,
+                        nvrId = it.nvrId,
+                        nvrName = it.nvrName,
+                        channel = it.nvrChannel,
+                    )
+                }
         if (newCctvList.isNotEmpty()) {
             repository.saveAll(newCctvList)
         }
 
-        val externalPathSet = externalPathNames.toSet()
-        val toDelete = existingCctvList.filter { it.streamName !in externalPathSet }
+        existingCctvList.forEach { cctv ->
+            externalPathMap[cctv.streamName]?.let { path ->
+                cctv.name = path.cctvName ?: cctv.name
+                cctv.nvrId = path.nvrId
+                cctv.nvrName = path.nvrName
+                cctv.channel = path.nvrChannel
+            }
+        }
+
+        val toDelete = existingCctvList.filter { it.streamName !in externalPathMap }
         if (toDelete.isNotEmpty()) {
             repository.deleteAllInBatch(toDelete)
         }
@@ -80,8 +97,6 @@ class CctvService(
             lon = request.lon,
             lat = request.lat,
             alt = request.alt,
-            nvrName = request.nvrName,
-            channel = request.channel,
         )
     }
 

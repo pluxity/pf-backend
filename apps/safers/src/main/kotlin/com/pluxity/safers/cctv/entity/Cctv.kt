@@ -25,6 +25,8 @@ class Cctv(
     var lat: Double? = null,
     @Column(name = "alt")
     var alt: Double? = null,
+    @Column(name = "nvr_id")
+    var nvrId: String? = null,
     @Column(name = "nvr_name")
     var nvrName: String? = null,
     @Column(name = "channel")
@@ -35,14 +37,10 @@ class Cctv(
         lon: Double?,
         lat: Double?,
         alt: Double?,
-        nvrName: String?,
-        channel: Int?,
     ) {
         this.name = name
         this.lon = lon
         this.lat = lat
         this.alt = alt
-        this.nvrName = nvrName
-        this.channel = channel
     }
 }

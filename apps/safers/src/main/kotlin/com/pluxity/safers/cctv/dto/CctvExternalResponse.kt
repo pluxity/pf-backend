@@ -8,6 +8,8 @@ data class MediaServerPathListResponse(
 
 data class MediaServerPathItem(
     val name: String,
-    val confName: String,
-    val ready: Boolean,
+    val nvrId: String? = null,
+    val nvrName: String? = null,
+    val nvrChannel: Int? = null,
+    val cctvName: String? = null,
 )
