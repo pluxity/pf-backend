@@ -2,6 +2,8 @@ package com.pluxity.safers.cctv.controller
 
 import com.pluxity.common.core.response.DataResponseBody
 import com.pluxity.common.core.response.ErrorResponseBody
+import com.pluxity.safers.cctv.dto.CctvPlaybackRequest
+import com.pluxity.safers.cctv.dto.CctvPlaybackResponse
 import com.pluxity.safers.cctv.dto.CctvResponse
 import com.pluxity.safers.cctv.dto.CctvUpdateRequest
 import com.pluxity.safers.cctv.service.CctvFacade
@@ -97,4 +99,36 @@ class CctvController(
         service.update(id, request)
         return ResponseEntity.noContent().build()
     }
+
+    @Operation(summary = "NVR 녹화영상 재생 세션 생성", description = "NVR 녹화영상의 재생 스트림 경로를 생성합니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "재생 세션 생성 성공"),
+            ApiResponse(
+                responseCode = "400",
+                description = "NVR 정보 누락 또는 미디어서버 URL 미설정",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "CCTV를 찾을 수 없음",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+        ],
+    )
+    @PostMapping("/{id}/playback")
+    fun playback(
+        @PathVariable id: Long,
+        @RequestBody @Valid request: CctvPlaybackRequest,
+    ): ResponseEntity<DataResponseBody<CctvPlaybackResponse>> = ResponseEntity.ok(DataResponseBody(service.playback(id, request)))
 }

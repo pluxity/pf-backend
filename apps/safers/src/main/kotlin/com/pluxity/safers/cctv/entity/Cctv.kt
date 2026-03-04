@@ -27,8 +27,6 @@ class Cctv(
     var alt: Double? = null,
     @Column(name = "nvr_id")
     var nvrId: String? = null,
-    @Column(name = "nvr_name")
-    var nvrName: String? = null,
     @Column(name = "channel")
     var channel: Int? = null,
 ) : IdentityIdEntity() {
