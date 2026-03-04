@@ -9,9 +9,9 @@ spring:
       port: ${REDIS_PORT:6379}
       timeout: 1000
   application:
-    name: weekly-report
+    name: safers
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/weekly_report
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/safers
     username: ${DB_USERNAME:pluxity}
     password: ${DB_PASSWORD:pluxity0304}
 
