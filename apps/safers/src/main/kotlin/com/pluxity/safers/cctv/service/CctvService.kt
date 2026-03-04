@@ -12,9 +12,12 @@ import com.pluxity.safers.cctv.dto.toResponse
 import com.pluxity.safers.cctv.entity.Cctv
 import com.pluxity.safers.cctv.repository.CctvRepository
 import com.pluxity.safers.site.entity.Site
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+
+private val log = KotlinLogging.logger {}
 
 @Service
 @Transactional(readOnly = true)
@@ -33,13 +36,18 @@ class CctvService(
         site: Site,
         externalPaths: List<MediaServerPathItem>,
     ) {
-        val externalPathMap = externalPaths.associateBy { it.name }
+        val (validPaths, invalidPaths) = externalPaths.partition { !it.nvrId.isNullOrBlank() }
+        if (invalidPaths.isNotEmpty()) {
+            log.warn { "Site ${site.requiredId}(${site.name}): nvrId가 없는 ${invalidPaths.size}건 제외 - ${invalidPaths.map { it.name }}" }
+        }
+
+        val externalPathMap = validPaths.associateBy { it.name }
 
         val existingCctvList = repository.findBySiteId(site.requiredId)
         val existingStreamNameMap = existingCctvList.associateBy { it.streamName }
 
         val newCctvList =
-            externalPaths
+            validPaths
                 .filter { it.name !in existingStreamNameMap }
                 .map {
                     Cctv(
