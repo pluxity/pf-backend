@@ -26,6 +26,10 @@ class CctvFacade(
     private val siteRepository: SiteRepository,
     private val apiClient: CctvApiClient,
 ) {
+    companion object {
+        private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+    }
+
     fun sync(siteId: Long? = null) {
         val sites =
             if (siteId != null) {
@@ -68,7 +72,7 @@ class CctvFacade(
         cctvId: Long,
         request: CctvPlaybackRequest,
     ): CctvPlaybackResponse {
-        val cctv = cctvService.getById(cctvId)
+        val cctv = cctvService.findById(cctvId)
         val site = cctv.site
 
         val baseUrl =
@@ -81,9 +85,8 @@ class CctvFacade(
             cctv.channel
                 ?: throw CustomException(CctvErrorCode.MISSING_NVR_INFO, cctvId)
 
-        val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
-        val startTime = LocalDateTime.parse(request.startDate, formatter)
-        val endTime = LocalDateTime.parse(request.endDate, formatter)
+        val startTime = LocalDateTime.parse(request.startDate, DATE_FORMATTER)
+        val endTime = LocalDateTime.parse(request.endDate, DATE_FORMATTER)
 
         val response = apiClient.requestPlayback(baseUrl, site.requiredId, nvrId, channel, startTime, endTime)
         return CctvPlaybackResponse(pathName = response.pathName)
