@@ -1,8 +1,11 @@
 package com.pluxity.weekly.team.entity
 
+import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.core.entity.IdentityIdEntity
-import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 
@@ -17,8 +20,10 @@ import jakarta.persistence.UniqueConstraint
     ],
 )
 class TeamMember(
-    @Column(name = "team_id", nullable = false)
-    val teamId: Long,
-    @Column(name = "user_id", nullable = false)
-    val userId: Long,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id", nullable = false)
+    val team: Team,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    val user: User,
 ) : IdentityIdEntity()

@@ -11,11 +11,14 @@ data class TeamMemberResponse(
     val teamId: Long,
     @field:Schema(description = "사용자 ID", example = "1")
     val userId: Long,
+    @field:Schema(description = "사용자명", example = "홍길동")
+    val userName: String,
 )
 
 fun TeamMember.toResponse(): TeamMemberResponse =
     TeamMemberResponse(
         id = this.requiredId,
-        teamId = this.teamId,
-        userId = this.userId,
+        teamId = this.team.requiredId,
+        userId = this.user.requiredId,
+        userName = this.user.name,
     )
