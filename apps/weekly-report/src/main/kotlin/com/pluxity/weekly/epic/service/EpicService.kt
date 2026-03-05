@@ -18,7 +18,6 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
-
 // TODO: @CheckPermission 적용 (Epic 도메인 권한 체크)
 // TODO: EpicStatus 상태 전이 규칙 (예: TODO → IN_PROGRESS → DONE, 역방향 제한 등)
 // TODO: ProjectAssignment, EpicAssignment 통합

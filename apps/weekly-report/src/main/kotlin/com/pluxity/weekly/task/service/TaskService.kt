@@ -13,6 +13,8 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
+// TODO: @CheckPermission 적용 (Task 도메인 권한 체크)
+// TODO: Role별 llm context 생성 메서드
 @Service
 @Transactional(readOnly = true)
 class TaskService(
