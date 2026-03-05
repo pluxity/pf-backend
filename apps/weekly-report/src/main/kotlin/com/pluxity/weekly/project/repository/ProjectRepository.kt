@@ -9,7 +9,7 @@ interface ProjectRepository : JpaRepository<Project, Long> {
     @Query(
         """
         SELECT new com.pluxity.weekly.project.dto.ProjectMemberResponse(
-            u.id, u.name, t.id, t.name
+            pa.project.id, u.id, u.name, t.id, t.name
         )
         FROM ProjectAssignment pa
         JOIN pa.assignedBy u
@@ -19,4 +19,18 @@ interface ProjectRepository : JpaRepository<Project, Long> {
         """,
     )
     fun findMembersByProjectId(projectId: Long): List<ProjectMemberResponse>
+
+    @Query(
+        """
+        SELECT new com.pluxity.weekly.project.dto.ProjectMemberResponse(
+            pa.project.id, u.id, u.name, t.id, t.name
+        )
+        FROM ProjectAssignment pa
+        JOIN pa.assignedBy u
+        LEFT JOIN TeamMember tm ON tm.user = u
+        LEFT JOIN tm.team t
+        WHERE pa.project.id IN :projectIds
+        """,
+    )
+    fun findMembersByProjectIds(projectIds: List<Long>): List<ProjectMemberResponse>
 }

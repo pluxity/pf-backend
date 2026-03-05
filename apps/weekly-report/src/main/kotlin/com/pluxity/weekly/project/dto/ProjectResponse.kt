@@ -32,6 +32,8 @@ data class ProjectResponse(
 
 @Schema(description = "프로젝트 참여자 정보")
 data class ProjectMemberResponse(
+    @field:Schema(description = "프로젝트 ID", example = "1")
+    val projectId: Long,
     @field:Schema(description = "사용자 ID", example = "1")
     val userId: Long,
     @field:Schema(description = "사용자명", example = "홍길동")
