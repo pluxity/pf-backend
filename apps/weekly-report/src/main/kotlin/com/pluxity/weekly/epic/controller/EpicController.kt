@@ -3,6 +3,7 @@ package com.pluxity.weekly.epic.controller
 import com.pluxity.common.core.annotation.ResponseCreated
 import com.pluxity.common.core.response.DataResponseBody
 import com.pluxity.common.core.response.ErrorResponseBody
+import com.pluxity.weekly.epic.dto.EpicAssignmentResponse
 import com.pluxity.weekly.epic.dto.EpicRequest
 import com.pluxity.weekly.epic.dto.EpicResponse
 import com.pluxity.weekly.epic.service.EpicService
@@ -112,6 +113,67 @@ class EpicController(
         @PathVariable id: Long,
     ): ResponseEntity<Void> {
         service.delete(id)
+        return ResponseEntity.noContent().build()
+    }
+
+    @Operation(summary = "에픽 배정 목록 조회", description = "에픽에 배정된 사용자 목록을 조회합니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "조회 성공"),
+            ApiResponse(
+                responseCode = "404",
+                description = "에픽을 찾을 수 없음",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponseBody::class))],
+            ),
+        ],
+    )
+    @GetMapping("/{epicId}/assignments")
+    fun findAssignments(
+        @PathVariable epicId: Long,
+    ): ResponseEntity<DataResponseBody<List<EpicAssignmentResponse>>> = ResponseEntity.ok(DataResponseBody(service.findAssignments(epicId)))
+
+    @Operation(summary = "에픽 사용자 배정", description = "에픽에 사용자를 배정합니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "204", description = "배정 성공"),
+            ApiResponse(
+                responseCode = "400",
+                description = "이미 배정된 사용자",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponseBody::class))],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "에픽 또는 사용자를 찾을 수 없음",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponseBody::class))],
+            ),
+        ],
+    )
+    @PostMapping("/{epicId}/assignments/{userId}")
+    fun assign(
+        @PathVariable epicId: Long,
+        @PathVariable userId: Long,
+    ): ResponseEntity<Void> {
+        service.assign(epicId, userId)
+        return ResponseEntity.noContent().build()
+    }
+
+    @Operation(summary = "에픽 사용자 배정 해제", description = "에픽에서 사용자 배정을 해제합니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "204", description = "해제 성공"),
+            ApiResponse(
+                responseCode = "404",
+                description = "에픽 또는 배정을 찾을 수 없음",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponseBody::class))],
+            ),
+        ],
+    )
+    @DeleteMapping("/{epicId}/assignments/{userId}")
+    fun unassign(
+        @PathVariable epicId: Long,
+        @PathVariable userId: Long,
+    ): ResponseEntity<Void> {
+        service.unassign(epicId, userId)
         return ResponseEntity.noContent().build()
     }
 }
