@@ -1,10 +1,13 @@
 package com.pluxity.weekly.project.entity
 
+import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.core.entity.IdentityIdEntity
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import java.time.LocalDate
 
@@ -25,6 +28,19 @@ class Project(
     @Column(name = "pm_id")
     var pmId: Long? = null,
 ) : IdentityIdEntity() {
+    @OneToMany(mappedBy = "project", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val assignments: MutableList<ProjectAssignment> = mutableListOf()
+
+    fun assign(user: User) {
+        if (assignments.none { it.assignedBy == user }) {
+            assignments.add(ProjectAssignment(project = this, assignedBy = user))
+        }
+    }
+
+    fun unassign(user: User) {
+        assignments.removeIf { it.assignedBy == user }
+    }
+
     fun update(
         name: String,
         description: String?,
