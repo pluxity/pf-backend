@@ -17,6 +17,7 @@ enum class WeeklyReportErrorCode(
     NOT_FOUND_EPIC(HttpStatus.NOT_FOUND, "ID가 %s인 에픽을 찾을 수 없습니다."),
     DUPLICATE_EPIC_ASSIGNMENT(HttpStatus.BAD_REQUEST, "사용자 %s은(는) 이미 에픽 %s에 배정되어 있습니다."),
     NOT_FOUND_EPIC_ASSIGNMENT(HttpStatus.NOT_FOUND, "에픽 %s에 사용자 %s이(가) 배정되어 있지 않습니다."),
+    NOT_FOUND_TASK(HttpStatus.NOT_FOUND, "ID가 %s인 태스크를 찾을 수 없습니다."),
     ;
 
     override fun getHttpStatus(): HttpStatus = httpStatus
