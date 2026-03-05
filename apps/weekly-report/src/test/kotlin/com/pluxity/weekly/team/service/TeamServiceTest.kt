@@ -3,9 +3,11 @@ package com.pluxity.weekly.team.service
 import com.linecorp.kotlinjdsl.dsl.jpql.Jpql
 import com.linecorp.kotlinjdsl.querymodel.jpql.JpqlQueryable
 import com.linecorp.kotlinjdsl.querymodel.jpql.select.SelectQuery
+import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.utils.findPageNotNull
+import com.pluxity.common.test.entity.dummyUser
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.team.dto.dummyTeamRequest
 import com.pluxity.weekly.team.entity.Team
@@ -35,7 +37,8 @@ class TeamServiceTest :
 
         val repository: TeamRepository = mockk()
         val memberRepository: TeamMemberRepository = mockk()
-        val service = TeamService(repository, memberRepository)
+        val userRepository: UserRepository = mockk()
+        val service = TeamService(repository, memberRepository, userRepository)
 
         Given("팀 전체 조회") {
             When("팀 목록을 조회하면") {
@@ -171,14 +174,16 @@ class TeamServiceTest :
         Given("팀원 목록 조회") {
             When("팀에 소속된 팀원을 조회하면") {
                 val team = dummyTeam(id = 1L)
+                val user1 = dummyUser(id = 10L, name = "홍길동")
+                val user2 = dummyUser(id = 20L, name = "김영희")
                 val members =
                     listOf(
-                        dummyTeamMember(id = 1L, teamId = 1L, userId = 10L),
-                        dummyTeamMember(id = 2L, teamId = 1L, userId = 20L),
+                        dummyTeamMember(id = 1L, team = team, user = user1),
+                        dummyTeamMember(id = 2L, team = team, user = user2),
                     )
 
                 every { repository.findByIdOrNull(1L) } returns team
-                every { memberRepository.findByTeamId(1L) } returns members
+                every { memberRepository.findByTeam(team) } returns members
 
                 val result = service.findMembers(1L)
 
@@ -193,10 +198,12 @@ class TeamServiceTest :
         Given("팀원 추가") {
             When("새로운 사용자를 팀에 추가하면") {
                 val team = dummyTeam(id = 1L)
-                val saved = dummyTeamMember(id = 1L, teamId = 1L, userId = 10L)
+                val user = dummyUser(id = 10L)
+                val saved = dummyTeamMember(id = 1L, team = team, user = user)
 
                 every { repository.findByIdOrNull(1L) } returns team
-                every { memberRepository.existsByTeamIdAndUserId(1L, 10L) } returns false
+                every { userRepository.findByIdOrNull(10L) } returns user
+                every { memberRepository.existsByTeamAndUser(team, user) } returns false
                 every { memberRepository.save(any<TeamMember>()) } returns saved
 
                 val result = service.addMember(1L, 10L)
@@ -208,9 +215,11 @@ class TeamServiceTest :
 
             When("이미 소속된 사용자를 추가하면") {
                 val team = dummyTeam(id = 1L)
+                val user = dummyUser(id = 10L)
 
                 every { repository.findByIdOrNull(1L) } returns team
-                every { memberRepository.existsByTeamIdAndUserId(1L, 10L) } returns true
+                every { userRepository.findByIdOrNull(10L) } returns user
+                every { memberRepository.existsByTeamAndUser(team, user) } returns true
 
                 val exception =
                     shouldThrow<CustomException> {
@@ -226,23 +235,27 @@ class TeamServiceTest :
         Given("팀원 제거") {
             When("소속된 사용자를 제거하면") {
                 val team = dummyTeam(id = 1L)
+                val user = dummyUser(id = 10L)
 
                 every { repository.findByIdOrNull(1L) } returns team
-                every { memberRepository.existsByTeamIdAndUserId(1L, 10L) } returns true
-                every { memberRepository.deleteByTeamIdAndUserId(1L, 10L) } just runs
+                every { userRepository.findByIdOrNull(10L) } returns user
+                every { memberRepository.existsByTeamAndUser(team, user) } returns true
+                every { memberRepository.deleteByTeamAndUser(team, user) } just runs
 
                 service.removeMember(1L, 10L)
 
                 Then("삭제가 수행된다") {
-                    verify(exactly = 1) { memberRepository.deleteByTeamIdAndUserId(1L, 10L) }
+                    verify(exactly = 1) { memberRepository.deleteByTeamAndUser(team, user) }
                 }
             }
 
             When("소속되지 않은 사용자를 제거하면") {
                 val team = dummyTeam(id = 1L)
+                val user = dummyUser(id = 999L)
 
                 every { repository.findByIdOrNull(1L) } returns team
-                every { memberRepository.existsByTeamIdAndUserId(1L, 999L) } returns false
+                every { userRepository.findByIdOrNull(999L) } returns user
+                every { memberRepository.existsByTeamAndUser(team, user) } returns false
 
                 val exception =
                     shouldThrow<CustomException> {

@@ -1,18 +1,20 @@
 package com.pluxity.weekly.team.repository
 
+import com.pluxity.common.auth.user.entity.User
+import com.pluxity.weekly.team.entity.Team
 import com.pluxity.weekly.team.entity.TeamMember
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface TeamMemberRepository : JpaRepository<TeamMember, Long> {
-    fun findByTeamId(teamId: Long): List<TeamMember>
+    fun findByTeam(team: Team): List<TeamMember>
 
-    fun existsByTeamIdAndUserId(
-        teamId: Long,
-        userId: Long,
+    fun existsByTeamAndUser(
+        team: Team,
+        user: User,
     ): Boolean
 
-    fun deleteByTeamIdAndUserId(
-        teamId: Long,
-        userId: Long,
+    fun deleteByTeamAndUser(
+        team: Team,
+        user: User,
     )
 }

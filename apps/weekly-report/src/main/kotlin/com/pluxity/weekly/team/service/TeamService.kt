@@ -1,5 +1,7 @@
 package com.pluxity.weekly.team.service
 
+import com.pluxity.common.auth.user.entity.User
+import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.PageResponse
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional
 class TeamService(
     private val teamRepository: TeamRepository,
     private val memberRepository: TeamMemberRepository,
+    private val userRepository: UserRepository,
 ) {
     fun findAll(request: PageSearchRequest): PageResponse<TeamResponse> {
         val pageable = PageRequest.of(request.page - 1, request.size)
@@ -67,9 +70,8 @@ class TeamService(
     // ── TeamMember ──
 
     fun findMembers(teamId: Long): List<TeamMemberResponse> {
-        getTeamById(teamId)
-
-        return memberRepository.findByTeamId(teamId).map { it.toResponse() }
+        val team = getTeamById(teamId)
+        return memberRepository.findByTeam(team).map { it.toResponse() }
     }
 
     @Transactional
@@ -77,11 +79,12 @@ class TeamService(
         teamId: Long,
         userId: Long,
     ): Long {
-        getTeamById(teamId)
-        if (memberRepository.existsByTeamIdAndUserId(teamId, userId)) {
+        val team = getTeamById(teamId)
+        val user = getUserById(userId)
+        if (memberRepository.existsByTeamAndUser(team, user)) {
             throw CustomException(WeeklyReportErrorCode.DUPLICATE_TEAM_MEMBER, userId, teamId)
         }
-        return memberRepository.save(TeamMember(teamId = teamId, userId = userId)).requiredId
+        return memberRepository.save(TeamMember(team = team, user = user)).requiredId
     }
 
     @Transactional
@@ -89,15 +92,19 @@ class TeamService(
         teamId: Long,
         userId: Long,
     ) {
-        getTeamById(teamId)
-        if (!memberRepository.existsByTeamIdAndUserId(teamId, userId)) {
+        val team = getTeamById(teamId)
+        val user = getUserById(userId)
+        if (!memberRepository.existsByTeamAndUser(team, user)) {
             throw CustomException(WeeklyReportErrorCode.NOT_FOUND_TEAM_MEMBER, teamId, userId)
         }
-        memberRepository.deleteByTeamIdAndUserId(teamId, userId)
+        memberRepository.deleteByTeamAndUser(team, user)
     }
 
     private fun getTeamById(id: Long): Team =
         teamRepository.findByIdOrNull(id)
             ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_TEAM, id)
 
+    private fun getUserById(id: Long): User =
+        userRepository.findByIdOrNull(id)
+            ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_USER, id)
 }

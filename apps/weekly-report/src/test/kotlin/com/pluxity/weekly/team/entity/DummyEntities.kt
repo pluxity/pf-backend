@@ -1,7 +1,9 @@
 package com.pluxity.weekly.team.entity
 
+import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.core.test.withAudit
 import com.pluxity.common.core.test.withId
+import com.pluxity.common.test.entity.dummyUser
 
 fun dummyTeam(
     id: Long? = null,
@@ -14,9 +16,9 @@ fun dummyTeam(
 
 fun dummyTeamMember(
     id: Long? = null,
-    teamId: Long = 1L,
-    userId: Long = 1L,
+    team: Team = dummyTeam(id = 1L),
+    user: User = dummyUser(id = 1L),
 ) = TeamMember(
-    teamId = teamId,
-    userId = userId,
+    team = team,
+    user = user,
 ).withId(id).withAudit()
