@@ -20,4 +20,7 @@ class WeeklyReportApiConfigurer : ApiConfigurer {
 
     @Bean
     fun projectApi(): GroupedOpenApi = apiGroup("6. 프로젝트 관리 API", "/projects/**")
+
+    @Bean
+    fun epicApi(): GroupedOpenApi = apiGroup("7. 에픽 관리 API", "/epics/**")
 }
