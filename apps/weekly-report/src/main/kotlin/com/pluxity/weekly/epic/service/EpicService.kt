@@ -1,5 +1,7 @@
 package com.pluxity.weekly.epic.service
 
+import com.pluxity.common.auth.annotation.CheckPermission
+import com.pluxity.common.auth.user.entity.PermissionAction
 import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
@@ -18,7 +20,6 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
-// TODO: @CheckPermission 적용 (Epic 도메인 권한 체크)
 // TODO: EpicStatus 상태 전이 규칙 (예: TODO → IN_PROGRESS → DONE, 역방향 제한 등)
 // TODO: ProjectAssignment, EpicAssignment 통합
 // TODO: Role별 llm context 생성 메서드
@@ -30,10 +31,13 @@ class EpicService(
     private val teamRepository: TeamRepository,
     private val userRepository: UserRepository,
 ) {
+    @CheckPermission(action = PermissionAction.READ_LIST, resourceType = "epic")
     fun findAll(): List<EpicResponse> = epicRepository.findAll().map { it.toResponse() }
 
+    @CheckPermission(action = PermissionAction.READ_SINGLE, resourceType = "epic")
     fun findById(id: Long): EpicResponse = getEpicById(id).toResponse()
 
+    @CheckPermission(action = PermissionAction.CREATE, resourceType = "epic")
     @Transactional
     fun create(request: EpicRequest): Long =
         epicRepository
@@ -49,6 +53,7 @@ class EpicService(
                 ),
             ).requiredId
 
+    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "epic")
     @Transactional
     fun update(
         id: Long,
@@ -65,6 +70,7 @@ class EpicService(
         )
     }
 
+    @CheckPermission(action = PermissionAction.DELETE, resourceType = "epic")
     @Transactional
     fun delete(id: Long) {
         epicRepository.delete(getEpicById(id))
@@ -72,8 +78,10 @@ class EpicService(
 
     // ── EpicAssignment ──
 
+    @CheckPermission(action = PermissionAction.READ_LIST, resourceType = "epic")
     fun findAssignments(epicId: Long): List<EpicAssignmentResponse> = getEpicById(epicId).assignments.map { it.toResponse() }
 
+    @CheckPermission(action = PermissionAction.CREATE, resourceType = "epic")
     @Transactional
     fun assign(
         epicId: Long,
@@ -87,6 +95,7 @@ class EpicService(
         epic.assign(user)
     }
 
+    @CheckPermission(action = PermissionAction.DELETE, resourceType = "epic")
     @Transactional
     fun unassign(
         epicId: Long,

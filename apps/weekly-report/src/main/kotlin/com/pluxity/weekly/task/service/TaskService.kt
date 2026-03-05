@@ -1,5 +1,7 @@
 package com.pluxity.weekly.task.service
 
+import com.pluxity.common.auth.annotation.CheckPermission
+import com.pluxity.common.auth.user.entity.PermissionAction
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.epic.entity.Epic
 import com.pluxity.weekly.epic.repository.EpicRepository
@@ -13,7 +15,6 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
-// TODO: @CheckPermission 적용 (Task 도메인 권한 체크)
 // TODO: Role별 llm context 생성 메서드
 @Service
 @Transactional(readOnly = true)
@@ -21,10 +22,13 @@ class TaskService(
     private val taskRepository: TaskRepository,
     private val epicRepository: EpicRepository,
 ) {
+    @CheckPermission(action = PermissionAction.READ_LIST, resourceType = "task")
     fun findAll(): List<TaskResponse> = taskRepository.findAll().map { it.toResponse() }
 
+    @CheckPermission(action = PermissionAction.READ_SINGLE, resourceType = "task")
     fun findById(id: Long): TaskResponse = getTaskById(id).toResponse()
 
+    @CheckPermission(action = PermissionAction.CREATE, resourceType = "task")
     @Transactional
     fun create(request: TaskRequest): Long =
         taskRepository
@@ -40,6 +44,7 @@ class TaskService(
                 ),
             ).requiredId
 
+    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "task")
     @Transactional
     fun update(
         id: Long,
@@ -56,6 +61,7 @@ class TaskService(
         )
     }
 
+    @CheckPermission(action = PermissionAction.DELETE, resourceType = "task")
     @Transactional
     fun delete(id: Long) {
         taskRepository.delete(getTaskById(id))
