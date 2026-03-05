@@ -1,10 +1,13 @@
 package com.pluxity.weekly.epic.service
 
+import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.test.entity.dummyUser
 import com.pluxity.weekly.epic.dto.dummyEpicRequest
 import com.pluxity.weekly.epic.entity.Epic
 import com.pluxity.weekly.epic.entity.EpicStatus
 import com.pluxity.weekly.epic.entity.dummyEpic
+import com.pluxity.weekly.epic.entity.dummyEpicAssignment
 import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.entity.dummyProject
@@ -28,7 +31,8 @@ class EpicServiceTest :
         val epicRepository: EpicRepository = mockk()
         val projectRepository: ProjectRepository = mockk()
         val teamRepository: TeamRepository = mockk()
-        val service = EpicService(epicRepository, projectRepository, teamRepository)
+        val userRepository: UserRepository = mockk()
+        val service = EpicService(epicRepository, projectRepository, teamRepository, userRepository)
 
         Given("에픽 전체 조회") {
             When("에픽 목록을 조회하면") {
@@ -184,6 +188,99 @@ class EpicServiceTest :
 
                 Then("NOT_FOUND 예외가 발생한다") {
                     exception.code shouldBe WeeklyReportErrorCode.NOT_FOUND_EPIC
+                }
+            }
+        }
+
+        // ── EpicAssignment ──
+
+        Given("에픽 배정 목록 조회") {
+            When("에픽에 배정된 사용자를 조회하면") {
+                val epic = dummyEpic(id = 1L)
+                val user1 = dummyUser(id = 10L, name = "홍길동")
+                val user2 = dummyUser(id = 20L, name = "김영희")
+                epic.assignments.addAll(
+                    listOf(
+                        dummyEpicAssignment(id = 1L, epic = epic, assignedBy = user1),
+                        dummyEpicAssignment(id = 2L, epic = epic, assignedBy = user2),
+                    ),
+                )
+
+                every { epicRepository.findByIdOrNull(1L) } returns epic
+
+                val result = service.findAssignments(1L)
+
+                Then("배정 목록이 반환된다") {
+                    result.size shouldBe 2
+                }
+            }
+        }
+
+        Given("에픽 배정 추가") {
+            When("새로운 사용자를 에픽에 배정하면") {
+                val epic = dummyEpic(id = 1L)
+                val user = dummyUser(id = 10L)
+
+                every { epicRepository.findByIdOrNull(1L) } returns epic
+                every { userRepository.findByIdOrNull(10L) } returns user
+
+                service.assign(1L, 10L)
+
+                Then("배정이 추가된다") {
+                    epic.assignments.size shouldBe 1
+                    epic.assignments[0].assignedBy shouldBe user
+                }
+            }
+
+            When("이미 배정된 사용자를 추가하면") {
+                val epic = dummyEpic(id = 1L)
+                val user = dummyUser(id = 10L)
+                epic.assign(user)
+
+                every { epicRepository.findByIdOrNull(1L) } returns epic
+                every { userRepository.findByIdOrNull(10L) } returns user
+
+                val exception =
+                    shouldThrow<CustomException> {
+                        service.assign(1L, 10L)
+                    }
+
+                Then("DUPLICATE 예외가 발생한다") {
+                    exception.code shouldBe WeeklyReportErrorCode.DUPLICATE_EPIC_ASSIGNMENT
+                }
+            }
+        }
+
+        Given("에픽 배정 해제") {
+            When("배정된 사용자를 해제하면") {
+                val epic = dummyEpic(id = 1L)
+                val user = dummyUser(id = 10L)
+                epic.assign(user)
+
+                every { epicRepository.findByIdOrNull(1L) } returns epic
+                every { userRepository.findByIdOrNull(10L) } returns user
+
+                service.unassign(1L, 10L)
+
+                Then("배정이 제거된다") {
+                    epic.assignments.size shouldBe 0
+                }
+            }
+
+            When("배정되지 않은 사용자를 해제하면") {
+                val epic = dummyEpic(id = 1L)
+                val user = dummyUser(id = 999L)
+
+                every { epicRepository.findByIdOrNull(1L) } returns epic
+                every { userRepository.findByIdOrNull(999L) } returns user
+
+                val exception =
+                    shouldThrow<CustomException> {
+                        service.unassign(1L, 999L)
+                    }
+
+                Then("NOT_FOUND 예외가 발생한다") {
+                    exception.code shouldBe WeeklyReportErrorCode.NOT_FOUND_EPIC_ASSIGNMENT
                 }
             }
         }
