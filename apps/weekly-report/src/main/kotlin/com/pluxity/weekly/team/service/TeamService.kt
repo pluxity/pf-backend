@@ -1,5 +1,7 @@
 package com.pluxity.weekly.team.service
 
+import com.pluxity.common.auth.annotation.CheckPermission
+import com.pluxity.common.auth.user.entity.PermissionAction
 import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.dto.PageSearchRequest
@@ -41,6 +43,7 @@ class TeamService(
 
     fun findById(id: Long): TeamResponse = getTeamById(id).toResponse()
 
+    @CheckPermission(action = PermissionAction.CREATE, resourceType = "team")
     @Transactional
     fun create(request: TeamRequest): Long =
         teamRepository
@@ -51,6 +54,7 @@ class TeamService(
                 ),
             ).requiredId
 
+    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "team")
     @Transactional
     fun update(
         id: Long,
@@ -62,6 +66,7 @@ class TeamService(
         )
     }
 
+    @CheckPermission(action = PermissionAction.DELETE, resourceType = "team")
     @Transactional
     fun delete(id: Long) {
         teamRepository.deleteById(getTeamById(id).requiredId)
@@ -74,6 +79,7 @@ class TeamService(
         return memberRepository.findByTeam(team).map { it.toResponse() }
     }
 
+    @CheckPermission(action = PermissionAction.CREATE, resourceType = "team")
     @Transactional
     fun addMember(
         teamId: Long,
@@ -87,6 +93,7 @@ class TeamService(
         return memberRepository.save(TeamMember(team = team, user = user)).requiredId
     }
 
+    @CheckPermission(action = PermissionAction.DELETE, resourceType = "team")
     @Transactional
     fun removeMember(
         teamId: Long,

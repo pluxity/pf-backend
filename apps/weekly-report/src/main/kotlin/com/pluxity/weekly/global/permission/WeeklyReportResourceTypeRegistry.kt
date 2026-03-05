@@ -13,6 +13,7 @@ class WeeklyReportResourceTypeRegistry : ResourceTypeRegistry {
         val endpoint: String,
     ) {
         USER("사용자관리", "users"),
+        TEAM("팀관리", "teams"),
     }
 
     override fun resolve(name: String): String =
