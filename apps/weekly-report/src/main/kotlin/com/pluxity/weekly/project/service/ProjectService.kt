@@ -14,6 +14,10 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
+// TODO: ProjectStatus 상태 전이 규칙 (예: TODO → IN_PROGRESS → DONE, 역방향 제한 등)
+// TODO: @CheckPermission 적용 (Project 도메인 권한 체크)
+// TODO: dueDate 초과 시 status를 OVERDUE로 변경하는 스케줄러 또는 조회 시 판정 로직
+
 @Service
 @Transactional(readOnly = true)
 class ProjectService(
