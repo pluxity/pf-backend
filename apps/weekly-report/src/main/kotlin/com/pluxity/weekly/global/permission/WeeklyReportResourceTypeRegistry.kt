@@ -14,6 +14,7 @@ class WeeklyReportResourceTypeRegistry : ResourceTypeRegistry {
     ) {
         USER("사용자관리", "users"),
         TEAM("팀관리", "teams"),
+        PROJECT("프로젝트관리", "projects"),
     }
 
     override fun resolve(name: String): String =
