@@ -1,6 +1,9 @@
 package com.pluxity.weekly.epic.service
 
+import com.pluxity.common.auth.user.entity.User
+import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.weekly.epic.dto.EpicAssignmentResponse
 import com.pluxity.weekly.epic.dto.EpicRequest
 import com.pluxity.weekly.epic.dto.EpicResponse
 import com.pluxity.weekly.epic.dto.toResponse
@@ -21,6 +24,7 @@ class EpicService(
     private val epicRepository: EpicRepository,
     private val projectRepository: ProjectRepository,
     private val teamRepository: TeamRepository,
+    private val userRepository: UserRepository,
 ) {
     fun findAll(): List<EpicResponse> = epicRepository.findAll().map { it.toResponse() }
 
@@ -62,6 +66,36 @@ class EpicService(
         epicRepository.delete(getEpicById(id))
     }
 
+    // ── EpicAssignment ──
+
+    fun findAssignments(epicId: Long): List<EpicAssignmentResponse> = getEpicById(epicId).assignments.map { it.toResponse() }
+
+    @Transactional
+    fun assign(
+        epicId: Long,
+        userId: Long,
+    ) {
+        val epic = getEpicById(epicId)
+        val user = getUserById(userId)
+        if (epic.assignments.any { it.assignedBy == user }) {
+            throw CustomException(WeeklyReportErrorCode.DUPLICATE_EPIC_ASSIGNMENT, userId, epicId)
+        }
+        epic.assign(user)
+    }
+
+    @Transactional
+    fun unassign(
+        epicId: Long,
+        userId: Long,
+    ) {
+        val epic = getEpicById(epicId)
+        val user = getUserById(userId)
+        if (epic.assignments.none { it.assignedBy == user }) {
+            throw CustomException(WeeklyReportErrorCode.NOT_FOUND_EPIC_ASSIGNMENT, epicId, userId)
+        }
+        epic.unassign(user)
+    }
+
     private fun getEpicById(id: Long): Epic =
         epicRepository.findByIdOrNull(id)
             ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_EPIC, id)
@@ -73,4 +107,8 @@ class EpicService(
     private fun getTeamById(id: Long): Team =
         teamRepository.findByIdOrNull(id)
             ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_TEAM, id)
+
+    private fun getUserById(id: Long): User =
+        userRepository.findByIdOrNull(id)
+            ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_USER, id)
 }
