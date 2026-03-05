@@ -160,7 +160,7 @@ class TeamController(
         ],
     )
     @PostMapping("/{teamId}/members")
-    @ResponseCreated(path = "/teams/{teamId}/members/{userId}")
+    @ResponseCreated(path = "/teams/{teamId}/members/{id}")
     fun addMember(
         @PathVariable teamId: Long,
         @RequestBody @Valid request: TeamMemberRequest,
