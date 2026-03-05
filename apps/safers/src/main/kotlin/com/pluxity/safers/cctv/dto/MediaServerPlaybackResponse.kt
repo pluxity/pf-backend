@@ -5,5 +5,4 @@ data class MediaServerPlaybackResponse(
     val pathName: String,
     val hlsUrl: String,
     val webrtcUrl: String,
-    val expiresAt: String,
 )
