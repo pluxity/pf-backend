@@ -6,11 +6,14 @@ import com.pluxity.safers.cctv.config.CctvErrorCode
 import com.pluxity.safers.cctv.dto.MediaServerPathItem
 import com.pluxity.safers.cctv.dto.MediaServerPathListResponse
 import com.pluxity.safers.cctv.dto.MediaServerPlaybackResponse
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+
+private val log = KotlinLogging.logger {}
 
 @Component
 class CctvApiClient(
@@ -55,6 +58,25 @@ class CctvApiClient(
             .bodyToMono<MediaServerPlaybackResponse>()
             .block()
             ?: throw CustomException(CctvErrorCode.PLAYBACK_REQUEST_FAILED)
+    }
+
+    fun deletePlayback(
+        baseUrl: String,
+        siteId: Long,
+        nvrId: String,
+        pathName: String,
+    ) {
+        try {
+            val client = createClientForSite(baseUrl, siteId)
+            client
+                .delete()
+                .uri("/v3/nvr/$nvrId/playback/$pathName")
+                .retrieve()
+                .bodyToMono<Void>()
+                .block()
+        } catch (e: Exception) {
+            log.warn(e) { "Playback 세션 삭제 실패 - nvrId: $nvrId, pathName: $pathName" }
+        }
     }
 
     fun fetchPaths(
