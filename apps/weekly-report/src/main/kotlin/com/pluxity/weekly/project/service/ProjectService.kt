@@ -24,10 +24,15 @@ class ProjectService(
     private val projectRepository: ProjectRepository,
     private val userRepository: UserRepository,
 ) {
-    fun findAll(): List<ProjectResponse> =
-        projectRepository.findAll().map {
-            it.toResponse(projectRepository.findMembersByProjectId(it.requiredId))
-        }
+    fun findAll(): List<ProjectResponse> {
+        val projects = projectRepository.findAll()
+        if (projects.isEmpty()) return emptyList()
+        val memberMap =
+            projectRepository
+                .findMembersByProjectIds(projects.map { it.requiredId })
+                .groupBy { it.projectId }
+        return projects.map { it.toResponse(memberMap[it.requiredId].orEmpty()) }
+    }
 
     fun findById(id: Long): ProjectResponse {
         val project = getById(id)
@@ -65,7 +70,7 @@ class ProjectService(
 
     @Transactional
     fun delete(id: Long) {
-        projectRepository.deleteById(getById(id).requiredId)
+        projectRepository.delete(getById(id))
     }
 
     // ── ProjectAssignment ──

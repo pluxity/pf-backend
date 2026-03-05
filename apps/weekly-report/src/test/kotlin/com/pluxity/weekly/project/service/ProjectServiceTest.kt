@@ -38,7 +38,7 @@ class ProjectServiceTest :
                     )
 
                 every { projectRepository.findAll() } returns entities
-                every { projectRepository.findMembersByProjectId(any()) } returns emptyList()
+                every { projectRepository.findMembersByProjectIds(any()) } returns emptyList()
 
                 val result = service.findAll()
 
@@ -152,12 +152,12 @@ class ProjectServiceTest :
                 val entity = dummyProject(id = 1L, name = "삭제대상 프로젝트")
 
                 every { projectRepository.findByIdOrNull(1L) } returns entity
-                every { projectRepository.deleteById(1L) } just runs
+                every { projectRepository.delete(any<Project>()) } just runs
 
                 service.delete(1L)
 
                 Then("삭제가 수행된다") {
-                    verify(exactly = 1) { projectRepository.deleteById(1L) }
+                    verify(exactly = 1) { projectRepository.delete(entity) }
                 }
             }
 
