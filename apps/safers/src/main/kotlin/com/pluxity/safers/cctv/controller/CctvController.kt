@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -131,4 +132,39 @@ class CctvController(
         @PathVariable id: Long,
         @RequestBody @Valid request: CctvPlaybackRequest,
     ): ResponseEntity<DataResponseBody<CctvPlaybackResponse>> = ResponseEntity.ok(DataResponseBody(service.playback(id, request)))
+
+    @Operation(summary = "NVR 녹화영상 재생 세션 삭제", description = "생성된 NVR 녹화영상 재생 세션을 삭제합니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "204", description = "삭제 성공"),
+            ApiResponse(
+                responseCode = "400",
+                description = "NVR 정보 누락 또는 미디어서버 URL 미설정",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "CCTV를 찾을 수 없음",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+        ],
+    )
+    @DeleteMapping("/{id}/playback/{pathName}")
+    fun deletePlayback(
+        @PathVariable id: Long,
+        @PathVariable pathName: String,
+    ): ResponseEntity<Void> {
+        service.deletePlayback(id, pathName)
+        return ResponseEntity.noContent().build()
+    }
 }

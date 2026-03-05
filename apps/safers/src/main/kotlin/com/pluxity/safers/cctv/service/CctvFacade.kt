@@ -7,6 +7,7 @@ import com.pluxity.safers.cctv.dto.CctvPlaybackRequest
 import com.pluxity.safers.cctv.dto.CctvPlaybackResponse
 import com.pluxity.safers.cctv.dto.CctvResponse
 import com.pluxity.safers.cctv.dto.CctvUpdateRequest
+import com.pluxity.safers.cctv.entity.Cctv
 import com.pluxity.safers.site.repository.SiteRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
@@ -73,6 +74,27 @@ class CctvFacade(
         cctvId: Long,
         request: CctvPlaybackRequest,
     ): CctvPlaybackResponse {
+        val (baseUrl, siteId, nvrId, cctv) = resolvePlaybackInfo(cctvId)
+        val channel =
+            cctv.channel
+                ?: throw CustomException(CctvErrorCode.MISSING_NVR_INFO, cctvId)
+
+        val startTime = parseDateTime(request.startDate)
+        val endTime = parseDateTime(request.endDate)
+
+        val response = apiClient.requestPlayback(baseUrl, siteId, nvrId, channel, startTime, endTime)
+        return CctvPlaybackResponse(pathName = response.pathName)
+    }
+
+    fun deletePlayback(
+        cctvId: Long,
+        pathName: String,
+    ) {
+        val (baseUrl, siteId, nvrId) = resolvePlaybackInfo(cctvId)
+        apiClient.deletePlayback(baseUrl, siteId, nvrId, pathName.removePrefix("playback-"))
+    }
+
+    private fun resolvePlaybackInfo(cctvId: Long): PlaybackInfo {
         val cctv = cctvService.findByIdWithSite(cctvId)
         val site = cctv.site
 
@@ -82,16 +104,16 @@ class CctvFacade(
         val nvrId =
             cctv.nvrId
                 ?: throw CustomException(CctvErrorCode.MISSING_NVR_INFO, cctvId)
-        val channel =
-            cctv.channel
-                ?: throw CustomException(CctvErrorCode.MISSING_NVR_INFO, cctvId)
 
-        val startTime = parseDateTime(request.startDate)
-        val endTime = parseDateTime(request.endDate)
-
-        val response = apiClient.requestPlayback(baseUrl, site.requiredId, nvrId, channel, startTime, endTime)
-        return CctvPlaybackResponse(pathName = response.pathName)
+        return PlaybackInfo(baseUrl, site.requiredId, nvrId, cctv)
     }
+
+    private data class PlaybackInfo(
+        val baseUrl: String,
+        val siteId: Long,
+        val nvrId: String,
+        val cctv: Cctv,
+    )
 
     private fun parseDateTime(value: String): LocalDateTime =
         try {
