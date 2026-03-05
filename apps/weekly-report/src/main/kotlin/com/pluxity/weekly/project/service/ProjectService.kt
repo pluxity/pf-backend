@@ -1,5 +1,7 @@
 package com.pluxity.weekly.project.service
 
+import com.pluxity.common.auth.annotation.CheckPermission
+import com.pluxity.common.auth.user.entity.PermissionAction
 import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
@@ -24,6 +26,7 @@ class ProjectService(
     private val projectRepository: ProjectRepository,
     private val userRepository: UserRepository,
 ) {
+    @CheckPermission(action = PermissionAction.READ_LIST, resourceType = "project")
     fun findAll(): List<ProjectResponse> {
         val projects = projectRepository.findAll()
         if (projects.isEmpty()) return emptyList()
@@ -34,11 +37,13 @@ class ProjectService(
         return projects.map { it.toResponse(memberMap[it.requiredId].orEmpty()) }
     }
 
+    @CheckPermission(action = PermissionAction.READ_SINGLE, resourceType = "project")
     fun findById(id: Long): ProjectResponse {
         val project = getById(id)
         return project.toResponse(projectRepository.findMembersByProjectId(project.requiredId))
     }
 
+    @CheckPermission(action = PermissionAction.CREATE, resourceType = "project")
     @Transactional
     fun create(request: ProjectRequest): Long =
         projectRepository
@@ -53,6 +58,7 @@ class ProjectService(
                 ),
             ).requiredId
 
+    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "project")
     @Transactional
     fun update(
         id: Long,
@@ -68,6 +74,7 @@ class ProjectService(
         )
     }
 
+    @CheckPermission(action = PermissionAction.DELETE, resourceType = "project")
     @Transactional
     fun delete(id: Long) {
         projectRepository.delete(getById(id))
@@ -77,6 +84,7 @@ class ProjectService(
 
     fun findAssignments(projectId: Long): List<ProjectAssignmentResponse> = getById(projectId).assignments.map { it.toResponse() }
 
+    @CheckPermission(action = PermissionAction.CREATE, resourceType = "project")
     @Transactional
     fun assign(
         projectId: Long,
@@ -90,6 +98,7 @@ class ProjectService(
         project.assign(user)
     }
 
+    @CheckPermission(action = PermissionAction.DELETE, resourceType = "project")
     @Transactional
     fun unassign(
         projectId: Long,
