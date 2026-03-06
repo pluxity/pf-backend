@@ -9,12 +9,10 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.every
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user
-import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 
 @WebMvcTest(WeatherController::class)
-@ContextConfiguration(classes = [WeatherController::class])
 class WeatherControllerTest(
     private val mockMvc: MockMvc,
     @MockkBean private val weatherService: WeatherService,

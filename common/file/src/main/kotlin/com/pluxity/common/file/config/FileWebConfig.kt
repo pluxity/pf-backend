@@ -1,12 +1,14 @@
 package com.pluxity.common.file.config
 
 import com.pluxity.common.file.properties.FileProperties
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.CacheControl
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 @Configuration
+@ConditionalOnBean(FileProperties::class)
 class FileWebConfig(
     private val fileProperties: FileProperties,
 ) : WebMvcConfigurer {

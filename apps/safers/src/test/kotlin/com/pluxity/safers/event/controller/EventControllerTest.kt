@@ -3,7 +3,6 @@ package com.pluxity.safers.event.controller
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.exception.CustomExceptionHandler
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.common.file.dto.FileResponse
 import com.pluxity.safers.event.dto.EventResponse
@@ -20,14 +19,12 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user
-import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import java.time.LocalDateTime
 
 @WebMvcTest(EventController::class)
-@ContextConfiguration(classes = [EventController::class, CustomExceptionHandler::class])
 class EventControllerTest(
     private val mockMvc: MockMvc,
     private val objectMapper: ObjectMapper,
