@@ -3,7 +3,6 @@ package com.pluxity.safers.site.controller
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.exception.CustomExceptionHandler
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.site.dto.SiteResponse
@@ -18,7 +17,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user
-import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
@@ -27,7 +25,6 @@ import org.springframework.test.web.servlet.put
 import java.time.LocalDate
 
 @WebMvcTest(SiteController::class)
-@ContextConfiguration(classes = [SiteController::class, CustomExceptionHandler::class])
 class SiteControllerTest(
     private val mockMvc: MockMvc,
     private val objectMapper: ObjectMapper,
