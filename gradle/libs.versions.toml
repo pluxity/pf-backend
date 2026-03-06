@@ -9,7 +9,7 @@ spring-dependency-management = "1.1.7"
 
 # Persistence
 jts = "1.20.0"
-flyway = "11.8.0"
+flyway = "12.0.3"
 
 # AWS
 aws-s3 = "2.42.3"
@@ -66,7 +66,7 @@ kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 # Database
 postgresql = { module = "org.postgresql:postgresql" }
 h2 = { module = "com.h2database:h2" }
-flyway-core = { module = "org.flywaydb:flyway-core" }
+flyway-starter = { module = "org.springframework.boot:spring-boot-starter-flyway" }
 flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }
 
 # Hibernate Spatial

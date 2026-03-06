@@ -49,6 +49,8 @@ subprojects {
         implementation(rootProject.libs.p6spy)
 
         runtimeOnly(rootProject.libs.postgresql)
+        implementation(rootProject.libs.flyway.starter)
+        implementation(rootProject.libs.flyway.postgresql)
 
         testImplementation(rootProject.libs.spring.boot.starter.test)
         testImplementation(rootProject.libs.kotlin.test.junit5)
