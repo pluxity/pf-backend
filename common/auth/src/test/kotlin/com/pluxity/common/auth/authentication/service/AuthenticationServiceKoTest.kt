@@ -24,6 +24,7 @@ import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.security.authentication.AuthenticationManager
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.crypto.password.PasswordEncoder
 
 class AuthenticationServiceKoTest :
@@ -110,7 +111,8 @@ class AuthenticationServiceKoTest :
                 val request: HttpServletRequest = mockk(relaxed = true)
                 val response: HttpServletResponse = mockk(relaxed = true)
 
-                every { authenticationManager.authenticate(any()) } throws RuntimeException("인증 실패")
+                every { authenticationManager.authenticate(any()) } throws
+                    BadCredentialsException("인증 실패")
 
                 Then("INVALID_ID_OR_PASSWORD 예외 발생") {
                     shouldThrowExactly<CustomException> {
