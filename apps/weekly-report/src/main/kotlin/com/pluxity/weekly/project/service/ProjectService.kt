@@ -84,7 +84,7 @@ class ProjectService(
     @CheckPermission(action = PermissionAction.READ_LIST, resourceType = "project")
     fun findAssignments(projectId: Long): List<ProjectAssignmentResponse> = getById(projectId).assignments.map { it.toResponse() }
 
-    @CheckPermission(action = PermissionAction.CREATE, resourceType = "project")
+    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "project")
     @Transactional
     fun assign(
         projectId: Long,
@@ -98,7 +98,7 @@ class ProjectService(
         project.assign(user)
     }
 
-    @CheckPermission(action = PermissionAction.DELETE, resourceType = "project")
+    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "project")
     @Transactional
     fun unassign(
         projectId: Long,
