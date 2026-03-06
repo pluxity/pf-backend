@@ -180,10 +180,10 @@ class AdminUserControllerTest(
 
             When("POST $baseUrl - 유효하지 않은 요청 (빈 필드)") {
                 val invalidRequest =
-                    mapOf(
-                        "username" to "",
-                        "password" to "",
-                        "name" to "",
+                    dummyUserCreateRequest(
+                        username = "",
+                        password = "",
+                        name = "",
                     )
 
                 val result =

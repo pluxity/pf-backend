@@ -50,11 +50,11 @@ class AuthenticationControllerTest(
 
             When("POST $baseUrl/sign-up - 유효하지 않은 요청 (빈 필드)") {
                 val invalidRequest =
-                    mapOf(
-                        "username" to "",
-                        "password" to "",
-                        "name" to "",
-                        "code" to "",
+                    dummySignUpRequest(
+                        username = "",
+                        password = "",
+                        name = "",
+                        code = "",
                     )
 
                 val result =
@@ -97,9 +97,9 @@ class AuthenticationControllerTest(
 
             When("POST $baseUrl/sign-in - 유효하지 않은 요청 (빈 필드)") {
                 val invalidRequest =
-                    mapOf(
-                        "username" to "",
-                        "password" to "",
+                    dummySignInRequest(
+                        username = "",
+                        password = "",
                     )
 
                 val result =
