@@ -7,6 +7,7 @@ dependencies {
     api(project(":common:file"))
 
     api(rootProject.libs.spring.boot.starter.test)
+    api(rootProject.libs.spring.boot.starter.webmvc.test)
     api(rootProject.libs.bundles.kotest)
     api(rootProject.libs.mockk)
     api(rootProject.libs.springmockk)
