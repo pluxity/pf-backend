@@ -1,7 +1,6 @@
 [versions]
 # Language & Platform
 kotlin = "2.3.10"
-java = "25"
 
 # Spring
 spring-boot = "4.0.3"
@@ -24,9 +23,6 @@ kotlin-jdsl = "3.8.0"
 kotlin-logging = "8.0.01"
 logbook = "4.0.2"
 p6spy = "2.0.0"
-
-# Coroutines
-kotlinx-coroutines = "1.10.2"
 
 # Cron (platform)
 cron-utils = "9.2.1"
