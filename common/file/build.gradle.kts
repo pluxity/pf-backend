@@ -5,5 +5,6 @@ dependencies {
 
     implementation(rootProject.libs.aws.s3)
 
+    testImplementation(project(":common:test-support"))
     testImplementation(testFixtures(project(":common:core")))
 }
