@@ -6,6 +6,7 @@ import com.pluxity.safers.weather.client.WeatherApiClient
 import com.pluxity.safers.weather.dto.dummyForecastApiResponse
 import com.pluxity.safers.weather.dto.dummyObservationApiResponse
 import io.kotest.core.spec.style.BehaviorSpec
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -19,6 +20,10 @@ class WeatherFacadeTest :
         val siteRepository: SiteRepository = mockk()
 
         val facade = WeatherFacade(weatherService, weatherApiClient, siteRepository)
+
+        beforeContainer {
+            clearMocks(weatherService, weatherApiClient, siteRepository, answers = false)
+        }
 
         Given("초단기 예보 수집") {
 

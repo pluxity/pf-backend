@@ -10,6 +10,7 @@ import com.pluxity.safers.weather.repository.WeatherRepository
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -20,6 +21,10 @@ class WeatherServiceTest :
         val weatherRepository: WeatherRepository = mockk(relaxed = true)
         every { weatherRepository.save(any()) } answers { firstArg() }
         val service = WeatherService(weatherRepository)
+
+        beforeContainer {
+            clearMocks(weatherRepository, answers = false)
+        }
 
         Given("대시보드 날씨 조회") {
 
