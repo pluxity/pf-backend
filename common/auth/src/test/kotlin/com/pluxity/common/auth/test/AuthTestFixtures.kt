@@ -1,5 +1,7 @@
 package com.pluxity.common.auth.test
 
+import com.pluxity.common.auth.authentication.dto.SignInRequest
+import com.pluxity.common.auth.authentication.dto.SignUpRequest
 import com.pluxity.common.auth.authentication.entity.RefreshToken
 import com.pluxity.common.auth.permission.Permission
 import com.pluxity.common.auth.user.dto.UserCreateRequest
@@ -72,3 +74,15 @@ fun dummyUserPasswordUpdateRequest(
     currentPassword: String = "currentPassword",
     newPassword: String = "newPassword",
 ): UserPasswordUpdateRequest = UserPasswordUpdateRequest(currentPassword, newPassword)
+
+fun dummySignUpRequest(
+    username: String = "username",
+    password: String = "password",
+    name: String = "name",
+    code: String = "code",
+): SignUpRequest = SignUpRequest(username, password, name, code)
+
+fun dummySignInRequest(
+    username: String = "username",
+    password: String = "password",
+): SignInRequest = SignInRequest(username, password)
