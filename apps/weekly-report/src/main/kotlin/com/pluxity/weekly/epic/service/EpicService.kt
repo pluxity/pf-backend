@@ -81,7 +81,7 @@ class EpicService(
     @CheckPermission(action = PermissionAction.READ_LIST, resourceType = "epic")
     fun findAssignments(epicId: Long): List<EpicAssignmentResponse> = getEpicById(epicId).assignments.map { it.toResponse() }
 
-    @CheckPermission(action = PermissionAction.CREATE, resourceType = "epic")
+    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "epic")
     @Transactional
     fun assign(
         epicId: Long,
@@ -95,7 +95,7 @@ class EpicService(
         epic.assign(user)
     }
 
-    @CheckPermission(action = PermissionAction.DELETE, resourceType = "epic")
+    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "epic")
     @Transactional
     fun unassign(
         epicId: Long,

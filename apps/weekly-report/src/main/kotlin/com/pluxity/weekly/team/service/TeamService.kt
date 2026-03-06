@@ -79,7 +79,7 @@ class TeamService(
         return memberRepository.findByTeam(team).map { it.toResponse() }
     }
 
-    @CheckPermission(action = PermissionAction.CREATE, resourceType = "team")
+    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "team")
     @Transactional
     fun addMember(
         teamId: Long,
@@ -93,7 +93,7 @@ class TeamService(
         return memberRepository.save(TeamMember(team = team, user = user)).requiredId
     }
 
-    @CheckPermission(action = PermissionAction.DELETE, resourceType = "team")
+    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "team")
     @Transactional
     fun removeMember(
         teamId: Long,
