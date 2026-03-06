@@ -1,6 +1,6 @@
 package com.pluxity.common.auth.authentication.security
 
-import com.pluxity.common.auth.test.dummyUser
+import com.pluxity.common.test.entity.dummyUser
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 

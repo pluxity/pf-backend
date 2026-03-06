@@ -1,12 +1,12 @@
 package com.pluxity.common.auth.user.controller
 
 import com.ninjasquad.springmockk.MockkBean
-import com.pluxity.common.auth.user.dto.RoleCreateRequest
 import com.pluxity.common.auth.user.dto.RoleResponse
-import com.pluxity.common.auth.user.dto.RoleUpdateRequest
 import com.pluxity.common.auth.user.service.RoleService
 import com.pluxity.common.core.constant.ErrorCode
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.test.dto.dummyRoleCreateRequest
+import com.pluxity.common.test.dto.dummyRoleUpdateRequest
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.every
 import io.mockk.just
@@ -103,12 +103,7 @@ class RoleControllerTest(
         Given("역할 생성 API") {
 
             When("POST $baseUrl - 유효한 요청") {
-                val request =
-                    RoleCreateRequest(
-                        name = "일반 사용자",
-                        description = "기본 역할",
-                        permissionIds = emptyList(),
-                    )
+                val request = dummyRoleCreateRequest()
 
                 every { roleService.save(any(), any()) } returns 1L
 
@@ -129,12 +124,7 @@ class RoleControllerTest(
             }
 
             When("POST $baseUrl - name이 빈 문자열인 경우") {
-                val request =
-                    RoleCreateRequest(
-                        name = "",
-                        description = "기본 역할",
-                        permissionIds = emptyList(),
-                    )
+                val request = dummyRoleCreateRequest(name = "")
 
                 val result =
                     mockMvc.post(baseUrl) {
@@ -155,12 +145,7 @@ class RoleControllerTest(
         Given("역할 수정 API") {
 
             When("PATCH $baseUrl/{id} - 유효한 요청") {
-                val request =
-                    RoleUpdateRequest(
-                        name = "수정된 역할",
-                        description = "수정된 설명",
-                        permissionIds = emptyList(),
-                    )
+                val request = dummyRoleUpdateRequest()
 
                 every { roleService.update(1L, any()) } just runs
 
@@ -180,12 +165,7 @@ class RoleControllerTest(
             }
 
             When("PATCH $baseUrl/{id} - 존재하지 않는 역할") {
-                val request =
-                    RoleUpdateRequest(
-                        name = "수정된 역할",
-                        description = "수정된 설명",
-                        permissionIds = emptyList(),
-                    )
+                val request = dummyRoleUpdateRequest()
 
                 every { roleService.update(999L, any()) } throws
                     CustomException(ErrorCode.NOT_FOUND_ROLE, 999L)

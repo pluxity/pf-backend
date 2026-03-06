@@ -1,14 +1,13 @@
 package com.pluxity.common.auth.permission
 
 import com.ninjasquad.springmockk.MockkBean
-import com.pluxity.common.auth.permission.dto.PermissionCreateRequest
-import com.pluxity.common.auth.permission.dto.PermissionRequest
 import com.pluxity.common.auth.permission.dto.PermissionResponse
-import com.pluxity.common.auth.permission.dto.PermissionUpdateRequest
 import com.pluxity.common.auth.permission.dto.ResourceTypeResponse
 import com.pluxity.common.core.constant.ErrorCode
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.BaseResponse
+import com.pluxity.common.test.dto.dummyPermissionCreateRequest
+import com.pluxity.common.test.dto.dummyPermissionUpdateRequest
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.every
 import io.mockk.just
@@ -60,19 +59,7 @@ class PermissionControllerTest(
         Given("권한 생성 API") {
 
             When("POST $baseUrl - 유효한 요청") {
-                val request =
-                    PermissionCreateRequest(
-                        name = "건물 읽기 권한",
-                        description = "건물 조회만 가능",
-                        permissions =
-                            listOf(
-                                PermissionRequest(
-                                    resourceType = "BUILDING",
-                                    resourceIds = emptyList(),
-                                    level = PermissionLevel.READ,
-                                ),
-                            ),
-                    )
+                val request = dummyPermissionCreateRequest()
 
                 every { permissionService.create(any()) } returns 1L
 
@@ -157,19 +144,7 @@ class PermissionControllerTest(
         Given("권한 수정 API") {
 
             When("PATCH $baseUrl/{id} - 유효한 요청") {
-                val request =
-                    PermissionUpdateRequest(
-                        name = "수정된 권한",
-                        description = "수정된 설명",
-                        permissions =
-                            listOf(
-                                PermissionRequest(
-                                    resourceType = "BUILDING",
-                                    resourceIds = emptyList(),
-                                    level = PermissionLevel.READ,
-                                ),
-                            ),
-                    )
+                val request = dummyPermissionUpdateRequest()
 
                 every { permissionService.update(1L, any()) } just runs
 

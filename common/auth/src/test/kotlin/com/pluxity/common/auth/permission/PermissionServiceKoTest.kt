@@ -3,10 +3,10 @@ package com.pluxity.common.auth.permission
 import com.pluxity.common.auth.permission.dto.PermissionCreateRequest
 import com.pluxity.common.auth.permission.dto.PermissionRequest
 import com.pluxity.common.auth.permission.dto.PermissionUpdateRequest
-import com.pluxity.common.auth.test.dummyPermission
 import com.pluxity.common.auth.user.repository.RolePermissionRepository
 import com.pluxity.common.core.constant.ErrorCode
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.test.entity.dummyPermission
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.core.spec.style.BehaviorSpec

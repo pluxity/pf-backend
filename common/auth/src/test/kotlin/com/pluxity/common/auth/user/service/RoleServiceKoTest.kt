@@ -2,7 +2,6 @@ package com.pluxity.common.auth.user.service
 
 import com.pluxity.common.auth.permission.Permission
 import com.pluxity.common.auth.permission.PermissionService
-import com.pluxity.common.auth.test.dummyRole
 import com.pluxity.common.auth.user.dto.RoleCreateRequest
 import com.pluxity.common.auth.user.dto.RoleUpdateRequest
 import com.pluxity.common.auth.user.entity.RolePermission
@@ -12,6 +11,7 @@ import com.pluxity.common.auth.user.repository.RoleRepository
 import com.pluxity.common.auth.user.repository.UserRoleRepository
 import com.pluxity.common.core.constant.ErrorCode
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.test.entity.dummyRole
 import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe

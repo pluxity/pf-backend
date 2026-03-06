@@ -4,13 +4,13 @@ import com.pluxity.common.auth.authentication.repository.RefreshTokenRepository
 import com.pluxity.common.auth.authentication.security.JwtProvider
 import com.pluxity.common.auth.properties.JwtProperties
 import com.pluxity.common.auth.properties.TokenProperties
-import com.pluxity.common.auth.test.dummyRefreshToken
-import com.pluxity.common.auth.test.dummySignInRequest
-import com.pluxity.common.auth.test.dummySignUpRequest
-import com.pluxity.common.auth.test.dummyUser
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.constant.ErrorCode
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.test.dto.dummySignInRequest
+import com.pluxity.common.test.dto.dummySignUpRequest
+import com.pluxity.common.test.entity.dummyRefreshToken
+import com.pluxity.common.test.entity.dummyUser
 import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
