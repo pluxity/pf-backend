@@ -3,6 +3,7 @@ package com.pluxity.safers.site.controller
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.core.response.BaseResponse
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.site.dto.SiteResponse
@@ -95,7 +96,7 @@ class SiteControllerTest(
                         location = "POLYGON ((126.96 37.55, 126.98 37.55, 126.98 37.56, 126.96 37.56, 126.96 37.55))",
                         thumbnailImage = null,
                         baseResponse =
-                            com.pluxity.common.core.response.BaseResponse(
+                            BaseResponse(
                                 createdAt = "2024-01-01T00:00:00",
                                 createdBy = "system",
                                 updatedAt = "2024-01-01T00:00:00",
@@ -155,7 +156,7 @@ class SiteControllerTest(
                                     location = "POLYGON ((126.96 37.55, 126.98 37.55, 126.98 37.56, 126.96 37.56, 126.96 37.55))",
                                     thumbnailImage = null,
                                     baseResponse =
-                                        com.pluxity.common.core.response.BaseResponse(
+                                        BaseResponse(
                                             createdAt = "2024-01-01T00:00:00",
                                             createdBy = "system",
                                             updatedAt = "2024-01-01T00:00:00",

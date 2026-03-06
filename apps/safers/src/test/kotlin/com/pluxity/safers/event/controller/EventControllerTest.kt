@@ -57,16 +57,7 @@ class EventControllerTest(
             }
 
             When("POST $baseUrl - 필수 필드 누락") {
-                val invalidRequest =
-                    mapOf(
-                        "event_id" to "",
-                        "name" to "",
-                        "snapshot" to "",
-                        "timestamp" to "2024-01-01T12:00:00",
-                        "category" to "DETECTION",
-                        "type" to "NO_HELMET",
-                        "track_id" to 12345,
-                    )
+                val invalidRequest = dummyEventCreateRequest(eventId = "", name = "", snapshot = "")
 
                 val result =
                     mockMvc.post(baseUrl) {
