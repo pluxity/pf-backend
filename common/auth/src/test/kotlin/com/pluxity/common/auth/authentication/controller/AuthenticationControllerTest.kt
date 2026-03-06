@@ -2,8 +2,8 @@ package com.pluxity.common.auth.authentication.controller
 
 import com.ninjasquad.springmockk.MockkBean
 import com.pluxity.common.auth.authentication.service.AuthenticationService
-import com.pluxity.common.auth.test.dummySignInRequest
-import com.pluxity.common.auth.test.dummySignUpRequest
+import com.pluxity.common.test.dto.dummySignInRequest
+import com.pluxity.common.test.dto.dummySignUpRequest
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.every
 import io.mockk.just
