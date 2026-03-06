@@ -34,11 +34,17 @@ class WeatherServiceTest :
                     verify {
                         repository.save(
                             match {
-                                it.measuredAt == "2026-03-06 12:00:00" &&
-                                    it.temperature == 15.5 &&
-                                    it.humidity == 60.0 &&
-                                    it.pm10 == 35 &&
-                                    it.pm25 == 15
+                                it.measuredAt == dto.measuredAt &&
+                                    it.temperature == dto.temperature &&
+                                    it.humidity == dto.humidity &&
+                                    it.windSpeed == dto.windSpeed &&
+                                    it.windDirection == dto.windDirection &&
+                                    it.rainfall == dto.rainfall &&
+                                    it.pm10 == dto.pm10 &&
+                                    it.pm25 == dto.pm25 &&
+                                    it.pm10Status == dto.pm10Status &&
+                                    it.pm25Status == dto.pm25Status &&
+                                    it.noise == dto.noise
                             },
                         )
                     }
