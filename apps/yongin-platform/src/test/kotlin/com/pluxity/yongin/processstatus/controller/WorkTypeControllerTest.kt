@@ -72,6 +72,7 @@ class WorkTypeControllerTest(
                 Then("201 Created와 ID가 반환된다") {
                     result.andExpect {
                         status { isCreated() }
+                        header { string("Location", "/process-statuses/work-types/1") }
                     }
                 }
             }
