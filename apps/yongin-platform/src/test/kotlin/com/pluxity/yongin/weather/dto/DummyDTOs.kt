@@ -1,5 +1,33 @@
 package com.pluxity.yongin.weather.dto
 
+fun dummyWeatherResponse(
+    id: Long? = 1L,
+    measuredAt: String? = "2026-01-01T00:00:00",
+    temperature: Double? = 15.0,
+    humidity: Double? = 60.0,
+    windSpeed: Double? = 3.5,
+    windDirection: String? = "NW",
+    rainfall: Int? = 0,
+    pm10: Int? = 30,
+    pm25: Int? = 15,
+    pm10Status: String? = "좋음",
+    pm25Status: String? = "좋음",
+    noise: Double? = 45.0,
+) = WeatherResponse(
+    id = id,
+    measuredAt = measuredAt,
+    temperature = temperature,
+    humidity = humidity,
+    windSpeed = windSpeed,
+    windDirection = windDirection,
+    rainfall = rainfall,
+    pm10 = pm10,
+    pm25 = pm25,
+    pm10Status = pm10Status,
+    pm25Status = pm25Status,
+    noise = noise,
+)
+
 fun dummyWeatherDataDto(
     measuredAt: String = "2026-03-06 12:00:00",
     temperature: Double = 15.5,

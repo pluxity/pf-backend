@@ -4,11 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.PageResponse
-import com.pluxity.common.file.dto.FileResponse
 import com.pluxity.safers.event.dto.EventResponse
 import com.pluxity.safers.event.dto.dummyEventCreateRequest
+import com.pluxity.safers.event.dto.dummyEventResponse
 import com.pluxity.safers.event.entity.EventCategory
-import com.pluxity.safers.event.entity.EventType
 import com.pluxity.safers.event.service.EventFacade
 import com.pluxity.safers.global.constant.SafersErrorCode
 import io.kotest.core.spec.style.BehaviorSpec
@@ -22,7 +21,6 @@ import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequ
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
-import java.time.LocalDateTime
 
 @WebMvcTest(EventController::class)
 class EventControllerTest(
@@ -78,20 +76,7 @@ class EventControllerTest(
         Given("이벤트 단건 조회 API") {
 
             When("GET $baseUrl/{id} - 존재하는 이벤트") {
-                val response =
-                    EventResponse(
-                        id = 1L,
-                        eventId = "EVT-20240101-001",
-                        timestamp = LocalDateTime.of(2024, 1, 1, 12, 0, 0),
-                        category = EventCategory.DETECTION,
-                        type = EventType.NO_HELMET,
-                        trackId = 12345L,
-                        name = "헬멧 미착용 감지",
-                        confidence = 0.95,
-                        path = "",
-                        snapshot = FileResponse(),
-                        video = FileResponse(),
-                    )
+                val response = dummyEventResponse()
 
                 every { eventFacade.findById(1L) } returns response
 
@@ -132,22 +117,7 @@ class EventControllerTest(
             When("GET $baseUrl - 페이징 조회") {
                 val pageResponse =
                     PageResponse(
-                        content =
-                            listOf(
-                                EventResponse(
-                                    id = 1L,
-                                    eventId = "EVT-20240101-001",
-                                    timestamp = LocalDateTime.of(2024, 1, 1, 12, 0, 0),
-                                    category = EventCategory.DETECTION,
-                                    type = EventType.NO_HELMET,
-                                    trackId = 12345L,
-                                    name = "헬멧 미착용 감지",
-                                    confidence = 0.95,
-                                    path = "",
-                                    snapshot = FileResponse(),
-                                    video = FileResponse(),
-                                ),
-                            ),
+                        content = listOf(dummyEventResponse()),
                         pageNumber = 1,
                         pageSize = 10,
                         totalElements = 1,

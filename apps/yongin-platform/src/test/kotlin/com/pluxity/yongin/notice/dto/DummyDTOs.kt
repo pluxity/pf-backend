@@ -1,5 +1,6 @@
 package com.pluxity.yongin.notice.dto
 
+import com.pluxity.common.core.response.BaseResponse
 import java.time.LocalDate
 
 fun dummyNoticeRequest(
@@ -16,4 +17,30 @@ fun dummyNoticeRequest(
     isAlways = isAlways,
     startDate = startDate,
     endDate = endDate,
+)
+
+fun dummyNoticeResponse(
+    id: Long = 1L,
+    title: String = "테스트 공지사항",
+    content: String? = "테스트 공지사항 내용입니다",
+    isVisible: Boolean = false,
+    isAlways: Boolean = false,
+    startDate: LocalDate? = null,
+    endDate: LocalDate? = null,
+    baseResponse: BaseResponse =
+        BaseResponse(
+            createdAt = "2026-01-01T00:00:00",
+            createdBy = "system",
+            updatedAt = "2026-01-01T00:00:00",
+            updatedBy = "system",
+        ),
+) = NoticeResponse(
+    id = id,
+    title = title,
+    content = content,
+    isVisible = isVisible,
+    isAlways = isAlways,
+    startDate = startDate,
+    endDate = endDate,
+    baseResponse = baseResponse,
 )
