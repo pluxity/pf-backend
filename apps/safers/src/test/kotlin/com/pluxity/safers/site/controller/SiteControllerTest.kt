@@ -3,11 +3,10 @@ package com.pluxity.safers.site.controller
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.response.BaseResponse
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.safers.global.constant.SafersErrorCode
-import com.pluxity.safers.site.dto.SiteResponse
 import com.pluxity.safers.site.dto.dummySiteRequest
+import com.pluxity.safers.site.dto.dummySiteResponse
 import com.pluxity.safers.site.entity.Region
 import com.pluxity.safers.site.service.SiteService
 import io.kotest.core.spec.style.BehaviorSpec
@@ -23,7 +22,6 @@ import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
-import java.time.LocalDate
 
 @WebMvcTest(SiteController::class)
 class SiteControllerTest(
@@ -83,26 +81,7 @@ class SiteControllerTest(
         Given("현장 단건 조회 API") {
 
             When("GET $baseUrl/{id} - 존재하는 현장") {
-                val response =
-                    SiteResponse(
-                        id = 1L,
-                        name = "서울역 현장",
-                        constructionStartDate = LocalDate.of(2024, 1, 1),
-                        constructionEndDate = LocalDate.of(2025, 12, 31),
-                        description = "서울역 리모델링 현장",
-                        region = Region.SEOUL,
-                        address = "서울특별시 용산구 한강대로 405",
-                        baseUrl = "https://example.com/api",
-                        location = "POLYGON ((126.96 37.55, 126.98 37.55, 126.98 37.56, 126.96 37.56, 126.96 37.55))",
-                        thumbnailImage = null,
-                        baseResponse =
-                            BaseResponse(
-                                createdAt = "2024-01-01T00:00:00",
-                                createdBy = "system",
-                                updatedAt = "2024-01-01T00:00:00",
-                                updatedBy = "system",
-                            ),
-                    )
+                val response = dummySiteResponse()
 
                 every { siteService.findById(1L) } returns response
 
@@ -142,28 +121,7 @@ class SiteControllerTest(
             When("GET $baseUrl - 페이징 조회") {
                 val pageResponse =
                     PageResponse(
-                        content =
-                            listOf(
-                                SiteResponse(
-                                    id = 1L,
-                                    name = "서울역 현장",
-                                    constructionStartDate = null,
-                                    constructionEndDate = null,
-                                    description = null,
-                                    region = Region.SEOUL,
-                                    address = null,
-                                    baseUrl = null,
-                                    location = "POLYGON ((126.96 37.55, 126.98 37.55, 126.98 37.56, 126.96 37.56, 126.96 37.55))",
-                                    thumbnailImage = null,
-                                    baseResponse =
-                                        BaseResponse(
-                                            createdAt = "2024-01-01T00:00:00",
-                                            createdBy = "system",
-                                            updatedAt = "2024-01-01T00:00:00",
-                                            updatedBy = "system",
-                                        ),
-                                ),
-                            ),
+                        content = listOf(dummySiteResponse()),
                         pageNumber = 1,
                         pageSize = 10,
                         totalElements = 1,

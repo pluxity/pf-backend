@@ -3,15 +3,12 @@ package com.pluxity.safers.cctv.controller
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.response.BaseResponse
 import com.pluxity.safers.cctv.config.CctvErrorCode
-import com.pluxity.safers.cctv.dto.CctvPlaybackResponse
-import com.pluxity.safers.cctv.dto.CctvResponse
 import com.pluxity.safers.cctv.dto.dummyCctvPlaybackRequest
+import com.pluxity.safers.cctv.dto.dummyCctvPlaybackResponse
+import com.pluxity.safers.cctv.dto.dummyCctvResponse
 import com.pluxity.safers.cctv.dto.dummyCctvUpdateRequest
 import com.pluxity.safers.cctv.service.CctvFacade
-import com.pluxity.safers.site.dto.SiteResponse
-import com.pluxity.safers.site.entity.Region
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.every
 import io.mockk.just
@@ -34,27 +31,6 @@ class CctvControllerTest(
 ) : BehaviorSpec({
 
         val baseUrl = "/cctvs"
-
-        val dummySiteResponse =
-            SiteResponse(
-                id = 1L,
-                name = "서울역 현장",
-                constructionStartDate = null,
-                constructionEndDate = null,
-                description = null,
-                region = Region.SEOUL,
-                address = null,
-                baseUrl = "http://media-server:9997",
-                location = "POLYGON ((126.96 37.55, 126.98 37.55, 126.98 37.56, 126.96 37.56, 126.96 37.55))",
-                thumbnailImage = null,
-                baseResponse =
-                    BaseResponse(
-                        createdAt = "2024-01-01T00:00:00",
-                        createdBy = "system",
-                        updatedAt = "2024-01-01T00:00:00",
-                        updatedBy = "system",
-                    ),
-            )
 
         Given("CCTV 동기화 API") {
 
@@ -95,25 +71,7 @@ class CctvControllerTest(
         Given("CCTV 목록 조회 API") {
 
             When("GET $baseUrl - siteId로 조회") {
-                val responses =
-                    listOf(
-                        CctvResponse(
-                            id = 1L,
-                            site = dummySiteResponse,
-                            streamName = "cam1",
-                            name = "1번 카메라",
-                            lon = 127.0,
-                            lat = 37.0,
-                            alt = 50.0,
-                            baseResponse =
-                                BaseResponse(
-                                    createdAt = "2024-01-01T00:00:00",
-                                    createdBy = "system",
-                                    updatedAt = "2024-01-01T00:00:00",
-                                    updatedBy = "system",
-                                ),
-                        ),
-                    )
+                val responses = listOf(dummyCctvResponse())
 
                 every { cctvFacade.findAll(1L) } returns responses
 
@@ -201,8 +159,7 @@ class CctvControllerTest(
             When("POST $baseUrl/{id}/playback - 유효한 요청") {
                 val request = dummyCctvPlaybackRequest()
 
-                every { cctvFacade.playback(1L, any()) } returns
-                    CctvPlaybackResponse(pathName = "playback-pb_38ae550d")
+                every { cctvFacade.playback(1L, any()) } returns dummyCctvPlaybackResponse()
 
                 val result =
                     mockMvc.post("$baseUrl/1/playback") {

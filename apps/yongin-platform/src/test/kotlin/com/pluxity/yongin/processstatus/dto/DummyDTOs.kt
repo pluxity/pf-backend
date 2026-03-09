@@ -3,6 +3,40 @@ package com.pluxity.yongin.processstatus.dto
 import com.pluxity.common.core.dto.PageSearchRequest
 import java.time.LocalDate
 
+fun dummyWorkTypeResponse(
+    id: Long = 1L,
+    name: String = "토공",
+) = WorkTypeResponse(
+    id = id,
+    name = name,
+)
+
+fun dummyProcessStatusResponse(
+    id: Long = 1L,
+    workDate: LocalDate = LocalDate.of(2026, 1, 15),
+    workType: WorkTypeResponse = dummyWorkTypeResponse(),
+    plannedRate: Int = 100,
+    actualRate: Int = 100,
+    isActive: Boolean = false,
+) = ProcessStatusResponse(
+    id = id,
+    workDate = workDate,
+    workType = workType,
+    plannedRate = plannedRate,
+    actualRate = actualRate,
+    isActive = isActive,
+)
+
+fun dummyProcessStatusImageResponse(fileId: Long? = 1L) =
+    ProcessStatusImageResponse(
+        fileId = fileId,
+    )
+
+fun dummyProcessStatusImageRequest(fileId: Long = 1L) =
+    ProcessStatusImageRequest(
+        fileId = fileId,
+    )
+
 fun dummyWorkTypeRequest(name: String = "토공") =
     WorkTypeRequest(
         name = name,

@@ -9,3 +9,8 @@ fun dummySystemSettingRequest(
     bimThumbnailFileId = bimThumbnailFileId,
     aerialViewFileId = aerialViewFileId,
 )
+
+fun dummySystemSettingResponse(rollingIntervalSeconds: Int = 30) =
+    SystemSettingResponse(
+        rollingIntervalSeconds = rollingIntervalSeconds,
+    )
