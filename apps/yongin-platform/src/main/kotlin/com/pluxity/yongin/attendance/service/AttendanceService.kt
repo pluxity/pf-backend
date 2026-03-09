@@ -4,7 +4,6 @@ import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.common.core.response.toPageResponse
-import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.yongin.attendance.dto.AttendanceExternalData
 import com.pluxity.yongin.attendance.dto.AttendanceResponse
 import com.pluxity.yongin.attendance.dto.AttendanceUpdateRequest
@@ -31,15 +30,7 @@ class AttendanceService(
         syncAttendanceData(externalData)
 
         val pageable = PageRequest.of(request.page - 1, request.size)
-        val page =
-            repository.findPageNotNull(pageable) {
-                select(entity(Attendance::class))
-                    .from(entity(Attendance::class))
-                    .orderBy(
-                        path(Attendance::attendanceDate).desc(),
-                        path(Attendance::id).asc(),
-                    )
-            }
+        val page = repository.findAllOrderByDateDescIdAsc(pageable)
         return page.toPageResponse { it.toResponse() }
     }
 

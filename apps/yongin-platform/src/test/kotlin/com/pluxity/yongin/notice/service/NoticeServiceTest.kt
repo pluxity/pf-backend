@@ -1,14 +1,9 @@
 package com.pluxity.yongin.notice.service
 
-import com.linecorp.kotlinjdsl.dsl.jpql.Jpql
-import com.linecorp.kotlinjdsl.querymodel.jpql.JpqlQueryable
-import com.linecorp.kotlinjdsl.querymodel.jpql.select.SelectQuery
 import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.yongin.global.constant.YonginErrorCode
 import com.pluxity.yongin.notice.dto.dummyNoticeRequest
-import com.pluxity.yongin.notice.entity.Notice
 import com.pluxity.yongin.notice.entity.dummyNotice
 import com.pluxity.yongin.notice.repository.NoticeRepository
 import io.kotest.assertions.throwables.shouldThrow
@@ -17,19 +12,15 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.verify
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import java.time.LocalDate
 
 class NoticeServiceTest :
     BehaviorSpec({
-
-        mockkStatic("com.pluxity.common.core.utils.KotlinJdslExtensionsKt")
 
         val repository: NoticeRepository = mockk()
         val service = NoticeService(repository)
@@ -48,10 +39,7 @@ class NoticeServiceTest :
                 val page = PageImpl(entities, pageable, entities.size.toLong())
 
                 every {
-                    repository.findPageNotNull(
-                        any<Pageable>(),
-                        any<Jpql.() -> JpqlQueryable<SelectQuery<Notice>>>(),
-                    )
+                    repository.findAllOrderByIdDesc(any())
                 } returns page
 
                 val result = service.findAll(PageSearchRequest(page = 1, size = 9999))
@@ -213,9 +201,7 @@ class NoticeServiceTest :
                     )
 
                 every {
-                    repository.findAll(
-                        init = any<Jpql.() -> JpqlQueryable<SelectQuery<Notice>>>(),
-                    )
+                    repository.findAllActive(any())
                 } returns entities
 
                 val result = service.findActive()

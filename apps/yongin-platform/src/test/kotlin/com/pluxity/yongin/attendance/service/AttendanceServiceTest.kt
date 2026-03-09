@@ -1,11 +1,7 @@
 package com.pluxity.yongin.attendance.service
 
-import com.linecorp.kotlinjdsl.dsl.jpql.Jpql
-import com.linecorp.kotlinjdsl.querymodel.jpql.JpqlQueryable
-import com.linecorp.kotlinjdsl.querymodel.jpql.select.SelectQuery
 import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.yongin.attendance.client.AttendanceApiClient
 import com.pluxity.yongin.attendance.dto.AttendanceExternalData
 import com.pluxity.yongin.attendance.dto.AttendanceUpdateRequest
@@ -18,17 +14,13 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.verify
 import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import java.time.LocalDate
 
 class AttendanceServiceTest :
     BehaviorSpec({
-
-        mockkStatic("com.pluxity.common.core.utils.KotlinJdslExtensionsKt")
 
         val repository: AttendanceRepository = mockk(relaxed = true)
         val apiClient: AttendanceApiClient = mockk()
@@ -115,10 +107,7 @@ class AttendanceServiceTest :
                 every { apiClient.fetchAttendanceData() } returns externalData
                 every { repository.findByAttendanceDateAndDeviceNameIn(today, any()) } returns emptyList()
                 every {
-                    repository.findPageNotNull(
-                        any<Pageable>(),
-                        any<Jpql.() -> JpqlQueryable<SelectQuery<Attendance>>>(),
-                    )
+                    repository.findAllOrderByDateDescIdAsc(any())
                 } returns PageImpl(savedEntities)
 
                 val result = facade.findAllWithSync(request)
@@ -139,10 +128,7 @@ class AttendanceServiceTest :
                 every { apiClient.fetchAttendanceData() } returns externalData
                 every { repository.findByAttendanceDateAndDeviceNameIn(today, any()) } returns listOf(existingEntity)
                 every {
-                    repository.findPageNotNull(
-                        any<Pageable>(),
-                        any<Jpql.() -> JpqlQueryable<SelectQuery<Attendance>>>(),
-                    )
+                    repository.findAllOrderByDateDescIdAsc(any())
                 } returns PageImpl(listOf(existingEntity))
 
                 facade.findAllWithSync(request)
@@ -156,10 +142,7 @@ class AttendanceServiceTest :
             When("외부 API 데이터가 없으면") {
                 every { apiClient.fetchAttendanceData() } returns emptyList()
                 every {
-                    repository.findPageNotNull(
-                        any<Pageable>(),
-                        any<Jpql.() -> JpqlQueryable<SelectQuery<Attendance>>>(),
-                    )
+                    repository.findAllOrderByDateDescIdAsc(any())
                 } returns PageImpl(emptyList())
 
                 facade.findAllWithSync(request)
