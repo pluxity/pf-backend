@@ -2,10 +2,10 @@ package com.pluxity.safers.cctv.client
 
 import com.pluxity.common.core.config.WebClientFactory
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.safers.cctv.config.CctvErrorCode
 import com.pluxity.safers.cctv.dto.MediaServerPathItem
 import com.pluxity.safers.cctv.dto.MediaServerPathListResponse
 import com.pluxity.safers.cctv.dto.MediaServerPlaybackResponse
+import com.pluxity.safers.global.constant.SafersErrorCode
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
@@ -57,7 +57,7 @@ class CctvApiClient(
             ).retrieve()
             .bodyToMono<MediaServerPlaybackResponse>()
             .block()
-            ?: throw CustomException(CctvErrorCode.PLAYBACK_REQUEST_FAILED)
+            ?: throw CustomException(SafersErrorCode.PLAYBACK_REQUEST_FAILED)
     }
 
     fun deletePlayback(

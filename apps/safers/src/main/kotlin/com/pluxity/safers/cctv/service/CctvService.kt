@@ -3,13 +3,13 @@ package com.pluxity.safers.cctv.service
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.file.extensions.getFileMapById
 import com.pluxity.common.file.service.FileService
-import com.pluxity.safers.cctv.config.CctvErrorCode
 import com.pluxity.safers.cctv.dto.CctvResponse
 import com.pluxity.safers.cctv.dto.CctvUpdateRequest
 import com.pluxity.safers.cctv.dto.MediaServerPathItem
 import com.pluxity.safers.cctv.dto.toResponse
 import com.pluxity.safers.cctv.entity.Cctv
 import com.pluxity.safers.cctv.repository.CctvRepository
+import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.site.entity.Site
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.data.repository.findByIdOrNull
@@ -93,9 +93,9 @@ class CctvService(
 
     fun findByIdWithSite(id: Long): Cctv =
         repository.findByIdWithSite(id)
-            ?: throw CustomException(CctvErrorCode.NOT_FOUND_CCTV, id)
+            ?: throw CustomException(SafersErrorCode.NOT_FOUND_CCTV, id)
 
     private fun getById(id: Long): Cctv =
         repository.findByIdOrNull(id)
-            ?: throw CustomException(CctvErrorCode.NOT_FOUND_CCTV, id)
+            ?: throw CustomException(SafersErrorCode.NOT_FOUND_CCTV, id)
 }

@@ -2,13 +2,13 @@ package com.pluxity.yongin.cctv.service
 
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.yongin.cctv.client.CctvApiClient
-import com.pluxity.yongin.cctv.config.CctvErrorCode
 import com.pluxity.yongin.cctv.dto.CctvResponse
 import com.pluxity.yongin.cctv.dto.CctvUpdateRequest
 import com.pluxity.yongin.cctv.dto.toResponse
 import com.pluxity.yongin.cctv.entity.Cctv
 import com.pluxity.yongin.cctv.repository.CctvBookmarkRepository
 import com.pluxity.yongin.cctv.repository.CctvRepository
+import com.pluxity.yongin.global.constant.YonginErrorCode
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -73,5 +73,5 @@ class CctvService(
 
     private fun getById(id: Long): Cctv =
         repository.findByIdOrNull(id)
-            ?: throw CustomException(CctvErrorCode.NOT_FOUND_CCTV, id)
+            ?: throw CustomException(YonginErrorCode.NOT_FOUND_CCTV, id)
 }

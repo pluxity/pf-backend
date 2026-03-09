@@ -2,11 +2,11 @@ package com.pluxity.yongin.cctv.controller
 
 import com.ninjasquad.springmockk.MockkBean
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.yongin.cctv.config.CctvErrorCode
 import com.pluxity.yongin.cctv.dto.dummyCctvBookmarkOrderRequest
 import com.pluxity.yongin.cctv.dto.dummyCctvBookmarkRequest
 import com.pluxity.yongin.cctv.dto.dummyCctvBookmarkResponse
 import com.pluxity.yongin.cctv.service.CctvBookmarkService
+import com.pluxity.yongin.global.constant.YonginErrorCode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.every
 import io.mockk.just
@@ -138,7 +138,7 @@ class CctvBookmarkControllerTest(
         }
 
         Given("존재하지 않는 ID로 즐겨찾기 삭제 요청하면") {
-            every { service.delete(any()) } throws CustomException(CctvErrorCode.NOT_FOUND_CCTV_BOOKMARK, 999L)
+            every { service.delete(any()) } throws CustomException(YonginErrorCode.NOT_FOUND_CCTV_BOOKMARK, 999L)
 
             When("DELETE $baseUrl/{id} 요청 시") {
                 val result =
@@ -156,7 +156,7 @@ class CctvBookmarkControllerTest(
         }
 
         Given("이미 즐겨찾기된 CCTV를 등록 요청하면") {
-            every { service.create(any()) } throws CustomException(CctvErrorCode.ALREADY_BOOKMARK)
+            every { service.create(any()) } throws CustomException(YonginErrorCode.ALREADY_BOOKMARK)
 
             When("POST $baseUrl 요청 시") {
                 val request = dummyCctvBookmarkRequest()
@@ -178,7 +178,7 @@ class CctvBookmarkControllerTest(
         }
 
         Given("즐겨찾기 개수 제한을 초과하여 등록 요청하면") {
-            every { service.create(any()) } throws CustomException(CctvErrorCode.EXCEED_BOOKMARK_LIMIT)
+            every { service.create(any()) } throws CustomException(YonginErrorCode.EXCEED_BOOKMARK_LIMIT)
 
             When("POST $baseUrl 요청 시") {
                 val request = dummyCctvBookmarkRequest()
@@ -200,7 +200,7 @@ class CctvBookmarkControllerTest(
         }
 
         Given("존재하지 않는 즐겨찾기로 순서 변경 요청하면") {
-            every { service.updateOrder(any()) } throws CustomException(CctvErrorCode.NOT_FOUND_CCTV_BOOKMARK, 999L)
+            every { service.updateOrder(any()) } throws CustomException(YonginErrorCode.NOT_FOUND_CCTV_BOOKMARK, 999L)
 
             When("PATCH $baseUrl/order 요청 시") {
                 val request = dummyCctvBookmarkOrderRequest()

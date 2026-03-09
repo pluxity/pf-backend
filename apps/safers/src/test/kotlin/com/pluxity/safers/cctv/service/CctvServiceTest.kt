@@ -3,12 +3,12 @@ package com.pluxity.safers.cctv.service
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.file.service.FileService
 import com.pluxity.safers.cctv.client.CctvApiClient
-import com.pluxity.safers.cctv.config.CctvErrorCode
 import com.pluxity.safers.cctv.dto.CctvUpdateRequest
 import com.pluxity.safers.cctv.dto.MediaServerPathItem
 import com.pluxity.safers.cctv.entity.Cctv
 import com.pluxity.safers.cctv.entity.dummyCctv
 import com.pluxity.safers.cctv.repository.CctvRepository
+import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.site.entity.dummySite
 import com.pluxity.safers.site.repository.SiteRepository
 import io.kotest.assertions.throwables.shouldThrow
@@ -113,7 +113,7 @@ class CctvServiceTest :
                         shouldThrow<CustomException> {
                             facade.sync(siteId = 999L)
                         }
-                    exception.code shouldBe CctvErrorCode.NOT_FOUND_SITE
+                    exception.code shouldBe SafersErrorCode.NOT_FOUND_SITE
                 }
             }
         }
@@ -178,7 +178,7 @@ class CctvServiceTest :
                                 CctvUpdateRequest(name = "test", lon = null, lat = null, alt = null),
                             )
                         }
-                    exception.code shouldBe CctvErrorCode.NOT_FOUND_CCTV
+                    exception.code shouldBe SafersErrorCode.NOT_FOUND_CCTV
                 }
             }
         }
