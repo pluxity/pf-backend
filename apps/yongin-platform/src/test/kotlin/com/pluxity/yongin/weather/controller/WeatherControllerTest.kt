@@ -53,7 +53,10 @@ class WeatherControllerTest(
                     mockMvc.post("/weather/webhook") {
                         contentType = MediaType.APPLICATION_FORM_URLENCODED
                         param("type", "WEATHER")
-                        param("data", "{\"test\": 1}")
+                        param(
+                            "data",
+                            """{"measuredAt":"2026-03-06 12:00:00","temperature":15.5,"humidity":60.0,"windSpeed":3.5,"windDirection":"북서","rainfall":0,"pm10":35,"pm25":15,"pm10Status":"보통","pm25Status":"좋음","noise":45.0}""",
+                        )
                         with(csrf())
                         with(user("tester"))
                     }

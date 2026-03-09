@@ -8,8 +8,8 @@ import java.time.LocalDate
 fun dummySiteResponse(
     id: Long = 1L,
     name: String = "서울역 현장",
-    constructionStartDate: LocalDate? = LocalDate.of(2024, 1, 1),
-    constructionEndDate: LocalDate? = LocalDate.of(2025, 12, 31),
+    constructionStartDate: LocalDate? = LocalDate.of(2026, 1, 1),
+    constructionEndDate: LocalDate? = LocalDate.of(2026, 12, 31),
     description: String? = "서울역 리모델링 현장",
     region: Region? = Region.SEOUL,
     address: String? = "서울특별시 용산구 한강대로 405",
@@ -18,9 +18,9 @@ fun dummySiteResponse(
     thumbnailImage: FileResponse? = null,
     baseResponse: BaseResponse =
         BaseResponse(
-            createdAt = "2024-01-01T00:00:00",
+            createdAt = "2026-01-01T00:00:00",
             createdBy = "system",
-            updatedAt = "2024-01-01T00:00:00",
+            updatedAt = "2026-01-01T00:00:00",
             updatedBy = "system",
         ),
 ): SiteResponse =
@@ -40,8 +40,8 @@ fun dummySiteResponse(
 
 fun dummySiteRequest(
     name: String = "서울역 현장",
-    constructionStartDate: LocalDate? = LocalDate.of(2024, 1, 1),
-    constructionEndDate: LocalDate? = LocalDate.of(2025, 12, 31),
+    constructionStartDate: LocalDate? = LocalDate.of(2026, 1, 1),
+    constructionEndDate: LocalDate? = LocalDate.of(2026, 12, 31),
     description: String? = "서울역 리모델링 현장",
     region: Region? = Region.SEOUL,
     address: String? = "서울특별시 용산구 한강대로 405",

@@ -22,7 +22,7 @@ fun dummyGoalResponse(
     previousCumulativeQuantity: Int = 750,
     targetQuantity: Int = 100,
     workQuantity: Int = 50,
-    startDate: LocalDate = LocalDate.of(2025, 1, 1),
+    startDate: LocalDate = LocalDate.of(2026, 1, 1),
     completionDate: LocalDate = LocalDate.of(2026, 12, 31),
     plannedWorkDays: Int = 365,
     delayDays: Int = 0,

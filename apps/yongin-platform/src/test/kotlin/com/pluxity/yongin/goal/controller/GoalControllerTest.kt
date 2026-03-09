@@ -1,7 +1,9 @@
 package com.pluxity.yongin.goal.controller
 
 import com.ninjasquad.springmockk.MockkBean
+import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.PageResponse
+import com.pluxity.yongin.global.constant.YonginErrorCode
 import com.pluxity.yongin.goal.dto.dummyGoalBulkRequest
 import com.pluxity.yongin.goal.dto.dummyGoalResponse
 import com.pluxity.yongin.goal.service.GoalService
@@ -102,6 +104,28 @@ class GoalControllerTest(
                 Then("204 No Content가 반환된다") {
                     result.andExpect {
                         status { isNoContent() }
+                    }
+                }
+            }
+        }
+
+        Given("존재하지 않는 목표관리로 일괄 저장 요청하면") {
+            every { service.saveOrUpdateAll(any()) } throws CustomException(YonginErrorCode.NOT_FOUND_GOAL, 999L)
+
+            When("PUT $baseUrl 요청 시") {
+                val request = dummyGoalBulkRequest()
+
+                val result =
+                    mockMvc.put(baseUrl) {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = objectMapper.writeValueAsString(request)
+                        with(csrf())
+                        with(user("tester"))
+                    }
+
+                Then("404 Not Found를 반환한다") {
+                    result.andExpect {
+                        status { isNotFound() }
                     }
                 }
             }

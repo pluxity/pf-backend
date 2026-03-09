@@ -94,7 +94,7 @@ class EventControllerTest(
                     result.andExpect {
                         status { isOk() }
                         jsonPath("$.data.id") { value(1) }
-                        jsonPath("$.data.eventId") { value("EVT-20240101-001") }
+                        jsonPath("$.data.eventId") { value("EVT-20260101-001") }
                         jsonPath("$.data.name") { value("헬멧 미착용 감지") }
                     }
                 }

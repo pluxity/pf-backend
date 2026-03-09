@@ -1,6 +1,8 @@
 package com.pluxity.yongin.cctv.controller
 
 import com.ninjasquad.springmockk.MockkBean
+import com.pluxity.common.core.exception.CustomException
+import com.pluxity.yongin.cctv.config.CctvErrorCode
 import com.pluxity.yongin.cctv.dto.dummyCctvBookmarkOrderRequest
 import com.pluxity.yongin.cctv.dto.dummyCctvBookmarkRequest
 import com.pluxity.yongin.cctv.dto.dummyCctvBookmarkResponse
@@ -130,6 +132,90 @@ class CctvBookmarkControllerTest(
                 Then("204 No Content가 반환된다") {
                     result.andExpect {
                         status { isNoContent() }
+                    }
+                }
+            }
+        }
+
+        Given("존재하지 않는 ID로 즐겨찾기 삭제 요청하면") {
+            every { service.delete(any()) } throws CustomException(CctvErrorCode.NOT_FOUND_CCTV_BOOKMARK, 999L)
+
+            When("DELETE $baseUrl/{id} 요청 시") {
+                val result =
+                    mockMvc.delete("$baseUrl/999") {
+                        with(csrf())
+                        with(user("tester"))
+                    }
+
+                Then("404 Not Found를 반환한다") {
+                    result.andExpect {
+                        status { isNotFound() }
+                    }
+                }
+            }
+        }
+
+        Given("이미 즐겨찾기된 CCTV를 등록 요청하면") {
+            every { service.create(any()) } throws CustomException(CctvErrorCode.ALREADY_BOOKMARK)
+
+            When("POST $baseUrl 요청 시") {
+                val request = dummyCctvBookmarkRequest()
+
+                val result =
+                    mockMvc.post(baseUrl) {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = objectMapper.writeValueAsString(request)
+                        with(csrf())
+                        with(user("tester"))
+                    }
+
+                Then("400 Bad Request를 반환한다") {
+                    result.andExpect {
+                        status { isBadRequest() }
+                    }
+                }
+            }
+        }
+
+        Given("즐겨찾기 개수 제한을 초과하여 등록 요청하면") {
+            every { service.create(any()) } throws CustomException(CctvErrorCode.EXCEED_BOOKMARK_LIMIT)
+
+            When("POST $baseUrl 요청 시") {
+                val request = dummyCctvBookmarkRequest()
+
+                val result =
+                    mockMvc.post(baseUrl) {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = objectMapper.writeValueAsString(request)
+                        with(csrf())
+                        with(user("tester"))
+                    }
+
+                Then("400 Bad Request를 반환한다") {
+                    result.andExpect {
+                        status { isBadRequest() }
+                    }
+                }
+            }
+        }
+
+        Given("존재하지 않는 즐겨찾기로 순서 변경 요청하면") {
+            every { service.updateOrder(any()) } throws CustomException(CctvErrorCode.NOT_FOUND_CCTV_BOOKMARK, 999L)
+
+            When("PATCH $baseUrl/order 요청 시") {
+                val request = dummyCctvBookmarkOrderRequest()
+
+                val result =
+                    mockMvc.patch("$baseUrl/order") {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = objectMapper.writeValueAsString(request)
+                        with(csrf())
+                        with(user("tester"))
+                    }
+
+                Then("404 Not Found를 반환한다") {
+                    result.andExpect {
+                        status { isNotFound() }
                     }
                 }
             }
