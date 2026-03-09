@@ -161,7 +161,7 @@ class EventServiceTest :
 
                 Then("이벤트 정보가 반환된다") {
                     result.id shouldBe 1L
-                    result.eventId shouldBe "EVT-20240101-001"
+                    result.eventId shouldBe "EVT-20260101-001"
                     result.name shouldBe "헬멧 미착용 감지"
                     result.snapshot shouldBe snapshotFileResponse
                     result.video shouldBe videoFileResponse

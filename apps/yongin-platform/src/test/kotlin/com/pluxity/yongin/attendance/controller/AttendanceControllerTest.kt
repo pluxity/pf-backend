@@ -1,10 +1,12 @@
 package com.pluxity.yongin.attendance.controller
 
 import com.ninjasquad.springmockk.MockkBean
+import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.yongin.attendance.dto.dummyAttendanceResponse
 import com.pluxity.yongin.attendance.dto.dummyAttendanceUpdateRequest
 import com.pluxity.yongin.attendance.service.AttendanceFacade
+import com.pluxity.yongin.global.constant.YonginErrorCode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.every
 import io.mockk.just
@@ -118,6 +120,28 @@ class AttendanceControllerTest(
                 Then("400 Bad Request가 반환된다") {
                     result.andExpect {
                         status { isBadRequest() }
+                    }
+                }
+            }
+        }
+
+        Given("존재하지 않는 ID로 작업내용 수정 요청하면") {
+            every { service.updateWorkContent(any(), any()) } throws CustomException(YonginErrorCode.NOT_FOUND_ATTENDANCE, 999L)
+
+            When("PATCH $baseUrl/{id} 요청 시") {
+                val request = dummyAttendanceUpdateRequest()
+
+                val result =
+                    mockMvc.patch("$baseUrl/999") {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = objectMapper.writeValueAsString(request)
+                        with(csrf())
+                        with(user("tester"))
+                    }
+
+                Then("404 Not Found를 반환한다") {
+                    result.andExpect {
+                        status { isNotFound() }
                     }
                 }
             }

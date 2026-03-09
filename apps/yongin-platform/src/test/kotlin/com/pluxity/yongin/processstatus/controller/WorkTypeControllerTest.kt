@@ -2,6 +2,8 @@ package com.pluxity.yongin.processstatus.controller
 
 import com.ninjasquad.springmockk.MockkBean
 import com.pluxity.common.core.aop.ResponseCreatedAspect
+import com.pluxity.common.core.exception.CustomException
+import com.pluxity.yongin.global.constant.YonginErrorCode
 import com.pluxity.yongin.processstatus.dto.dummyWorkTypeRequest
 import com.pluxity.yongin.processstatus.dto.dummyWorkTypeResponse
 import com.pluxity.yongin.processstatus.service.WorkTypeService
@@ -110,6 +112,42 @@ class WorkTypeControllerTest(
                 Then("204 No Content가 반환된다") {
                     result.andExpect {
                         status { isNoContent() }
+                    }
+                }
+            }
+        }
+
+        Given("존재하지 않는 ID로 공정명 삭제 요청하면") {
+            every { service.delete(any()) } throws CustomException(YonginErrorCode.NOT_FOUND_WORK_TYPE, 999L)
+
+            When("DELETE $baseUrl/{id} 요청 시") {
+                val result =
+                    mockMvc.delete("$baseUrl/999") {
+                        with(csrf())
+                        with(user("tester"))
+                    }
+
+                Then("404 Not Found를 반환한다") {
+                    result.andExpect {
+                        status { isNotFound() }
+                    }
+                }
+            }
+        }
+
+        Given("공정현황이 등록된 공정명을 삭제 요청하면") {
+            every { service.delete(any()) } throws CustomException(YonginErrorCode.WORK_TYPE_HAS_PROCESS_STATUS)
+
+            When("DELETE $baseUrl/{id} 요청 시") {
+                val result =
+                    mockMvc.delete("$baseUrl/1") {
+                        with(csrf())
+                        with(user("tester"))
+                    }
+
+                Then("400 Bad Request를 반환한다") {
+                    result.andExpect {
+                        status { isBadRequest() }
                     }
                 }
             }

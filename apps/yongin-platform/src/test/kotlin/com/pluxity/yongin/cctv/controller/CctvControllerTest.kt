@@ -1,6 +1,8 @@
 package com.pluxity.yongin.cctv.controller
 
 import com.ninjasquad.springmockk.MockkBean
+import com.pluxity.common.core.exception.CustomException
+import com.pluxity.yongin.cctv.config.CctvErrorCode
 import com.pluxity.yongin.cctv.dto.dummyCctvResponse
 import com.pluxity.yongin.cctv.dto.dummyCctvUpdateRequest
 import com.pluxity.yongin.cctv.service.CctvService
@@ -86,6 +88,28 @@ class CctvControllerTest(
                 Then("204 No Content가 반환된다") {
                     result.andExpect {
                         status { isNoContent() }
+                    }
+                }
+            }
+        }
+
+        Given("존재하지 않는 ID로 CCTV 수정 요청하면") {
+            every { service.update(any(), any()) } throws CustomException(CctvErrorCode.NOT_FOUND_CCTV, 999L)
+
+            When("PATCH $baseUrl/{id} 요청 시") {
+                val request = dummyCctvUpdateRequest()
+
+                val result =
+                    mockMvc.patch("$baseUrl/999") {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = objectMapper.writeValueAsString(request)
+                        with(csrf())
+                        with(user("tester"))
+                    }
+
+                Then("404 Not Found를 반환한다") {
+                    result.andExpect {
+                        status { isNotFound() }
                     }
                 }
             }

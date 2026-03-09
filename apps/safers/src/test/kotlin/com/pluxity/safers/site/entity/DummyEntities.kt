@@ -19,8 +19,8 @@ fun dummyPolygon(wkt: String = "POLYGON ((126.96 37.55, 126.98 37.55, 126.98 37.
 fun dummySite(
     id: Long? = 1L,
     name: String = "서울역 현장",
-    constructionStartDate: LocalDate? = LocalDate.of(2024, 1, 1),
-    constructionEndDate: LocalDate? = LocalDate.of(2025, 12, 31),
+    constructionStartDate: LocalDate? = LocalDate.of(2026, 1, 1),
+    constructionEndDate: LocalDate? = LocalDate.of(2026, 12, 31),
     description: String? = "서울역 리모델링 현장",
     region: Region? = Region.SEOUL,
     address: String? = "서울특별시 용산구 한강대로 405",

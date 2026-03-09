@@ -2,6 +2,8 @@ package com.pluxity.yongin.goal.controller
 
 import com.ninjasquad.springmockk.MockkBean
 import com.pluxity.common.core.aop.ResponseCreatedAspect
+import com.pluxity.common.core.exception.CustomException
+import com.pluxity.yongin.global.constant.YonginErrorCode
 import com.pluxity.yongin.goal.dto.dummyConstructionSectionRequest
 import com.pluxity.yongin.goal.dto.dummyConstructionSectionResponse
 import com.pluxity.yongin.goal.service.ConstructionSectionService
@@ -110,6 +112,42 @@ class ConstructionSectionControllerTest(
                 Then("204 No Content가 반환된다") {
                     result.andExpect {
                         status { isNoContent() }
+                    }
+                }
+            }
+        }
+
+        Given("존재하지 않는 ID로 시공구간 삭제 요청하면") {
+            every { service.delete(any()) } throws CustomException(YonginErrorCode.NOT_FOUND_CONSTRUCTION_SECTION, 999L)
+
+            When("DELETE $baseUrl/{id} 요청 시") {
+                val result =
+                    mockMvc.delete("$baseUrl/999") {
+                        with(csrf())
+                        with(user("tester"))
+                    }
+
+                Then("404 Not Found를 반환한다") {
+                    result.andExpect {
+                        status { isNotFound() }
+                    }
+                }
+            }
+        }
+
+        Given("목표관리가 등록된 시공구간을 삭제 요청하면") {
+            every { service.delete(any()) } throws CustomException(YonginErrorCode.CONSTRUCTION_SECTION_HAS_GOAL)
+
+            When("DELETE $baseUrl/{id} 요청 시") {
+                val result =
+                    mockMvc.delete("$baseUrl/1") {
+                        with(csrf())
+                        with(user("tester"))
+                    }
+
+                Then("400 Bad Request를 반환한다") {
+                    result.andExpect {
+                        status { isBadRequest() }
                     }
                 }
             }

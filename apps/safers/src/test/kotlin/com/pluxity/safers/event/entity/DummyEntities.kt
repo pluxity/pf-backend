@@ -5,8 +5,8 @@ import java.time.LocalDateTime
 
 fun dummyEvent(
     id: Long? = 1L,
-    eventId: String = "EVT-20240101-001",
-    eventTimestamp: LocalDateTime = LocalDateTime.of(2024, 1, 1, 12, 0, 0),
+    eventId: String = "EVT-20260101-001",
+    eventTimestamp: LocalDateTime = LocalDateTime.of(2026, 1, 1, 12, 0, 0),
     category: EventCategory = EventCategory.DETECTION,
     type: EventType = EventType.NO_HELMET,
     trackId: Long = 12345L,
