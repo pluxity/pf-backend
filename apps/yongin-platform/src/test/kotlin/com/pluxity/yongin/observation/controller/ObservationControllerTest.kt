@@ -103,7 +103,7 @@ class ObservationControllerTest(
                         with(user("tester"))
                     }
 
-                Then("201 Created가 반환된다") {
+                Then("200 OK와 ID가 반환된다") {
                     result.andExpect {
                         status { isOk() }
                         jsonPath("$") { value(1) }
