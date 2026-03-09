@@ -1,6 +1,7 @@
 package com.pluxity.safers.site.dto
 
 import com.pluxity.common.core.response.BaseResponse
+import com.pluxity.common.file.dto.FileResponse
 import com.pluxity.safers.site.entity.Region
 import java.time.LocalDate
 
@@ -14,6 +15,7 @@ fun dummySiteResponse(
     address: String? = "서울특별시 용산구 한강대로 405",
     baseUrl: String? = "https://example.com/api",
     location: String = "POLYGON ((126.96 37.55, 126.98 37.55, 126.98 37.56, 126.96 37.56, 126.96 37.55))",
+    thumbnailImage: FileResponse? = null,
     baseResponse: BaseResponse =
         BaseResponse(
             createdAt = "2024-01-01T00:00:00",
@@ -32,7 +34,7 @@ fun dummySiteResponse(
         address = address,
         baseUrl = baseUrl,
         location = location,
-        thumbnailImage = null,
+        thumbnailImage = thumbnailImage,
         baseResponse = baseResponse,
     )
 
