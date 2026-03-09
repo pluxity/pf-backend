@@ -1,7 +1,6 @@
 package com.pluxity.safers.cctv.service
 
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.utils.findAllNotNull
 import com.pluxity.common.file.extensions.getFileMapById
 import com.pluxity.common.file.service.FileService
 import com.pluxity.safers.cctv.config.CctvErrorCode
@@ -72,16 +71,7 @@ class CctvService(
     }
 
     fun findAll(siteId: Long? = null): List<CctvResponse> {
-        val cctvList =
-            repository.findAllNotNull {
-                select(entity(Cctv::class))
-                    .from(
-                        entity(Cctv::class),
-                        fetchJoin(Cctv::site),
-                    ).whereAnd(
-                        siteId?.let { path(Cctv::site)(Site::id).eq(it) },
-                    ).orderBy(path(Cctv::name).asc())
-            }
+        val cctvList = repository.findAllWithSite(siteId)
 
         val thumbnailFileMap = fileService.getFileMapById(cctvList) { it.site.thumbnailImageId }
 

@@ -1,7 +1,6 @@
 package com.pluxity.safers.cctv.service
 
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.utils.findAllNotNull
 import com.pluxity.common.file.service.FileService
 import com.pluxity.safers.cctv.client.CctvApiClient
 import com.pluxity.safers.cctv.config.CctvErrorCode
@@ -18,7 +17,6 @@ import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.verify
 import org.springframework.data.repository.findByIdOrNull
 
@@ -33,8 +31,6 @@ class CctvServiceTest :
         val facade = CctvFacade(service, siteRepository, apiClient)
 
         val site = dummySite(id = 1L, baseUrl = "http://media-server:9997")
-
-        mockkStatic("com.pluxity.common.core.utils.KotlinJdslExtensionsKt")
 
         Given("CCTV 동기화") {
 
@@ -131,7 +127,7 @@ class CctvServiceTest :
                         dummyCctv(id = 1L, site = site, streamName = "cam2", name = "B 카메라"),
                     )
 
-                every { repository.findAllNotNull<Cctv>(any()) } returns entities
+                every { repository.findAllWithSite(1L) } returns entities
 
                 val result = service.findAll(siteId = 1L)
 
@@ -143,7 +139,7 @@ class CctvServiceTest :
             }
 
             When("CCTV가 없으면") {
-                every { repository.findAllNotNull<Cctv>(any()) } returns emptyList()
+                every { repository.findAllWithSite(1L) } returns emptyList()
 
                 val result = service.findAll(siteId = 1L)
 
