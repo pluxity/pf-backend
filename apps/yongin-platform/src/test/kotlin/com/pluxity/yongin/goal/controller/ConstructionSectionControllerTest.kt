@@ -72,6 +72,7 @@ class ConstructionSectionControllerTest(
                 Then("201 Created와 ID가 반환된다") {
                     result.andExpect {
                         status { isCreated() }
+                        header { string("Location", "/goals/construction-sections/1") }
                     }
                 }
             }

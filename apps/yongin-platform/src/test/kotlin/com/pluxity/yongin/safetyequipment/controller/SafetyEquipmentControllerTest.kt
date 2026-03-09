@@ -112,6 +112,7 @@ class SafetyEquipmentControllerTest(
                 Then("201 Created가 반환된다") {
                     result.andExpect {
                         status { isCreated() }
+                        header { string("Location", "/safety-equipments/1") }
                     }
                 }
             }
