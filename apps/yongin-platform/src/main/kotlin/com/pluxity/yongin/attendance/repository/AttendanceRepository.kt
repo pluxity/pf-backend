@@ -1,6 +1,5 @@
 package com.pluxity.yongin.attendance.repository
 
-import com.linecorp.kotlinjdsl.support.spring.data.jpa.repository.KotlinJdslJpqlExecutor
 import com.pluxity.yongin.attendance.entity.Attendance
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
@@ -8,7 +7,7 @@ import java.time.LocalDate
 
 interface AttendanceRepository :
     JpaRepository<Attendance, Long>,
-    KotlinJdslJpqlExecutor {
+    AttendanceCustomRepository {
     fun findByAttendanceDateAndDeviceNameIn(
         attendanceDate: LocalDate,
         deviceNames: List<String>,

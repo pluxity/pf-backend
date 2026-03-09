@@ -5,7 +5,6 @@ import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.common.core.response.toPageResponse
 import com.pluxity.common.core.utils.findAllByIdsOrThrow
-import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.yongin.global.constant.YonginErrorCode
 import com.pluxity.yongin.goal.dto.GoalBulkRequest
 import com.pluxity.yongin.goal.dto.GoalResponse
@@ -26,12 +25,7 @@ class GoalService(
     fun findAll(request: PageSearchRequest): PageResponse<GoalResponse> {
         val pageable = PageRequest.of(request.page - 1, request.size)
 
-        val page =
-            repository.findPageNotNull(pageable) {
-                select(entity(Goal::class))
-                    .from(entity(Goal::class))
-                    .orderBy(path(Goal::inputDate).desc())
-            }
+        val page = repository.findAllOrderByInputDateDesc(pageable)
         return page.toPageResponse { it.toResponse() }
     }
 

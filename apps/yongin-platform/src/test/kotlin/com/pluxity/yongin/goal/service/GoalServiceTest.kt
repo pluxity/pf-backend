@@ -1,10 +1,6 @@
 package com.pluxity.yongin.goal.service
 
-import com.linecorp.kotlinjdsl.dsl.jpql.Jpql
-import com.linecorp.kotlinjdsl.querymodel.jpql.JpqlQueryable
-import com.linecorp.kotlinjdsl.querymodel.jpql.select.SelectQuery
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.yongin.goal.dto.dummyGoalBulkRequest
 import com.pluxity.yongin.goal.dto.dummyGoalRequest
 import com.pluxity.yongin.goal.dto.dummyPageSearchRequest
@@ -19,18 +15,14 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.verify
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
 import java.time.LocalDate
 
 class GoalServiceTest :
     BehaviorSpec({
-
-        mockkStatic("com.pluxity.common.core.utils.KotlinJdslExtensionsKt")
 
         val repository: GoalRepository = mockk()
         val constructionSectionRepository: ConstructionSectionRepository = mockk()
@@ -58,10 +50,7 @@ class GoalServiceTest :
                     )
 
                 every {
-                    repository.findPageNotNull(
-                        any<Pageable>(),
-                        any<Jpql.() -> JpqlQueryable<SelectQuery<Goal>>>(),
-                    )
+                    repository.findAllOrderByInputDateDesc(any())
                 } returns page
 
                 val result =
@@ -84,10 +73,7 @@ class GoalServiceTest :
                     )
 
                 every {
-                    repository.findPageNotNull(
-                        any<Pageable>(),
-                        any<Jpql.() -> JpqlQueryable<SelectQuery<Goal>>>(),
-                    )
+                    repository.findAllOrderByInputDateDesc(any())
                 } returns page
 
                 val result =
@@ -113,10 +99,7 @@ class GoalServiceTest :
                     )
 
                 every {
-                    repository.findPageNotNull(
-                        any<Pageable>(),
-                        any<Jpql.() -> JpqlQueryable<SelectQuery<Goal>>>(),
-                    )
+                    repository.findAllOrderByInputDateDesc(any())
                 } returns page
 
                 val result =

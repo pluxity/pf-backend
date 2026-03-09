@@ -4,8 +4,6 @@ import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.common.core.response.toPageResponse
-import com.pluxity.common.core.utils.findAllNotNull
-import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.yongin.global.constant.YonginErrorCode
 import com.pluxity.yongin.notice.dto.NoticeRequest
 import com.pluxity.yongin.notice.dto.NoticeResponse
@@ -26,12 +24,7 @@ class NoticeService(
     fun findAll(request: PageSearchRequest): PageResponse<NoticeResponse> {
         val pageable = PageRequest.of(request.page - 1, request.size)
 
-        val page =
-            repository.findPageNotNull(pageable) {
-                select(entity(Notice::class))
-                    .from(entity(Notice::class))
-                    .orderBy(path(Notice::id).desc())
-            }
+        val page = repository.findAllOrderByIdDesc(pageable)
         return page.toPageResponse { it.toResponse() }
     }
 
@@ -39,29 +32,7 @@ class NoticeService(
 
     fun findActive(): List<NoticeResponse> {
         val today = LocalDate.now()
-        return repository
-            .findAllNotNull {
-                select(entity(Notice::class))
-                    .from(entity(Notice::class))
-                    .where(
-                        and(
-                            path(Notice::isVisible).equal(true),
-                            or(
-                                path(Notice::isAlways).equal(true),
-                                and(
-                                    or(
-                                        path(Notice::startDate).isNull(),
-                                        path(Notice::startDate).lessThanOrEqualTo(today),
-                                    ),
-                                    or(
-                                        path(Notice::endDate).isNull(),
-                                        path(Notice::endDate).greaterThanOrEqualTo(today),
-                                    ),
-                                ),
-                            ),
-                        ),
-                    ).orderBy(path(Notice::id).desc())
-            }.map { it.toResponse() }
+        return repository.findAllActive(today).map { it.toResponse() }
     }
 
     @Transactional

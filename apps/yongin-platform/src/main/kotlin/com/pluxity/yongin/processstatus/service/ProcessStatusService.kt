@@ -5,7 +5,6 @@ import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.common.core.response.toPageResponse
 import com.pluxity.common.core.utils.findAllByIdsOrThrow
-import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.yongin.global.constant.YonginErrorCode
 import com.pluxity.yongin.processstatus.dto.ProcessStatusBulkRequest
 import com.pluxity.yongin.processstatus.dto.ProcessStatusResponse
@@ -26,12 +25,7 @@ class ProcessStatusService(
     fun findAll(request: PageSearchRequest): PageResponse<ProcessStatusResponse> {
         val pageable = PageRequest.of(request.page - 1, request.size)
 
-        val page =
-            repository.findPageNotNull(pageable) {
-                select(entity(ProcessStatus::class))
-                    .from(entity(ProcessStatus::class))
-                    .orderBy(path(ProcessStatus::workDate).desc())
-            }
+        val page = repository.findAllOrderByWorkDateDesc(pageable)
         return page.toPageResponse { it.toResponse() }
     }
 
