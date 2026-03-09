@@ -1,6 +1,5 @@
 package com.pluxity.safers.cctv.controller
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.safers.cctv.config.CctvErrorCode
@@ -22,6 +21,7 @@ import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
+import tools.jackson.databind.ObjectMapper
 
 @WebMvcTest(CctvController::class)
 class CctvControllerTest(

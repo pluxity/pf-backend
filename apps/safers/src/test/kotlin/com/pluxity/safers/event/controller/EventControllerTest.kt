@@ -1,7 +1,7 @@
 package com.pluxity.safers.event.controller
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
+import com.pluxity.common.core.aop.ResponseCreatedAspect
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.safers.event.dto.EventResponse
@@ -15,14 +15,19 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.runs
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
+import org.springframework.context.annotation.EnableAspectJAutoProxy
+import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
+import tools.jackson.databind.ObjectMapper
 
 @WebMvcTest(EventController::class)
+@Import(ResponseCreatedAspect::class)
+@EnableAspectJAutoProxy
 class EventControllerTest(
     private val mockMvc: MockMvc,
     private val objectMapper: ObjectMapper,
@@ -46,10 +51,10 @@ class EventControllerTest(
                         with(user("tester"))
                     }
 
-                Then("200 OK와 ID가 반환된다") {
+                Then("201 Created가 반환된다") {
                     result.andExpect {
-                        status { isOk() }
-                        jsonPath("$") { value(1) }
+                        status { isCreated() }
+                        header { string("Location", "/events/1") }
                     }
                 }
             }
