@@ -2,12 +2,12 @@ package com.pluxity.safers.cctv.service
 
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.safers.cctv.client.CctvApiClient
-import com.pluxity.safers.cctv.config.CctvErrorCode
 import com.pluxity.safers.cctv.dto.CctvPlaybackRequest
 import com.pluxity.safers.cctv.dto.CctvPlaybackResponse
 import com.pluxity.safers.cctv.dto.CctvResponse
 import com.pluxity.safers.cctv.dto.CctvUpdateRequest
 import com.pluxity.safers.cctv.entity.Cctv
+import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.site.repository.SiteRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +37,7 @@ class CctvFacade(
             if (siteId != null) {
                 val site =
                     siteRepository.findByIdOrNull(siteId)
-                        ?: throw CustomException(CctvErrorCode.NOT_FOUND_SITE, siteId)
+                        ?: throw CustomException(SafersErrorCode.NOT_FOUND_SITE, siteId)
                 listOf(site)
             } else {
                 siteRepository.findAll()
@@ -77,7 +77,7 @@ class CctvFacade(
         val (baseUrl, siteId, nvrId, cctv) = resolvePlaybackInfo(cctvId)
         val channel =
             cctv.channel
-                ?: throw CustomException(CctvErrorCode.MISSING_NVR_INFO, cctvId)
+                ?: throw CustomException(SafersErrorCode.MISSING_NVR_INFO, cctvId)
 
         val startTime = parseDateTime(request.startDate)
         val endTime = parseDateTime(request.endDate)
@@ -100,10 +100,10 @@ class CctvFacade(
 
         val baseUrl =
             site.baseUrl
-                ?: throw CustomException(CctvErrorCode.MISSING_BASE_URL, site.requiredId)
+                ?: throw CustomException(SafersErrorCode.MISSING_BASE_URL, site.requiredId)
         val nvrId =
             cctv.nvrId
-                ?: throw CustomException(CctvErrorCode.MISSING_NVR_INFO, cctvId)
+                ?: throw CustomException(SafersErrorCode.MISSING_NVR_INFO, cctvId)
 
         return PlaybackInfo(baseUrl, site.requiredId, nvrId, cctv)
     }
@@ -119,6 +119,6 @@ class CctvFacade(
         try {
             LocalDateTime.parse(value, DATE_FORMATTER)
         } catch (_: DateTimeParseException) {
-            throw CustomException(CctvErrorCode.INVALID_DATE_FORMAT)
+            throw CustomException(SafersErrorCode.INVALID_DATE_FORMAT)
         }
 }

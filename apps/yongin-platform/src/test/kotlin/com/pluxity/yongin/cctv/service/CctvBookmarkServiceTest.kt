@@ -1,12 +1,12 @@
 package com.pluxity.yongin.cctv.service
 
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.yongin.cctv.config.CctvErrorCode
 import com.pluxity.yongin.cctv.config.CctvProperties
 import com.pluxity.yongin.cctv.dto.CctvBookmarkOrderRequest
 import com.pluxity.yongin.cctv.dto.CctvBookmarkRequest
 import com.pluxity.yongin.cctv.entity.dummyCctvBookmark
 import com.pluxity.yongin.cctv.repository.CctvBookmarkRepository
+import com.pluxity.yongin.global.constant.YonginErrorCode
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -80,7 +80,7 @@ class CctvBookmarkServiceTest :
                         shouldThrow<CustomException> {
                             service.create(request)
                         }
-                    exception.code shouldBe CctvErrorCode.ALREADY_BOOKMARK
+                    exception.code shouldBe YonginErrorCode.ALREADY_BOOKMARK
                 }
             }
 
@@ -95,7 +95,7 @@ class CctvBookmarkServiceTest :
                         shouldThrow<CustomException> {
                             service.create(request)
                         }
-                    exception.code shouldBe CctvErrorCode.EXCEED_BOOKMARK_LIMIT
+                    exception.code shouldBe YonginErrorCode.EXCEED_BOOKMARK_LIMIT
                 }
             }
         }
@@ -122,7 +122,7 @@ class CctvBookmarkServiceTest :
                         shouldThrow<CustomException> {
                             service.delete(999L)
                         }
-                    exception.code shouldBe CctvErrorCode.NOT_FOUND_CCTV_BOOKMARK
+                    exception.code shouldBe YonginErrorCode.NOT_FOUND_CCTV_BOOKMARK
                 }
             }
         }
@@ -155,7 +155,7 @@ class CctvBookmarkServiceTest :
                         shouldThrow<CustomException> {
                             service.updateOrder(request)
                         }
-                    exception.code shouldBe CctvErrorCode.INVALID_BOOKMARK_ORDER_COUNT
+                    exception.code shouldBe YonginErrorCode.INVALID_BOOKMARK_ORDER_COUNT
                 }
             }
 
@@ -171,7 +171,7 @@ class CctvBookmarkServiceTest :
                         shouldThrow<CustomException> {
                             service.updateOrder(request)
                         }
-                    exception.code shouldBe CctvErrorCode.NOT_FOUND_CCTV_BOOKMARK
+                    exception.code shouldBe YonginErrorCode.NOT_FOUND_CCTV_BOOKMARK
                 }
             }
         }

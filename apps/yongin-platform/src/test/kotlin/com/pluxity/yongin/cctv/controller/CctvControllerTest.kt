@@ -2,10 +2,10 @@ package com.pluxity.yongin.cctv.controller
 
 import com.ninjasquad.springmockk.MockkBean
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.yongin.cctv.config.CctvErrorCode
 import com.pluxity.yongin.cctv.dto.dummyCctvResponse
 import com.pluxity.yongin.cctv.dto.dummyCctvUpdateRequest
 import com.pluxity.yongin.cctv.service.CctvService
+import com.pluxity.yongin.global.constant.YonginErrorCode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.every
 import io.mockk.just
@@ -94,7 +94,7 @@ class CctvControllerTest(
         }
 
         Given("존재하지 않는 ID로 CCTV 수정 요청하면") {
-            every { service.update(any(), any()) } throws CustomException(CctvErrorCode.NOT_FOUND_CCTV, 999L)
+            every { service.update(any(), any()) } throws CustomException(YonginErrorCode.NOT_FOUND_CCTV, 999L)
 
             When("PATCH $baseUrl/{id} 요청 시") {
                 val request = dummyCctvUpdateRequest()

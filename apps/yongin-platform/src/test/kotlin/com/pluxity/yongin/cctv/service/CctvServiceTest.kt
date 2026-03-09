@@ -2,7 +2,6 @@ package com.pluxity.yongin.cctv.service
 
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.yongin.cctv.client.CctvApiClient
-import com.pluxity.yongin.cctv.config.CctvErrorCode
 import com.pluxity.yongin.cctv.dto.CctvUpdateRequest
 import com.pluxity.yongin.cctv.dto.MediaServerPathItem
 import com.pluxity.yongin.cctv.entity.Cctv
@@ -10,6 +9,7 @@ import com.pluxity.yongin.cctv.entity.dummyCctv
 import com.pluxity.yongin.cctv.entity.dummyCctvBookmark
 import com.pluxity.yongin.cctv.repository.CctvBookmarkRepository
 import com.pluxity.yongin.cctv.repository.CctvRepository
+import com.pluxity.yongin.global.constant.YonginErrorCode
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -166,7 +166,7 @@ class CctvServiceTest :
                         shouldThrow<CustomException> {
                             service.update(999L, CctvUpdateRequest(name = "test", lon = null, lat = null, alt = null))
                         }
-                    exception.code shouldBe CctvErrorCode.NOT_FOUND_CCTV
+                    exception.code shouldBe YonginErrorCode.NOT_FOUND_CCTV
                 }
             }
         }

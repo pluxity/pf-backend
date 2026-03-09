@@ -2,12 +2,12 @@ package com.pluxity.safers.cctv.controller
 
 import com.ninjasquad.springmockk.MockkBean
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.safers.cctv.config.CctvErrorCode
 import com.pluxity.safers.cctv.dto.dummyCctvPlaybackRequest
 import com.pluxity.safers.cctv.dto.dummyCctvPlaybackResponse
 import com.pluxity.safers.cctv.dto.dummyCctvResponse
 import com.pluxity.safers.cctv.dto.dummyCctvUpdateRequest
 import com.pluxity.safers.cctv.service.CctvFacade
+import com.pluxity.safers.global.constant.SafersErrorCode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.every
 import io.mockk.just
@@ -136,7 +136,7 @@ class CctvControllerTest(
                 val request = dummyCctvUpdateRequest()
 
                 every { cctvFacade.update(999L, any()) } throws
-                    CustomException(CctvErrorCode.NOT_FOUND_CCTV, 999L)
+                    CustomException(SafersErrorCode.NOT_FOUND_CCTV, 999L)
 
                 val result =
                     mockMvc.patch("$baseUrl/999") {
@@ -181,7 +181,7 @@ class CctvControllerTest(
                 val request = dummyCctvPlaybackRequest()
 
                 every { cctvFacade.playback(999L, any()) } throws
-                    CustomException(CctvErrorCode.NOT_FOUND_CCTV, 999L)
+                    CustomException(SafersErrorCode.NOT_FOUND_CCTV, 999L)
 
                 val result =
                     mockMvc.post("$baseUrl/999/playback") {
@@ -202,7 +202,7 @@ class CctvControllerTest(
                 val request = dummyCctvPlaybackRequest()
 
                 every { cctvFacade.playback(1L, any()) } throws
-                    CustomException(CctvErrorCode.MISSING_NVR_INFO, 1L)
+                    CustomException(SafersErrorCode.MISSING_NVR_INFO, 1L)
 
                 val result =
                     mockMvc.post("$baseUrl/1/playback") {
@@ -240,7 +240,7 @@ class CctvControllerTest(
 
             When("DELETE $baseUrl/{id}/playback/{pathName} - 존재하지 않는 CCTV") {
                 every { cctvFacade.deletePlayback(999L, "some-path") } throws
-                    CustomException(CctvErrorCode.NOT_FOUND_CCTV, 999L)
+                    CustomException(SafersErrorCode.NOT_FOUND_CCTV, 999L)
 
                 val result =
                     mockMvc.delete("$baseUrl/999/playback/some-path") {
