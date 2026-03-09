@@ -1,11 +1,7 @@
 package com.pluxity.safers.site.service
 
-import com.linecorp.kotlinjdsl.dsl.jpql.Jpql
-import com.linecorp.kotlinjdsl.querymodel.jpql.JpqlQueryable
-import com.linecorp.kotlinjdsl.querymodel.jpql.select.SelectQuery
 import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.common.file.service.FileService
 import com.pluxity.common.test.dto.dummyFileResponse
 import com.pluxity.safers.global.constant.SafersErrorCode
@@ -20,16 +16,12 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.verify
 import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 
 class SiteServiceTest :
     BehaviorSpec({
-
-        mockkStatic("com.pluxity.common.core.utils.KotlinJdslExtensionsKt")
 
         val siteRepository: SiteRepository = mockk(relaxed = true)
         val fileService: FileService = mockk(relaxed = true)
@@ -118,10 +110,7 @@ class SiteServiceTest :
                 val page = PageImpl(sites)
 
                 every {
-                    siteRepository.findPageNotNull(
-                        any<Pageable>(),
-                        any<Jpql.() -> JpqlQueryable<SelectQuery<Site>>>(),
-                    )
+                    siteRepository.findAllOrderByIdDesc(any())
                 } returns page
 
                 every { fileService.getFiles(any()) } returns
@@ -144,10 +133,7 @@ class SiteServiceTest :
                 val page = PageImpl(emptyList<Site>())
 
                 every {
-                    siteRepository.findPageNotNull(
-                        any<Pageable>(),
-                        any<Jpql.() -> JpqlQueryable<SelectQuery<Site>>>(),
-                    )
+                    siteRepository.findAllOrderByIdDesc(any())
                 } returns page
 
                 every { fileService.getFiles(any()) } returns emptyList()

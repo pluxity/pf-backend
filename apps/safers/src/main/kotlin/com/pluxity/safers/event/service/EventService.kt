@@ -4,7 +4,6 @@ import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.common.core.response.toPageResponse
-import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.common.file.extensions.getFileMapByIds
 import com.pluxity.common.file.service.FileService
 import com.pluxity.safers.event.dto.EventCreateRequest
@@ -106,15 +105,7 @@ class EventService(
         val end = endDate?.let { LocalDateTime.parse(it, formatter) }
 
         val pageable = PageRequest.of(request.page - 1, request.size)
-        val page =
-            eventRepository.findPageNotNull(pageable) {
-                select(entity(Event::class))
-                    .from(entity(Event::class))
-                    .whereAnd(
-                        start?.let { path(Event::eventTimestamp).greaterThanOrEqualTo(it) },
-                        end?.let { path(Event::eventTimestamp).lessThanOrEqualTo(it) },
-                    ).orderBy(path(Event::id).desc())
-            }
+        val page = eventRepository.findAllByDateRange(pageable, start, end)
 
         val fileMap = fileService.getFileMapByIds(page.content) { listOf(it.snapshotFileId, it.videoFileId) }
         return page.toPageResponse {

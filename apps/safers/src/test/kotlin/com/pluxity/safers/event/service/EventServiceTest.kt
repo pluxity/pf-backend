@@ -1,11 +1,7 @@
 package com.pluxity.safers.event.service
 
-import com.linecorp.kotlinjdsl.dsl.jpql.Jpql
-import com.linecorp.kotlinjdsl.querymodel.jpql.JpqlQueryable
-import com.linecorp.kotlinjdsl.querymodel.jpql.select.SelectQuery
 import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.common.file.service.FileService
 import com.pluxity.common.test.dto.dummyFileResponse
 import com.pluxity.safers.event.dto.dummyEventCreateRequest
@@ -20,17 +16,13 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.verify
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 
 class EventServiceTest :
     BehaviorSpec({
-
-        mockkStatic("com.pluxity.common.core.utils.KotlinJdslExtensionsKt")
 
         val eventRepository: EventRepository = mockk(relaxed = true)
         val fileService: FileService = mockk(relaxed = true)
@@ -202,10 +194,7 @@ class EventServiceTest :
                 val page = PageImpl(events)
 
                 every {
-                    eventRepository.findPageNotNull(
-                        any<Pageable>(),
-                        any<Jpql.() -> JpqlQueryable<SelectQuery<Event>>>(),
-                    )
+                    eventRepository.findAllByDateRange(any(), any(), any())
                 } returns page
 
                 val fileResponse10 = dummyFileResponse(id = 10L)
@@ -226,10 +215,7 @@ class EventServiceTest :
                 val page = PageImpl(emptyList<Event>())
 
                 every {
-                    eventRepository.findPageNotNull(
-                        any<Pageable>(),
-                        any<Jpql.() -> JpqlQueryable<SelectQuery<Event>>>(),
-                    )
+                    eventRepository.findAllByDateRange(any(), any(), any())
                 } returns page
 
                 every { fileService.getFiles(any()) } returns emptyList()

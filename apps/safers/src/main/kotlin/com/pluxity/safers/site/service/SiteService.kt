@@ -4,7 +4,6 @@ import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.common.core.response.toPageResponse
-import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.common.file.extensions.getFileMapById
 import com.pluxity.common.file.service.FileService
 import com.pluxity.safers.global.constant.SafersErrorCode
@@ -67,12 +66,7 @@ class SiteService(
 
     fun findAll(request: PageSearchRequest): PageResponse<SiteResponse> {
         val pageable = PageRequest.of(request.page - 1, request.size)
-        val page =
-            siteRepository.findPageNotNull(pageable) {
-                select(entity(Site::class))
-                    .from(entity(Site::class))
-                    .orderBy(path(Site::id).desc())
-            }
+        val page = siteRepository.findAllOrderByIdDesc(pageable)
 
         val fileMap = fileService.getFileMapById(page.content) { it.thumbnailImageId }
         return page.toPageResponse {
