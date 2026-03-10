@@ -15,6 +15,7 @@ dependencies {
     implementation(rootProject.libs.bundles.springwolf)
     implementation(rootProject.libs.bundles.coroutines)
     implementation(rootProject.libs.logbook)
+    implementation(rootProject.libs.spring.kafka)
 
     // Hibernate Spatial + JTS (Site polygon)
     implementation(rootProject.libs.bundles.spatial)

@@ -3,6 +3,8 @@ server:
     context-path: /api
 
 spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST:}
   data:
     redis:
       host: ${REDIS_HOST:localhost}
