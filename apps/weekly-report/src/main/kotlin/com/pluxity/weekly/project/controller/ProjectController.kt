@@ -3,7 +3,6 @@ package com.pluxity.weekly.project.controller
 import com.pluxity.common.core.annotation.ResponseCreated
 import com.pluxity.common.core.response.DataResponseBody
 import com.pluxity.common.core.response.ErrorResponseBody
-import com.pluxity.weekly.project.dto.ProjectAssignmentResponse
 import com.pluxity.weekly.project.dto.ProjectRequest
 import com.pluxity.weekly.project.dto.ProjectResponse
 import com.pluxity.weekly.project.service.ProjectService
@@ -113,68 +112,6 @@ class ProjectController(
         @PathVariable id: Long,
     ): ResponseEntity<Void> {
         service.delete(id)
-        return ResponseEntity.noContent().build()
-    }
-
-    @Operation(summary = "프로젝트 배정 목록 조회", description = "프로젝트에 배정된 사용자 목록을 조회합니다")
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "조회 성공"),
-            ApiResponse(
-                responseCode = "404",
-                description = "프로젝트를 찾을 수 없음",
-                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponseBody::class))],
-            ),
-        ],
-    )
-    @GetMapping("/{projectId}/assignments")
-    fun findAssignments(
-        @PathVariable projectId: Long,
-    ): ResponseEntity<DataResponseBody<List<ProjectAssignmentResponse>>> =
-        ResponseEntity.ok(DataResponseBody(service.findAssignments(projectId)))
-
-    @Operation(summary = "프로젝트 사용자 배정", description = "프로젝트에 사용자를 배정합니다")
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "204", description = "배정 성공"),
-            ApiResponse(
-                responseCode = "400",
-                description = "이미 배정된 사용자",
-                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponseBody::class))],
-            ),
-            ApiResponse(
-                responseCode = "404",
-                description = "프로젝트 또는 사용자를 찾을 수 없음",
-                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponseBody::class))],
-            ),
-        ],
-    )
-    @PostMapping("/{projectId}/assignments/{userId}")
-    fun assign(
-        @PathVariable projectId: Long,
-        @PathVariable userId: Long,
-    ): ResponseEntity<Void> {
-        service.assign(projectId, userId)
-        return ResponseEntity.noContent().build()
-    }
-
-    @Operation(summary = "프로젝트 사용자 배정 해제", description = "프로젝트에서 사용자 배정을 해제합니다")
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "204", description = "해제 성공"),
-            ApiResponse(
-                responseCode = "404",
-                description = "프로젝트 또는 배정을 찾을 수 없음",
-                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponseBody::class))],
-            ),
-        ],
-    )
-    @DeleteMapping("/{projectId}/assignments/{userId}")
-    fun unassign(
-        @PathVariable projectId: Long,
-        @PathVariable userId: Long,
-    ): ResponseEntity<Void> {
-        service.unassign(projectId, userId)
         return ResponseEntity.noContent().build()
     }
 }
