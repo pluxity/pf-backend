@@ -3,6 +3,7 @@ package com.pluxity.weekly.chat.service
 import com.pluxity.weekly.chat.action.ActionHandler
 import com.pluxity.weekly.chat.action.dto.ActionResult
 import com.pluxity.weekly.chat.action.dto.ActionResultType
+import com.pluxity.weekly.chat.action.dto.ActionType
 import com.pluxity.weekly.chat.action.dto.LlmAction
 import com.pluxity.weekly.chat.context.ContextBuilder
 import com.pluxity.weekly.chat.llm.LlmService
@@ -37,6 +38,7 @@ class ChatServiceTest :
                 val actionResult =
                     ActionResult(
                         type = ActionResultType.SUCCESS,
+                        action = ActionType.READ,
                         message = "2개의 태스크를 조회했습니다.",
                         data = emptyList<Any>(),
                     )
@@ -65,16 +67,10 @@ class ChatServiceTest :
             When("clarify 후 사용자가 candidate를 선택하면") {
                 val partial = mapOf<String, Any?>("action" to "delete")
                 val selected = "SAFERS > api 구현 > api 명세서 작성"
-                val expectedAction =
-                    LlmAction(
-                        action = "delete",
-                        project = "SAFERS",
-                        epic = "api 구현",
-                        name = "api 명세서 작성",
-                    )
                 val actionResult =
                     ActionResult(
                         type = ActionResultType.NEEDS_CONFIRM,
+                        action = ActionType.DELETE,
                         message = "태스크(ID: 1)을(를) 삭제하시겠습니까?",
                         data = mapOf("taskId" to 1L),
                     )
@@ -95,6 +91,7 @@ class ChatServiceTest :
                 val actionResult =
                     ActionResult(
                         type = ActionResultType.SUCCESS,
+                        action = ActionType.READ,
                         message = "1개의 태스크를 조회했습니다.",
                     )
 
