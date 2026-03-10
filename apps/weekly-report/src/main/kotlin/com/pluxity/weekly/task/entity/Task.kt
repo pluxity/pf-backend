@@ -1,5 +1,6 @@
 package com.pluxity.weekly.task.entity
 
+import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.core.entity.IdentityIdEntity
 import com.pluxity.weekly.epic.entity.Epic
 import jakarta.persistence.Column
@@ -31,6 +32,9 @@ class Task(
     var startDate: LocalDate? = null,
     @Column(name = "due_date")
     var dueDate: LocalDate? = null,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assignee_id")
+    var assignee: User? = null,
 ) : IdentityIdEntity() {
     fun update(
         epic: Epic,
@@ -40,6 +44,7 @@ class Task(
         progress: Int,
         startDate: LocalDate?,
         dueDate: LocalDate?,
+        assignee: User?,
     ) {
         this.epic = epic
         this.name = name
@@ -48,5 +53,6 @@ class Task(
         this.progress = progress
         this.startDate = startDate
         this.dueDate = dueDate
+        this.assignee = assignee
     }
 }

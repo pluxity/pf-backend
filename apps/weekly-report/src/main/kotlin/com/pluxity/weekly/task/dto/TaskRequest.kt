@@ -31,4 +31,6 @@ data class TaskRequest(
     val startDate: LocalDate? = null,
     @field:Schema(description = "마감일", example = "2026-03-31")
     val dueDate: LocalDate? = null,
+    @field:Schema(description = "담당자 ID", example = "1")
+    val assigneeId: Long? = null,
 )
