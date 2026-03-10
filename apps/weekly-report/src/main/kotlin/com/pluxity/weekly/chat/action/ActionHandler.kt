@@ -3,6 +3,7 @@ package com.pluxity.weekly.chat.action
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.chat.action.dto.ActionResult
 import com.pluxity.weekly.chat.action.dto.ActionResultType
+import com.pluxity.weekly.chat.action.dto.ActionType
 import com.pluxity.weekly.chat.action.dto.LlmAction
 import com.pluxity.weekly.chat.dto.TaskSearchFilter
 import com.pluxity.weekly.epic.repository.EpicRepository
@@ -28,49 +29,65 @@ class ActionHandler(
     fun handle(
         action: LlmAction,
         userId: Long,
-    ): ActionResult =
-        try {
-            when (action.action) {
-                "read" -> handleRead(action)
-                "upsert" -> handleUpsert(action, userId)
-                "delete" -> handleDelete(action)
-                "clarify" -> handleClarify(action)
-                else -> ActionResult(ActionResultType.ERROR, "알 수 없는 액션: ${action.action}")
+    ): ActionResult {
+        val actionType = resolveActionType(action.action)
+        return try {
+            when (actionType) {
+                ActionType.READ -> handleRead(action, actionType)
+                ActionType.UPSERT -> handleUpsert(action, userId, actionType)
+                ActionType.DELETE -> handleDelete(action, actionType)
+                ActionType.CLARIFY -> handleClarify(action, actionType)
+                ActionType.UNKNOWN -> ActionResult(ActionResultType.ERROR, actionType, "알 수 없는 액션: ${action.action}")
             }
         } catch (e: CustomException) {
             log.warn { "액션 처리 중 권한/비즈니스 오류: ${e.message}" }
-            ActionResult(ActionResultType.ERROR, e.message ?: "처리 중 오류가 발생했습니다.")
+            ActionResult(ActionResultType.ERROR, actionType, e.message ?: "처리 중 오류가 발생했습니다.")
+        }
+    }
+
+    private fun resolveActionType(action: String): ActionType =
+        when (action) {
+            "read" -> ActionType.READ
+            "upsert" -> ActionType.UPSERT
+            "delete" -> ActionType.DELETE
+            "clarify" -> ActionType.CLARIFY
+            else -> ActionType.UNKNOWN
         }
 
-    private fun handleRead(action: LlmAction): ActionResult {
+    private fun handleRead(
+        action: LlmAction,
+        actionType: ActionType,
+    ): ActionResult {
         val filter = buildTaskFilter(action)
         val results = taskService.search(filter)
-        return ActionResult(ActionResultType.SUCCESS, "${results.size}개의 태스크를 조회했습니다.", results)
+        return ActionResult(ActionResultType.SUCCESS, actionType, "${results.size}개의 태스크를 조회했습니다.", results)
     }
 
     private fun handleUpsert(
         action: LlmAction,
         userId: Long,
+        actionType: ActionType,
     ): ActionResult {
         if (action.id != null) {
-            return updateTask(action)
+            return updateTask(action, actionType)
         }
-        return createTask(action, userId)
+        return createTask(action, userId, actionType)
     }
 
     private fun createTask(
         action: LlmAction,
         userId: Long,
+        actionType: ActionType,
     ): ActionResult {
         val epicId =
             resolveEpicId(action)
-                ?: return ActionResult(ActionResultType.ERROR, "에픽을 찾을 수 없습니다.")
+                ?: return ActionResult(ActionResultType.ERROR, actionType, "에픽을 찾을 수 없습니다.")
 
         val status = action.status?.let { parseEnum<TaskStatus>(it) } ?: TaskStatus.TODO
         val request =
             TaskRequest(
                 epicId = epicId,
-                name = action.name ?: return ActionResult(ActionResultType.ERROR, "태스크 이름이 필요합니다."),
+                name = action.name ?: return ActionResult(ActionResultType.ERROR, actionType, "태스크 이름이 필요합니다."),
                 description = action.description,
                 status = status,
                 progress = action.progress ?: if (status == TaskStatus.DONE) 100 else 0,
@@ -80,17 +97,20 @@ class ActionHandler(
             )
 
         val id = taskService.create(request)
-        return ActionResult(ActionResultType.SUCCESS, "태스크 '${action.name}'이(가) 생성되었습니다. (ID: $id)")
+        return ActionResult(ActionResultType.SUCCESS, actionType, "태스크 '${action.name}'이(가) 생성되었습니다. (ID: $id)")
     }
 
-    private fun updateTask(action: LlmAction): ActionResult {
+    private fun updateTask(
+        action: LlmAction,
+        actionType: ActionType,
+    ): ActionResult {
         val taskId =
             action.id
-                ?: return ActionResult(ActionResultType.ERROR, "태스크 ID가 null 입니다.")
+                ?: return ActionResult(ActionResultType.ERROR, actionType, "태스크 ID가 null 입니다.")
 
         val existing =
             taskRepository.findByIdOrNull(taskId)
-                ?: return ActionResult(ActionResultType.ERROR, "태스크(ID: ${action.id})를 찾을 수 없습니다.")
+                ?: return ActionResult(ActionResultType.ERROR, actionType, "태스크(ID: ${action.id})를 찾을 수 없습니다.")
 
         val epicId = resolveEpicId(action) ?: existing.epic.requiredId
         val status = action.status?.let { parseEnum<TaskStatus>(it) } ?: existing.status
@@ -107,21 +127,29 @@ class ActionHandler(
             )
 
         taskService.update(action.id, request)
-        return ActionResult(ActionResultType.SUCCESS, "태스크 '${request.name}'이(가) 수정되었습니다.")
+        return ActionResult(ActionResultType.SUCCESS, actionType, "태스크 '${request.name}'이(가) 수정되었습니다.")
     }
 
-    private fun handleDelete(action: LlmAction): ActionResult {
-        val id = action.id ?: return ActionResult(ActionResultType.ERROR, "삭제할 태스크의 ID가 필요합니다.")
+    private fun handleDelete(
+        action: LlmAction,
+        actionType: ActionType,
+    ): ActionResult {
+        val id = action.id ?: return ActionResult(ActionResultType.ERROR, actionType, "삭제할 태스크의 ID가 필요합니다.")
         return ActionResult(
             type = ActionResultType.NEEDS_CONFIRM,
+            action = actionType,
             message = "태스크(ID: $id)을(를) 삭제하시겠습니까?",
             data = mapOf("taskId" to id),
         )
     }
 
-    private fun handleClarify(action: LlmAction): ActionResult =
+    private fun handleClarify(
+        action: LlmAction,
+        actionType: ActionType,
+    ): ActionResult =
         ActionResult(
             type = ActionResultType.CLARIFY,
+            action = actionType,
             message = action.message ?: "추가 정보가 필요합니다.",
             candidates = action.candidates,
             partial = action.partial,
