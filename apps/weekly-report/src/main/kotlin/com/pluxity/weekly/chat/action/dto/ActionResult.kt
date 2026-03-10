@@ -5,7 +5,7 @@ data class ActionResult(
     val action: ActionType,
     val message: String,
     val data: Any? = null,
-    val candidates: List<String>? = null,
+    val candidates: List<Map<String, String>>? = null,
     val partial: Map<String, Any?>? = null,
 )
 

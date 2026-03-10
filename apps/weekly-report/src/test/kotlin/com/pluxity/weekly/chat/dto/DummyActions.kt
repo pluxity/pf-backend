@@ -48,7 +48,10 @@ fun dummyDeleteAction(id: Long = 1L) =
 
 fun dummyClarifyAction(
     message: String = "어느 프로젝트인가요?",
-    candidates: List<String> = listOf("SAFERS", "용인 플랫폼"),
+    candidates: List<Map<String, String>> = listOf(
+        mapOf("project" to "SAFERS", "epic" to "api 구현"),
+        mapOf("project" to "용인 플랫폼", "epic" to "api 구현"),
+    ),
     partial: Map<String, Any?> = mapOf("action" to "delete"),
 ) = LlmAction(
     action = "clarify",

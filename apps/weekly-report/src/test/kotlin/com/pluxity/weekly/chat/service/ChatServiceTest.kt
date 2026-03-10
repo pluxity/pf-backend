@@ -66,7 +66,7 @@ class ChatServiceTest :
         Given("resolve 플로우") {
             When("clarify 후 사용자가 candidate를 선택하면") {
                 val partial = mapOf<String, Any?>("action" to "delete")
-                val selected = "SAFERS > api 구현 > api 명세서 작성"
+                val selected = mapOf("project" to "SAFERS", "epic" to "api 구현", "name" to "api 명세서 작성")
                 val actionResult =
                     ActionResult(
                         type = ActionResultType.NEEDS_CONFIRM,
@@ -87,7 +87,7 @@ class ChatServiceTest :
 
             When("partial에 status 등 추가 정보가 있으면") {
                 val partial = mapOf<String, Any?>("action" to "read", "status" to "IN_PROGRESS")
-                val selected = "SAFERS > api 구현"
+                val selected = mapOf("project" to "SAFERS", "epic" to "api 구현")
                 val actionResult =
                     ActionResult(
                         type = ActionResultType.SUCCESS,
