@@ -2,11 +2,8 @@ package com.pluxity.weekly.project.service
 
 import com.pluxity.common.auth.annotation.CheckPermission
 import com.pluxity.common.auth.user.entity.PermissionAction
-import com.pluxity.common.auth.user.entity.User
-import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
-import com.pluxity.weekly.project.dto.ProjectAssignmentResponse
 import com.pluxity.weekly.project.dto.ProjectRequest
 import com.pluxity.weekly.project.dto.ProjectResponse
 import com.pluxity.weekly.project.dto.toResponse
@@ -23,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class ProjectService(
     private val projectRepository: ProjectRepository,
-    private val userRepository: UserRepository,
 ) {
     @CheckPermission(action = PermissionAction.READ_LIST, resourceType = "project")
     fun findAll(): List<ProjectResponse> {
@@ -79,44 +75,7 @@ class ProjectService(
         projectRepository.delete(getById(id))
     }
 
-    // ── ProjectAssignment ──
-
-    @CheckPermission(action = PermissionAction.READ_LIST, resourceType = "project")
-    fun findAssignments(projectId: Long): List<ProjectAssignmentResponse> = getById(projectId).assignments.map { it.toResponse() }
-
-    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "project")
-    @Transactional
-    fun assign(
-        projectId: Long,
-        userId: Long,
-    ) {
-        val project = getById(projectId)
-        val user = getUserById(userId)
-        if (project.assignments.any { it.assignedBy == user }) {
-            throw CustomException(WeeklyReportErrorCode.DUPLICATE_PROJECT_ASSIGNMENT, userId, projectId)
-        }
-        project.assign(user)
-    }
-
-    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "project")
-    @Transactional
-    fun unassign(
-        projectId: Long,
-        userId: Long,
-    ) {
-        val project = getById(projectId)
-        val user = getUserById(userId)
-        if (project.assignments.none { it.assignedBy == user }) {
-            throw CustomException(WeeklyReportErrorCode.NOT_FOUND_PROJECT_ASSIGNMENT, projectId, userId)
-        }
-        project.unassign(user)
-    }
-
     private fun getById(id: Long): Project =
         projectRepository.findByIdOrNull(id)
             ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_PROJECT, id)
-
-    private fun getUserById(id: Long): User =
-        userRepository.findByIdOrNull(id)
-            ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_USER, id)
 }

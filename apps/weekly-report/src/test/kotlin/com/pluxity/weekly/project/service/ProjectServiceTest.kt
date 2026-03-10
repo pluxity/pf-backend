@@ -1,14 +1,11 @@
 package com.pluxity.weekly.project.service
 
-import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.test.entity.dummyUser
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.dto.dummyProjectRequest
 import com.pluxity.weekly.project.entity.Project
 import com.pluxity.weekly.project.entity.ProjectStatus
 import com.pluxity.weekly.project.entity.dummyProject
-import com.pluxity.weekly.project.entity.dummyProjectAssignment
 import com.pluxity.weekly.project.repository.ProjectRepository
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -25,8 +22,7 @@ class ProjectServiceTest :
     BehaviorSpec({
 
         val projectRepository: ProjectRepository = mockk()
-        val userRepository: UserRepository = mockk()
-        val service = ProjectService(projectRepository, userRepository)
+        val service = ProjectService(projectRepository)
 
         Given("프로젝트 전체 조회") {
             When("프로젝트 목록을 조회하면") {
@@ -171,99 +167,6 @@ class ProjectServiceTest :
 
                 Then("NOT_FOUND 예외가 발생한다") {
                     exception.code shouldBe WeeklyReportErrorCode.NOT_FOUND_PROJECT
-                }
-            }
-        }
-
-        // ── ProjectAssignment ──
-
-        Given("프로젝트 배정 목록 조회") {
-            When("프로젝트에 배정된 사용자를 조회하면") {
-                val project = dummyProject(id = 1L)
-                val user1 = dummyUser(id = 10L, name = "홍길동")
-                val user2 = dummyUser(id = 20L, name = "김영희")
-                project.assignments.addAll(
-                    listOf(
-                        dummyProjectAssignment(id = 1L, project = project, assignedBy = user1),
-                        dummyProjectAssignment(id = 2L, project = project, assignedBy = user2),
-                    ),
-                )
-
-                every { projectRepository.findByIdOrNull(1L) } returns project
-
-                val result = service.findAssignments(1L)
-
-                Then("배정 목록이 반환된다") {
-                    result.size shouldBe 2
-                }
-            }
-        }
-
-        Given("프로젝트 배정 추가") {
-            When("새로운 사용자를 프로젝트에 배정하면") {
-                val project = dummyProject(id = 1L)
-                val user = dummyUser(id = 10L)
-
-                every { projectRepository.findByIdOrNull(1L) } returns project
-                every { userRepository.findByIdOrNull(10L) } returns user
-
-                service.assign(1L, 10L)
-
-                Then("배정이 추가된다") {
-                    project.assignments.size shouldBe 1
-                    project.assignments[0].assignedBy shouldBe user
-                }
-            }
-
-            When("이미 배정된 사용자를 추가하면") {
-                val project = dummyProject(id = 1L)
-                val user = dummyUser(id = 10L)
-                project.assign(user)
-
-                every { projectRepository.findByIdOrNull(1L) } returns project
-                every { userRepository.findByIdOrNull(10L) } returns user
-
-                val exception =
-                    shouldThrow<CustomException> {
-                        service.assign(1L, 10L)
-                    }
-
-                Then("DUPLICATE 예외가 발생한다") {
-                    exception.code shouldBe WeeklyReportErrorCode.DUPLICATE_PROJECT_ASSIGNMENT
-                }
-            }
-        }
-
-        Given("프로젝트 배정 해제") {
-            When("배정된 사용자를 해제하면") {
-                val project = dummyProject(id = 1L)
-                val user = dummyUser(id = 10L)
-                project.assign(user)
-
-                every { projectRepository.findByIdOrNull(1L) } returns project
-                every { userRepository.findByIdOrNull(10L) } returns user
-
-                service.unassign(1L, 10L)
-
-                Then("배정이 제거된다") {
-                    project.assignments.size shouldBe 0
-                }
-            }
-
-            When("배정되지 않은 사용자를 해제하면") {
-                val project = dummyProject(id = 1L)
-                val user = dummyUser(id = 999L)
-
-                every { projectRepository.findByIdOrNull(1L) } returns project
-                every { userRepository.findByIdOrNull(999L) } returns user
-
-                val exception =
-                    shouldThrow<CustomException> {
-                        service.unassign(1L, 999L)
-                    }
-
-                Then("NOT_FOUND 예외가 발생한다") {
-                    exception.code shouldBe WeeklyReportErrorCode.NOT_FOUND_PROJECT_ASSIGNMENT
                 }
             }
         }
