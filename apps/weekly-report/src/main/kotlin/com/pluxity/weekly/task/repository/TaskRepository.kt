@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 interface TaskRepository :
     JpaRepository<Task, Long>,
     KotlinJdslJpqlExecutor {
-
     fun findByEpicInAndAssigneeId(
         epics: List<Epic>,
         assigneeId: Long,
