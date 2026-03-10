@@ -17,4 +17,9 @@ interface TaskRepository :
         epicId: Long,
         name: String,
     ): Boolean
+
+    fun findByEpicIdAndName(
+        epicId: Long,
+        name: String,
+    ): Task?
 }
