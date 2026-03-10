@@ -1,6 +1,7 @@
 package com.pluxity.weekly.task.dto
 
 import com.fasterxml.jackson.annotation.JsonUnwrapped
+import com.pluxity.common.auth.user.entity.Permissible
 import com.pluxity.common.core.response.BaseResponse
 import com.pluxity.common.core.response.toBaseResponse
 import com.pluxity.weekly.task.entity.Task
@@ -26,9 +27,16 @@ data class TaskResponse(
     val startDate: LocalDate?,
     @field:Schema(description = "마감일", example = "2026-03-31")
     val dueDate: LocalDate?,
+    @field:Schema(description = "담당자 ID", example = "1")
+    val assigneeId: Long?,
+    @field:Schema(description = "담당자 이름", example = "홍길동")
+    val assigneeName: String?,
     @field:JsonUnwrapped
     val baseResponse: BaseResponse,
-)
+) : Permissible {
+    override val resourceId: String get() = id.toString()
+    override val resourceType: String get() = "TASK"
+}
 
 fun Task.toResponse(): TaskResponse =
     TaskResponse(
@@ -40,5 +48,7 @@ fun Task.toResponse(): TaskResponse =
         progress = this.progress,
         startDate = this.startDate,
         dueDate = this.dueDate,
+        assigneeId = this.assignee?.id,
+        assigneeName = this.assignee?.name,
         baseResponse = this.toBaseResponse(),
     )

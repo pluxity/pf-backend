@@ -1,5 +1,6 @@
 package com.pluxity.weekly.task.service
 
+import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.epic.entity.dummyEpic
 import com.pluxity.weekly.epic.repository.EpicRepository
@@ -25,7 +26,8 @@ class TaskServiceTest :
 
         val taskRepository: TaskRepository = mockk()
         val epicRepository: EpicRepository = mockk()
-        val service = TaskService(taskRepository, epicRepository)
+        val userRepository: UserRepository = mockk()
+        val service = TaskService(taskRepository, epicRepository, userRepository)
 
         Given("태스크 전체 조회") {
             When("태스크 목록을 조회하면") {
@@ -106,6 +108,7 @@ class TaskServiceTest :
                 val saved = dummyTask(id = 1L, epic = epic, name = "신규 태스크")
 
                 every { epicRepository.findByIdOrNull(1L) } returns epic
+                every { taskRepository.existsByEpicIdAndName(1L, request.name) } returns false
                 every { taskRepository.save(any<Task>()) } returns saved
 
                 val result = service.create(request)
