@@ -39,17 +39,17 @@ class ChatService(
 
     fun resolve(
         partial: Map<String, Any?>,
-        selected: String,
+        selected: Map<String, String>,
         userId: Long,
     ): ActionResult {
-        val parts = selected.split(">").map { it.trim() }
         val llmAction =
             LlmAction(
                 action = partial["action"] as? String ?: "read",
-                project = parts.getOrNull(0),
-                epic = parts.getOrNull(1),
-                name = parts.getOrNull(2),
+                project = selected["project"],
+                epic = selected["epic"],
+                name = selected["name"],
                 status = partial["status"] as? String,
+                progress = (partial["progress"] as? Number)?.toInt(),
                 filters = partial["filters"] as? Map<String, Any?>,
             )
 
