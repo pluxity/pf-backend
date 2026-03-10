@@ -166,7 +166,7 @@ class ActionHandler(
     private inline fun <reified T : Enum<T>> parseEnum(value: String): T? =
         try {
             enumValueOf<T>(value.uppercase().replace(" ", "_"))
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             null
         }
 }

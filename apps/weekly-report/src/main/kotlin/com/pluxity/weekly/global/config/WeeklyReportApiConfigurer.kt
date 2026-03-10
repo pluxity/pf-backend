@@ -26,4 +26,7 @@ class WeeklyReportApiConfigurer : ApiConfigurer {
 
     @Bean
     fun taskApi(): GroupedOpenApi = apiGroup("8. 태스크 관리 API", "/tasks/**")
+
+    @Bean
+    fun chatApi(): GroupedOpenApi = apiGroup("9. 채팅 API", "/chat/**")
 }
