@@ -6,6 +6,7 @@ dependencies {
     implementation(project(":common:core"))
     implementation(project(":common:auth"))
     implementation(rootProject.libs.logbook)
+    implementation(rootProject.libs.spring.boot.starter.webflux)
 
     testImplementation(project(":common:test-support"))
 }
