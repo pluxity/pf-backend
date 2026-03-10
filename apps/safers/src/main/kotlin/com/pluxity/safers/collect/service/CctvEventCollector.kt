@@ -20,8 +20,15 @@ class CctvEventCollector(
     }
 
     fun collect(request: EventCreateRequest) {
-        eventKafkaTemplate.send(TOPIC_EVENTS, request.eventId, request)
-        logger.info { "CCTV 이벤트 수집 발행: eventId=${request.eventId}" }
+        eventKafkaTemplate
+            .send(TOPIC_EVENTS, request.eventId, request)
+            .whenComplete { _, ex ->
+                if (ex != null) {
+                    logger.error(ex) { "CCTV 이벤트 발행 실패: eventId=${request.eventId}" }
+                } else {
+                    logger.info { "CCTV 이벤트 수집 발행: eventId=${request.eventId}" }
+                }
+            }
     }
 
     fun collectVideo(
@@ -29,7 +36,14 @@ class CctvEventCollector(
         request: EventVideoUploadRequest,
     ) {
         val message = CctvVideoMessage(eventId = eventId, videoUrl = request.video)
-        videoKafkaTemplate.send(TOPIC_VIDEOS, eventId.toString(), message)
-        logger.info { "CCTV 영상 수집 발행: eventId=$eventId" }
+        videoKafkaTemplate
+            .send(TOPIC_VIDEOS, eventId.toString(), message)
+            .whenComplete { _, ex ->
+                if (ex != null) {
+                    logger.error(ex) { "CCTV 영상 발행 실패: eventId=$eventId" }
+                } else {
+                    logger.info { "CCTV 영상 수집 발행: eventId=$eventId" }
+                }
+            }
     }
 }

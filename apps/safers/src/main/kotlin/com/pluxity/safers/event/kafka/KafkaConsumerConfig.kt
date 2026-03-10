@@ -3,6 +3,7 @@ package com.pluxity.safers.event.kafka
 import com.pluxity.safers.collect.dto.CctvVideoMessage
 import com.pluxity.safers.event.dto.EventCreateRequest
 import com.pluxity.safers.global.config.KafkaProperties
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.springframework.context.annotation.Bean
@@ -10,7 +11,13 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory
+import org.springframework.kafka.core.KafkaTemplate
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer
+import org.springframework.kafka.listener.DefaultErrorHandler
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+import org.springframework.util.backoff.FixedBackOff
+
+private val logger = KotlinLogging.logger {}
 
 @EnableKafka
 @Configuration
@@ -26,7 +33,19 @@ class KafkaConsumerConfig(
         )
 
     @Bean
-    fun cctvEventListenerFactory(): ConcurrentKafkaListenerContainerFactory<String, EventCreateRequest> =
+    fun kafkaErrorHandler(dltKafkaTemplate: KafkaTemplate<String, ByteArray>): DefaultErrorHandler {
+        val recoverer = DeadLetterPublishingRecoverer(dltKafkaTemplate)
+        return DefaultErrorHandler(recoverer, FixedBackOff(1000L, 3L)).apply {
+            setRetryListeners({ record, ex, deliveryAttempt ->
+                logger.warn(ex) { "Kafka 소비 재시도 (${deliveryAttempt}회): topic=${record.topic()}, key=${record.key()}" }
+            })
+        }
+    }
+
+    @Bean
+    fun cctvEventListenerFactory(
+        kafkaErrorHandler: DefaultErrorHandler,
+    ): ConcurrentKafkaListenerContainerFactory<String, EventCreateRequest> =
         ConcurrentKafkaListenerContainerFactory<String, EventCreateRequest>().apply {
             setConsumerFactory(
                 DefaultKafkaConsumerFactory(
@@ -35,10 +54,13 @@ class KafkaConsumerConfig(
                     JacksonJsonDeserializer(EventCreateRequest::class.java),
                 ),
             )
+            setCommonErrorHandler(kafkaErrorHandler)
         }
 
     @Bean
-    fun cctvVideoListenerFactory(): ConcurrentKafkaListenerContainerFactory<String, CctvVideoMessage> =
+    fun cctvVideoListenerFactory(
+        kafkaErrorHandler: DefaultErrorHandler,
+    ): ConcurrentKafkaListenerContainerFactory<String, CctvVideoMessage> =
         ConcurrentKafkaListenerContainerFactory<String, CctvVideoMessage>().apply {
             setConsumerFactory(
                 DefaultKafkaConsumerFactory(
@@ -47,5 +69,6 @@ class KafkaConsumerConfig(
                     JacksonJsonDeserializer(CctvVideoMessage::class.java),
                 ),
             )
+            setCommonErrorHandler(kafkaErrorHandler)
         }
 }
