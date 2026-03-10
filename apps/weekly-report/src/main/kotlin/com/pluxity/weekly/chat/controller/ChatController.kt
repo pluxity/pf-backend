@@ -1,0 +1,73 @@
+package com.pluxity.weekly.chat.controller
+
+import com.pluxity.common.auth.user.service.UserService
+import com.pluxity.common.core.response.DataResponseBody
+import com.pluxity.common.core.response.ErrorResponseBody
+import com.pluxity.weekly.chat.action.dto.ActionResult
+import com.pluxity.weekly.chat.dto.ChatRequest
+import com.pluxity.weekly.chat.dto.ChatResponse
+import com.pluxity.weekly.chat.dto.ResolveRequest
+import com.pluxity.weekly.chat.service.ChatService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
+import org.springframework.http.ResponseEntity
+import org.springframework.security.core.Authentication
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+
+@RestController
+@RequestMapping("/chat")
+@Tag(name = "Chat Controller", description = "자연어 채팅 CRUD API")
+class ChatController(
+    private val chatService: ChatService,
+    private val userService: UserService,
+) {
+    @Operation(summary = "채팅 메시지 전송", description = "자연어 메시지를 분석하여 CRUD 작업을 수행합니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "처리 성공"),
+            ApiResponse(
+                responseCode = "503",
+                description = "LLM 서비스 불가",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponseBody::class))],
+            ),
+        ],
+    )
+    @PostMapping
+    fun chat(
+        @RequestBody @Valid request: ChatRequest,
+        authentication: Authentication,
+    ): ResponseEntity<DataResponseBody<ChatResponse>> {
+        val user = userService.findUserByUsername(authentication.name)
+        val response = chatService.chat(request.message, user.requiredId)
+        return ResponseEntity.ok(DataResponseBody(response))
+    }
+
+    @Operation(summary = "Clarify 응답 처리", description = "사용자가 선택한 candidate로 액션을 완성하여 실행합니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "처리 성공"),
+            ApiResponse(
+                responseCode = "400",
+                description = "잘못된 요청",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponseBody::class))],
+            ),
+        ],
+    )
+    @PostMapping("/resolve")
+    fun resolve(
+        @RequestBody @Valid request: ResolveRequest,
+        authentication: Authentication,
+    ): ResponseEntity<DataResponseBody<ActionResult>> {
+        val user = userService.findUserByUsername(authentication.name)
+        val result = chatService.resolve(request.partial, request.selected, user.requiredId)
+        return ResponseEntity.ok(DataResponseBody(result))
+    }
+}
