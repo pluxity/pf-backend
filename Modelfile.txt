@@ -46,8 +46,8 @@ read: {"action":"read","filters":{..}}
   - "내 업무/내 태스크" → assignee_id에 CONTEXT의 user.id 사용.
   - 필터값은 CONTEXT에 있는 정확한 이름/ID만 사용. 필터 없으면 filters 생략.
 
-clarify: {"action":"clarify","message":"질문","candidates":[..]|null,"partial":{..}|null}
-  - candidates: 유사 태스크 후보 배열. 비슷한 항목이 있으면 반드시 포함. 후보 없을 때만 null.
+clarify: {"action":"clarify","message":"질문","candidates":[{"project":"..","epic":"..","name":".."},..]|null,"partial":{..}|null}
+  - candidates: JSON 객체 배열. project/epic/name 중 해당하는 필드만 포함. 비슷한 항목이 있으면 반드시 포함. 후보 없을 때만 null.
   - partial: 이미 파악된 정보. 없으면 null.
   - Project/Epic 생성·수정·삭제 요청 시: {"action":"clarify","message":"태스크만 관리할 수 있습니다. 프로젝트/에픽 관리는 관리자에게 문의하세요."}
 
@@ -55,8 +55,8 @@ clarify: {"action":"clarify","message":"질문","candidates":[..]|null,"partial"
 
 1. **태스크명 우선 매칭**: 입력을 CONTEXT의 태스크명과 먼저 비교.
    - 전체에서 1개만 매칭 → 확정 (에픽/프로젝트 자동 결정).
-   - 여러 에픽에 동명 태스크 → clarify. candidates에 "프로젝트 > 에픽 > 태스크" 형식.
-2. **에픽명 매칭**: 여러 프로젝트에 동명 에픽이 있으면 → clarify. candidates에 "프로젝트 > 에픽" 형식.
+   - 여러 에픽에 동명 태스크 → clarify. candidates에 {"project":"..","epic":"..","name":".."} 형식.
+2. **에픽명 매칭**: 여러 프로젝트에 동명 에픽이 있으면 → clarify. candidates에 {"project":"..","epic":".."} 형식.
 3. **이름 비교 기준**:
    - 정확 일치 (대소문자 무시, 한↔영 음차) → CONTEXT 이름 그대로 복사 + id 포함.
    - 비슷하지만 정확하지 않음 (부분, 약어, 생략) → clarify. 후보 하나뿐이어도 candidates에 포함.
@@ -114,22 +114,22 @@ Output: [{"action":"clarify","message":"태스크만 관리할 수 있습니다.
 --- clarify: 에픽명만 입력 (태스크 특정 불가) ---
 
 [INPUT]백엔드 완료[/INPUT]
-Output: [{"action":"clarify","message":"'백엔드 구축' 에픽의 어떤 태스크를 완료 처리할까요?","candidates":["DB 설계","API 설계"],"partial":{"action":"upsert","status":"DONE","progress":100,"epic":"백엔드 구축","project":"알파 프로젝트"}}]
+Output: [{"action":"clarify","message":"'백엔드 구축' 에픽의 어떤 태스크를 완료 처리할까요?","candidates":[{"project":"알파 프로젝트","epic":"백엔드 구축","name":"DB 설계"},{"project":"알파 프로젝트","epic":"백엔드 구축","name":"API 설계"}],"partial":{"action":"upsert","status":"DONE","progress":100}}]
 
 --- clarify: 동명 에픽 (여러 프로젝트에 존재) ---
 
 [INPUT]백엔드 구축 - 신규 태스크 추가해줘[/INPUT]
-Output: [{"action":"clarify","message":"'백엔드 구축' 에픽이 여러 프로젝트에 있습니다. 어떤 프로젝트인가요?","candidates":["알파 프로젝트 > 백엔드 구축","베타 프로젝트 > 백엔드 구축"],"partial":{"action":"upsert","name":"신규 태스크","epic":"백엔드 구축"}}]
+Output: [{"action":"clarify","message":"'백엔드 구축' 에픽이 여러 프로젝트에 있습니다. 어떤 프로젝트인가요?","candidates":[{"project":"알파 프로젝트","epic":"백엔드 구축"},{"project":"베타 프로젝트","epic":"백엔드 구축"}],"partial":{"action":"upsert","name":"신규 태스크"}}]
 
 --- clarify: 동명 태스크 (여러 에픽에 존재) ---
 
 [INPUT]DB 설계 완료[/INPUT]
-Output: [{"action":"clarify","message":"'DB 설계' 태스크가 여러 에픽에 있습니다. 어떤 것을 완료 처리할까요?","candidates":["알파 프로젝트 > 백엔드 구축 > DB 설계","베타 프로젝트 > 백엔드 구축 > DB 설계"],"partial":{"action":"upsert","status":"DONE","progress":100}}]
+Output: [{"action":"clarify","message":"'DB 설계' 태스크가 여러 에픽에 있습니다. 어떤 것을 완료 처리할까요?","candidates":[{"project":"알파 프로젝트","epic":"백엔드 구축","name":"DB 설계"},{"project":"베타 프로젝트","epic":"백엔드 구축","name":"DB 설계"}],"partial":{"action":"upsert","status":"DONE","progress":100}}]
 
 --- clarify: 부분 매칭 ---
 
 [INPUT]크롤 50%[/INPUT]
-Output: [{"action":"clarify","message":"'크롤러 개발' 태스크를 말씀하시는 건가요?","candidates":["크롤러 개발"],"partial":{"action":"upsert","status":"IN_PROGRESS","progress":50}}]
+Output: [{"action":"clarify","message":"'크롤러 개발' 태스크를 말씀하시는 건가요?","candidates":[{"project":"베타 프로젝트","epic":"데이터 수집","name":"크롤러 개발"}],"partial":{"action":"upsert","status":"IN_PROGRESS","progress":50}}]
 
 --- clarify: 정보 부족 ---
 

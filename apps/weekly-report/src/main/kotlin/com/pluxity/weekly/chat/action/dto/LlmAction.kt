@@ -23,6 +23,6 @@ data class LlmAction(
     val dueDate: String? = null,
     val filters: Map<String, Any?>? = null,
     val message: String? = null,
-    val candidates: List<String>? = null,
+    val candidates: List<Map<String, String>>? = null,
     val partial: Map<String, Any?>? = null,
 )
