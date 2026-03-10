@@ -1,14 +1,18 @@
 package com.pluxity.safers.collect.controller
 
 import com.ninjasquad.springmockk.MockkBean
+import com.pluxity.common.core.aop.ResponseCreatedAspect
 import com.pluxity.safers.collect.service.CctvEventCollector
 import com.pluxity.safers.event.dto.dummyEventCreateRequest
+import com.pluxity.safers.event.service.EventFacade
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.every
 import io.mockk.just
 import io.mockk.runs
 import io.mockk.verify
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
+import org.springframework.context.annotation.EnableAspectJAutoProxy
+import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user
@@ -17,9 +21,12 @@ import org.springframework.test.web.servlet.post
 import tools.jackson.databind.ObjectMapper
 
 @WebMvcTest(CctvEventCollectController::class)
+@Import(ResponseCreatedAspect::class)
+@EnableAspectJAutoProxy
 class CctvEventCollectControllerTest(
     private val mockMvc: MockMvc,
     private val objectMapper: ObjectMapper,
+    @MockkBean private val eventFacade: EventFacade,
     @MockkBean private val cctvEventCollector: CctvEventCollector,
 ) : BehaviorSpec({
 
@@ -28,7 +35,7 @@ class CctvEventCollectControllerTest(
         Given("이벤트 수집 API") {
 
             When("POST $baseUrl - 유효한 요청") {
-                every { cctvEventCollector.collect(any()) } just runs
+                every { eventFacade.create(any()) } returns 1L
 
                 val request = dummyEventCreateRequest()
                 val result =
@@ -39,14 +46,15 @@ class CctvEventCollectControllerTest(
                         with(user("tester"))
                     }
 
-                Then("202 Accepted가 반환된다") {
+                Then("201 Created가 반환된다") {
                     result.andExpect {
-                        status { isAccepted() }
+                        status { isCreated() }
+                        header { string("Location", "/events/1") }
                     }
                 }
 
-                Then("CctvEventCollector.collect가 호출된다") {
-                    verify { cctvEventCollector.collect(any()) }
+                Then("EventFacade.create가 호출된다") {
+                    verify { eventFacade.create(any()) }
                 }
             }
 
