@@ -21,4 +21,5 @@ dependencies {
     implementation(rootProject.libs.bundles.spatial)
 
     testImplementation(project(":common:test-support"))
+    testImplementation(rootProject.libs.spring.kafka.test)
 }

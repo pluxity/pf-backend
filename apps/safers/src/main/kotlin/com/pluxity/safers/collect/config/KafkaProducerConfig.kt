@@ -19,8 +19,10 @@ class KafkaProducerConfig(
     private fun producerProps(): Map<String, Any> =
         mapOf(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to kafkaProperties.bootstrapServers,
+            ProducerConfig.ACKS_CONFIG to "all",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JacksonJsonSerializer::class.java,
+            JacksonJsonSerializer.ADD_TYPE_INFO_HEADERS to false,
         )
 
     @Bean
