@@ -12,14 +12,14 @@ data class LlmAction(
     val status: String? = null,
     val progress: Int? = null,
     val project: String? = null,
-    @JsonProperty("project_id")
+    @param:JsonProperty("project_id")
     val projectId: Long? = null,
     val epic: String? = null,
-    @JsonProperty("epic_id")
+    @param:JsonProperty("epic_id")
     val epicId: Long? = null,
-    @JsonProperty("start_date")
+    @param:JsonProperty("start_date")
     val startDate: String? = null,
-    @JsonProperty("due_date")
+    @param:JsonProperty("due_date")
     val dueDate: String? = null,
     val filters: Map<String, Any?>? = null,
     val message: String? = null,

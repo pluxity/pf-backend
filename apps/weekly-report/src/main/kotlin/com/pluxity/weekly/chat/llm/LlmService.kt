@@ -23,7 +23,7 @@ class LlmService(
 ) {
     private val webClient =
         webClientFactory.createClient(
-            baseUrl = properties.baseUrl
+            baseUrl = properties.baseUrl,
         )
 
     fun generate(userMessage: String): List<LlmAction> {
@@ -94,7 +94,7 @@ class LlmService(
             } else {
                 listOf(objectMapper.readValue(json, LlmAction::class.java))
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             log.error { "LLM 응답 JSON 파싱 실패: $json" }
             throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
         }

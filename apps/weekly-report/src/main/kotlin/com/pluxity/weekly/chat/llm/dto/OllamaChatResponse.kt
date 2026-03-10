@@ -8,16 +8,16 @@ data class OllamaChatResponse(
     val model: String? = null,
     val message: OllamaMessage? = null,
     val done: Boolean = false,
-    @JsonProperty("prompt_eval_count")
+    @param:JsonProperty("prompt_eval_count")
     val promptEvalCount: Int = 0,
-    @JsonProperty("eval_count")
+    @param:JsonProperty("eval_count")
     val evalCount: Int = 0,
-    @JsonProperty("prompt_eval_duration")
+    @param:JsonProperty("prompt_eval_duration")
     val promptEvalDuration: Long = 0,
-    @JsonProperty("eval_duration")
+    @param:JsonProperty("eval_duration")
     val evalDuration: Long = 0,
-    @JsonProperty("total_duration")
+    @param:JsonProperty("total_duration")
     val totalDuration: Long = 0,
-    @JsonProperty("load_duration")
+    @param:JsonProperty("load_duration")
     val loadDuration: Long = 0,
 )
