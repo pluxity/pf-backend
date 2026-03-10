@@ -37,7 +37,7 @@ springwolf: # socket documentation ui
   enabled: true
   docket:
     default-content-type: application/json
-    base-package: com.pluxity
+    base-package: com.pluxity.safers.global.messaging
     servers:
       stomp:
         protocol: stomp
