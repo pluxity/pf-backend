@@ -68,8 +68,9 @@ class ActionHandler(
         userId: Long,
         actionType: ActionType,
     ): ActionResult {
-        if (action.id != null) {
-            return updateTask(action, actionType)
+        val taskId = action.id ?: resolveTaskId(action)
+        if (taskId != null) {
+            return updateTask(action.copy(id = taskId), actionType)
         }
         return createTask(action, userId, actionType)
     }
@@ -134,7 +135,8 @@ class ActionHandler(
         action: LlmAction,
         actionType: ActionType,
     ): ActionResult {
-        val id = action.id ?: return ActionResult(ActionResultType.ERROR, actionType, "삭제할 태스크의 ID가 필요합니다.")
+        val id = action.id ?: resolveTaskId(action)
+            ?: return ActionResult(ActionResultType.ERROR, actionType, "삭제할 태스크를 찾을 수 없습니다.")
         return ActionResult(
             type = ActionResultType.NEEDS_CONFIRM,
             action = actionType,
@@ -154,6 +156,12 @@ class ActionHandler(
             candidates = action.candidates,
             partial = action.partial,
         )
+
+    private fun resolveTaskId(action: LlmAction): Long? {
+        val name = action.name ?: return null
+        val epicId = resolveEpicId(action) ?: return null
+        return taskRepository.findByEpicIdAndName(epicId, name)?.requiredId
+    }
 
     private fun resolveProjectId(action: LlmAction): Long? {
         if (action.projectId != null) return action.projectId

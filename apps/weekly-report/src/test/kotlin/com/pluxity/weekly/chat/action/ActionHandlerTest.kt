@@ -62,6 +62,7 @@ class ActionHandlerTest :
             When("신규 task 생성 요청이면") {
                 val action = dummyUpsertAction(name = "신규 태스크", epicId = 1L)
 
+                every { taskRepository.findByEpicIdAndName(1L, "신규 태스크") } returns null
                 every { taskService.create(any()) } returns 1L
 
                 val result = handler.handle(action, userId)
@@ -96,6 +97,7 @@ class ActionHandlerTest :
 
                 every { projectRepository.findByNameContainingIgnoreCase(any()) } returns emptyList()
                 every { epicRepository.findByNameContainingIgnoreCase("인증") } returns listOf(epic)
+                every { taskRepository.findByEpicIdAndName(5L, "로그인") } returns null
                 every { taskService.create(any()) } returns 2L
 
                 val result = handler.handle(action, userId)
@@ -137,14 +139,17 @@ class ActionHandlerTest :
                 }
             }
 
-            When("ID가 없으면") {
-                val action = dummyDeleteAction().copy(id = null)
+            When("ID가 없고 이름으로도 찾을 수 없으면") {
+                val action = dummyDeleteAction().copy(id = null, name = "없는태스크", epic = "없는에픽")
+
+                every { projectRepository.findByNameContainingIgnoreCase(any()) } returns emptyList()
+                every { epicRepository.findByNameContainingIgnoreCase("없는에픽") } returns emptyList()
 
                 val result = handler.handle(action, userId)
 
                 Then("ERROR 결과를 반환한다") {
                     result.type shouldBe ActionResultType.ERROR
-                    result.message shouldBe "삭제할 태스크의 ID가 필요합니다."
+                    result.message shouldBe "삭제할 태스크를 찾을 수 없습니다."
                 }
             }
         }
@@ -158,7 +163,10 @@ class ActionHandlerTest :
                 Then("CLARIFY 결과를 반환한다") {
                     result.type shouldBe ActionResultType.CLARIFY
                     result.message shouldBe "어느 프로젝트인가요?"
-                    result.candidates shouldBe listOf("SAFERS", "용인 플랫폼")
+                    result.candidates shouldBe listOf(
+                        mapOf("project" to "SAFERS", "epic" to "api 구현"),
+                        mapOf("project" to "용인 플랫폼", "epic" to "api 구현"),
+                    )
                     result.partial shouldBe mapOf("action" to "delete")
                 }
             }
@@ -168,6 +176,7 @@ class ActionHandlerTest :
             When("서비스 호출 시 권한 에러가 발생하면") {
                 val action = dummyUpsertAction(name = "태스크", epicId = 1L)
 
+                every { taskRepository.findByEpicIdAndName(1L, "태스크") } returns null
                 every { taskService.create(any()) } throws
                     CustomException(WeeklyReportErrorCode.NOT_FOUND_TASK, 999L)
 
