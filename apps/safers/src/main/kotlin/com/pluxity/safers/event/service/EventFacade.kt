@@ -24,6 +24,14 @@ class EventFacade(
         eventService.uploadVideo(eventId, videoFileId)
     }
 
+    fun uploadVideoByEventId(
+        eventId: String,
+        videoUrl: String,
+    ) {
+        val videoFileId = eventFileDownloadService.downloadAndInitiateUpload(videoUrl)
+        eventService.uploadVideoByEventId(eventId, videoFileId)
+    }
+
     fun findById(id: Long): EventResponse = eventService.findById(id)
 
     fun findAll(

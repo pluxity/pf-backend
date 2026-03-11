@@ -85,6 +85,25 @@ class EventService(
         }
     }
 
+    @Transactional
+    fun uploadVideoByEventId(
+        eventId: String,
+        videoFileId: Long?,
+    ) {
+        val event =
+            eventRepository.findByEventId(eventId)
+                ?: throw CustomException(SafersErrorCode.NOT_FOUND_EVENT, eventId)
+
+        event.assignVideoFile(videoFileId)
+
+        videoFileId?.let {
+            fileService.finalizeUpload(it, "$EVENT_PATH${event.requiredId}/")
+            val snapshotFileResponse = fileService.getFileResponse(event.snapshotFileId)
+            val videoFileResponse = fileService.getFileResponse(it)
+            eventPublisher.publishEvent(EventVideoRegistered(event.toResponse(snapshotFileResponse, videoFileResponse)))
+        }
+    }
+
     fun findById(id: Long): EventResponse {
         val event =
             eventRepository.findByIdOrNull(id)

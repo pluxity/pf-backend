@@ -36,8 +36,8 @@ class CctvEventCollectController(
     @PostMapping("/{eventId}/video")
     fun collectVideo(
         @PathVariable
-        @Parameter(description = "이벤트 ID", required = true)
-        eventId: Long,
+        @Parameter(description = "이벤트 ID (문자열)", required = true, example = "EVT-20260101-001")
+        eventId: String,
         @RequestBody
         @Valid
         request: EventVideoUploadRequest,

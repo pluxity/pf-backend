@@ -33,13 +33,13 @@ class CctvEventConsumerTest :
         Given("영상 소비") {
 
             When("영상 메시지를 소비하면") {
-                val message = CctvVideoMessage(eventId = 1L, videoUrl = "http://localhost:8080/videos/clip.mp4")
-                every { eventFacade.uploadVideo(any(), any()) } just runs
+                val message = CctvVideoMessage(eventId = "EVT-20260101-001", videoUrl = "http://localhost:8080/videos/clip.mp4")
+                every { eventFacade.uploadVideoByEventId(any(), any()) } just runs
 
                 consumer.consumeVideo(message)
 
-                Then("EventFacade.uploadVideo가 호출된다") {
-                    verify { eventFacade.uploadVideo(1L, "http://localhost:8080/videos/clip.mp4") }
+                Then("EventFacade.uploadVideoByEventId가 호출된다") {
+                    verify { eventFacade.uploadVideoByEventId("EVT-20260101-001", "http://localhost:8080/videos/clip.mp4") }
                 }
             }
         }

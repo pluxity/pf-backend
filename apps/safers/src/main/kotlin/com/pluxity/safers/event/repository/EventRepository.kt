@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface EventRepository :
     JpaRepository<Event, Long>,
-    EventCustomRepository
+    EventCustomRepository {
+    fun findByEventId(eventId: String): Event?
+}

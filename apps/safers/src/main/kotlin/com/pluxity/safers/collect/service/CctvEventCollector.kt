@@ -32,12 +32,12 @@ class CctvEventCollector(
     }
 
     fun collectVideo(
-        eventId: Long,
+        eventId: String,
         request: EventVideoUploadRequest,
     ) {
         val message = CctvVideoMessage(eventId = eventId, videoUrl = request.video)
         videoKafkaTemplate
-            .send(TOPIC_VIDEOS, eventId.toString(), message)
+            .send(TOPIC_VIDEOS, eventId, message)
             .whenComplete { _, ex ->
                 if (ex != null) {
                     logger.error(ex) { "CCTV 영상 발행 실패: eventId=$eventId" }

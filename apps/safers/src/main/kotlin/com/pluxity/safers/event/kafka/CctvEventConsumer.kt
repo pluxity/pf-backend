@@ -23,6 +23,6 @@ class CctvEventConsumer(
     @KafkaListener(topics = [CctvEventCollector.TOPIC_VIDEOS], groupId = "safers", containerFactory = "cctvVideoListenerFactory")
     fun consumeVideo(message: CctvVideoMessage) {
         logger.info { "CCTV 영상 소비: eventId=${message.eventId}" }
-        eventFacade.uploadVideo(message.eventId, message.videoUrl)
+        eventFacade.uploadVideoByEventId(message.eventId, message.videoUrl)
     }
 }

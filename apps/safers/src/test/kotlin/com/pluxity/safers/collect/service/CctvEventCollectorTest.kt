@@ -42,7 +42,7 @@ class CctvEventCollectorTest :
         Given("영상 수집 발행") {
 
             When("영상 URL을 발행하면") {
-                val eventId = 1L
+                val eventId = "EVT-20260101-001"
                 val request = EventVideoUploadRequest(video = "http://localhost:8080/videos/clip.mp4")
                 every { videoKafkaTemplate.send(any<String>(), any(), any()) } returns CompletableFuture.completedFuture(mockk())
 
@@ -52,7 +52,7 @@ class CctvEventCollectorTest :
                     verify {
                         videoKafkaTemplate.send(
                             CctvEventCollector.TOPIC_VIDEOS,
-                            eventId.toString(),
+                            eventId,
                             match<CctvVideoMessage> { it.eventId == eventId && it.videoUrl == request.video },
                         )
                     }

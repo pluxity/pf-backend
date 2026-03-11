@@ -90,7 +90,7 @@ class CctvEventCollectControllerTest(
                 }
 
                 Then("CctvEventCollector.collectVideo가 호출된다") {
-                    verify { cctvEventCollector.collectVideo(eq(1L), any()) }
+                    verify { cctvEventCollector.collectVideo(eq("1"), any()) }
                 }
             }
 
