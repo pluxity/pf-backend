@@ -13,8 +13,14 @@ import java.time.LocalDate
 data class TaskResponse(
     @field:Schema(description = "ID", example = "1")
     val id: Long,
+    @field:Schema(description = "프로젝트 ID", example = "1")
+    val projectId: Long,
+    @field:Schema(description = "프로젝트명", example = "SAFERS 관제 시스템")
+    val projectName: String,
     @field:Schema(description = "에픽 ID", example = "1")
     val epicId: Long,
+    @field:Schema(description = "에픽명", example = "기획")
+    val epicName: String,
     @field:Schema(description = "태스크명", example = "로그인 API 개발")
     val name: String,
     @field:Schema(description = "설명", example = "태스크 설명입니다")
@@ -42,6 +48,9 @@ fun Task.toResponse(): TaskResponse =
     TaskResponse(
         id = this.requiredId,
         epicId = this.epic.requiredId,
+        epicName = this.epic.name,
+        projectId = this.epic.project.requiredId,
+        projectName = this.epic.project.name,
         name = this.name,
         description = this.description,
         status = this.status,
