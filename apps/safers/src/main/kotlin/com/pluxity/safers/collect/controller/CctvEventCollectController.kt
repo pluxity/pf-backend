@@ -1,10 +1,15 @@
 package com.pluxity.safers.collect.controller
 
+import com.pluxity.common.core.response.ErrorResponseBody
 import com.pluxity.safers.collect.dto.CctvVideoCollectRequest
 import com.pluxity.safers.collect.service.CctvEventCollector
 import com.pluxity.safers.event.dto.EventCreateRequest
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
@@ -20,6 +25,34 @@ class CctvEventCollectController(
     private val cctvEventCollector: CctvEventCollector,
 ) {
     @Operation(summary = "이벤트 수집", description = "외부 시스템에서 감지된 이벤트를 수집하여 Kafka를 통해 비동기 등록합니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "202",
+                description = "이벤트 수집 접수 완료",
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "잘못된 요청",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+            ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+        ],
+    )
     @PostMapping
     fun collectEvent(
         @Parameter(description = "이벤트 등록 정보", required = true)
@@ -32,6 +65,34 @@ class CctvEventCollectController(
     }
 
     @Operation(summary = "이벤트 영상 수집", description = "이벤트에 대한 영상을 수집하여 Kafka를 통해 비동기 등록합니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "202",
+                description = "영상 수집 접수 완료",
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "잘못된 요청",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+            ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+        ],
+    )
     @PostMapping("/video")
     fun collectVideo(
         @Parameter(description = "영상 수집 정보", required = true)
