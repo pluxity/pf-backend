@@ -11,7 +11,7 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "events")
 class Event(
-    @Column(name = "event_id", nullable = false)
+    @Column(name = "event_id", nullable = false, unique = true)
     val eventId: String,
     @Column(name = "event_timestamp", nullable = false)
     val eventTimestamp: LocalDateTime,

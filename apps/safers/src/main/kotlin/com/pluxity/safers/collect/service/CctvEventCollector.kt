@@ -1,8 +1,8 @@
 package com.pluxity.safers.collect.service
 
+import com.pluxity.safers.collect.dto.CctvVideoCollectRequest
 import com.pluxity.safers.collect.dto.CctvVideoMessage
 import com.pluxity.safers.event.dto.EventCreateRequest
-import com.pluxity.safers.event.dto.EventVideoUploadRequest
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
@@ -31,18 +31,15 @@ class CctvEventCollector(
             }
     }
 
-    fun collectVideo(
-        eventId: String,
-        request: EventVideoUploadRequest,
-    ) {
-        val message = CctvVideoMessage(eventId = eventId, videoUrl = request.video)
+    fun collectVideo(request: CctvVideoCollectRequest) {
+        val message = CctvVideoMessage(eventId = request.eventId, videoUrl = request.video)
         videoKafkaTemplate
-            .send(TOPIC_VIDEOS, eventId, message)
+            .send(TOPIC_VIDEOS, request.eventId, message)
             .whenComplete { _, ex ->
                 if (ex != null) {
-                    logger.error(ex) { "CCTV 영상 발행 실패: eventId=$eventId" }
+                    logger.error(ex) { "CCTV 영상 발행 실패: eventId=${request.eventId}" }
                 } else {
-                    logger.info { "CCTV 영상 수집 발행: eventId=$eventId" }
+                    logger.info { "CCTV 영상 수집 발행: eventId=${request.eventId}" }
                 }
             }
     }

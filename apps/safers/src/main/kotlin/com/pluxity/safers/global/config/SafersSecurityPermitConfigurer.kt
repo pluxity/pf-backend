@@ -8,5 +8,6 @@ class SafersSecurityPermitConfigurer : SecurityPermitConfigurer {
     override fun permitPaths(): List<String> =
         listOf(
             "/events/**",
+            "/collect/**",
         )
 }

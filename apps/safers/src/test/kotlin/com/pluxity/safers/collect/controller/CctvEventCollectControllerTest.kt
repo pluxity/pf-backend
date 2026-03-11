@@ -23,7 +23,7 @@ class CctvEventCollectControllerTest(
     @MockkBean private val cctvEventCollector: CctvEventCollector,
 ) : BehaviorSpec({
 
-        val baseUrl = "/collect/events"
+        val baseUrl = "/collect/cctv/events"
 
         Given("이벤트 수집 API (Kafka)") {
 
@@ -71,12 +71,12 @@ class CctvEventCollectControllerTest(
 
         Given("영상 수집 API (Kafka)") {
 
-            When("POST $baseUrl/{eventId}/video - 유효한 요청") {
-                every { cctvEventCollector.collectVideo(any(), any()) } just runs
+            When("POST $baseUrl/video - 유효한 요청") {
+                every { cctvEventCollector.collectVideo(any()) } just runs
 
-                val request = mapOf("video" to "http://localhost:8080/videos/clip.mp4")
+                val request = mapOf("eventId" to "EVT-20260101-001", "video" to "http://localhost:8080/videos/clip.mp4")
                 val result =
-                    mockMvc.post("$baseUrl/1/video") {
+                    mockMvc.post("$baseUrl/video") {
                         contentType = MediaType.APPLICATION_JSON
                         content = objectMapper.writeValueAsString(request)
                         with(csrf())
@@ -90,15 +90,15 @@ class CctvEventCollectControllerTest(
                 }
 
                 Then("CctvEventCollector.collectVideo가 호출된다") {
-                    verify { cctvEventCollector.collectVideo(eq("1"), any()) }
+                    verify { cctvEventCollector.collectVideo(any()) }
                 }
             }
 
-            When("POST $baseUrl/{eventId}/video - 영상 URL 누락") {
-                val invalidRequest = mapOf("video" to "")
+            When("POST $baseUrl/video - 필수 필드 누락") {
+                val invalidRequest = mapOf("eventId" to "", "video" to "")
 
                 val result =
-                    mockMvc.post("$baseUrl/1/video") {
+                    mockMvc.post("$baseUrl/video") {
                         contentType = MediaType.APPLICATION_JSON
                         content = objectMapper.writeValueAsString(invalidRequest)
                         with(csrf())

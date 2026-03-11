@@ -1,8 +1,8 @@
 package com.pluxity.safers.collect.service
 
+import com.pluxity.safers.collect.dto.CctvVideoCollectRequest
 import com.pluxity.safers.collect.dto.CctvVideoMessage
 import com.pluxity.safers.event.dto.EventCreateRequest
-import com.pluxity.safers.event.dto.EventVideoUploadRequest
 import com.pluxity.safers.event.dto.dummyEventCreateRequest
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.every
@@ -42,18 +42,17 @@ class CctvEventCollectorTest :
         Given("영상 수집 발행") {
 
             When("영상 URL을 발행하면") {
-                val eventId = "EVT-20260101-001"
-                val request = EventVideoUploadRequest(video = "http://localhost:8080/videos/clip.mp4")
+                val request = CctvVideoCollectRequest(eventId = "EVT-20260101-001", video = "http://localhost:8080/videos/clip.mp4")
                 every { videoKafkaTemplate.send(any<String>(), any(), any()) } returns CompletableFuture.completedFuture(mockk())
 
-                collector.collectVideo(eventId, request)
+                collector.collectVideo(request)
 
                 Then("올바른 토픽과 키로 발행된다") {
                     verify {
                         videoKafkaTemplate.send(
                             CctvEventCollector.TOPIC_VIDEOS,
-                            eventId,
-                            match<CctvVideoMessage> { it.eventId == eventId && it.videoUrl == request.video },
+                            request.eventId,
+                            match<CctvVideoMessage> { it.eventId == request.eventId && it.videoUrl == request.video },
                         )
                     }
                 }
