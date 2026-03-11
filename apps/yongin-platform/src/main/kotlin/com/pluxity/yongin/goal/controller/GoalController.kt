@@ -2,12 +2,17 @@ package com.pluxity.yongin.goal.controller
 
 import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.response.DataResponseBody
+import com.pluxity.common.core.response.ErrorResponseBody
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.yongin.goal.dto.GoalBulkRequest
 import com.pluxity.yongin.goal.dto.GoalResponse
 import com.pluxity.yongin.goal.service.GoalService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
@@ -25,6 +30,24 @@ class GoalController(
     private val service: GoalService,
 ) {
     @Operation(summary = "목표관리 전체 조회", description = "목표관리 전체 목록을 조회합니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "목록 조회 성공",
+            ),
+            ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+        ],
+    )
     @GetMapping
     fun findAll(
         @Parameter(description = "조회 페이지번호", example = "1")
@@ -35,10 +58,56 @@ class GoalController(
         ResponseEntity.ok(DataResponseBody(service.findAll(PageSearchRequest(page, size))))
 
     @Operation(summary = "최근 목표관리 조회", description = "가장 최근 입력일자의 목표관리 목록을 조회합니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "최근 목표 조회 성공",
+            ),
+            ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+        ],
+    )
     @GetMapping("/latest")
     fun findLatest(): ResponseEntity<DataResponseBody<List<GoalResponse>>> = ResponseEntity.ok(DataResponseBody(service.findLatest()))
 
     @Operation(summary = "목표관리 저장/수정/삭제", description = "목표관리를 저장, 수정, 삭제합니다. upserts의 id가 없으면 생성, 있으면 수정합니다. deletedIds에 포함된 id는 삭제됩니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "204",
+                description = "저장/수정/삭제 성공",
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "잘못된 요청",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+            ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+        ],
+    )
     @PutMapping
     fun saveOrUpdateAll(
         @RequestBody @Valid request: GoalBulkRequest,
