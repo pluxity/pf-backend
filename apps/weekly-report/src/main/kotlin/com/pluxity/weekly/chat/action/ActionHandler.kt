@@ -59,8 +59,29 @@ class ActionHandler(
         actionType: ActionType,
     ): ActionResult {
         val filter = buildTaskFilter(action)
-        val results = taskService.search(filter)
-        return ActionResult(ActionResultType.SUCCESS, actionType, "${results.size}개의 태스크를 조회했습니다.", results)
+        val tasks = taskService.search(filter)
+        val results = tasks.groupBy { it.projectId }.map { (_, projectTasks) ->
+            val first = projectTasks.first()
+            mapOf(
+                "project" to first.projectName,
+                "epics" to projectTasks.groupBy { it.epicId }.map { (_, epicTasks) ->
+                    val epicFirst = epicTasks.first()
+                    mapOf(
+                        "name" to epicFirst.epicName,
+                        "tasks" to epicTasks.map { task ->
+                            mapOf(
+                                "id" to task.id,
+                                "name" to task.name,
+                                "status" to task.status,
+                                "progress" to task.progress,
+                            )
+                        },
+                    )
+                },
+            )
+        }
+
+        return ActionResult(ActionResultType.SUCCESS, actionType, "${tasks.size}개의 태스크를 조회했습니다.", results)
     }
 
     private fun handleUpsert(

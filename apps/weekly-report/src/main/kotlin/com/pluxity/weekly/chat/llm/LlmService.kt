@@ -3,13 +3,17 @@ package com.pluxity.weekly.chat.llm
 import com.pluxity.common.core.config.WebClientFactory
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.chat.action.dto.LlmAction
-import com.pluxity.weekly.chat.config.OllamaProperties
+import com.pluxity.weekly.chat.config.LlmProperties
 import com.pluxity.weekly.chat.llm.dto.OllamaChatRequest
 import com.pluxity.weekly.chat.llm.dto.OllamaChatResponse
 import com.pluxity.weekly.chat.llm.dto.OllamaMessage
 import com.pluxity.weekly.chat.llm.dto.OllamaOptions
+import com.pluxity.weekly.chat.llm.dto.OpenAiChatRequest
+import com.pluxity.weekly.chat.llm.dto.OpenAiChatResponse
+import com.pluxity.weekly.chat.llm.dto.OpenAiMessage
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Service
 import tools.jackson.databind.ObjectMapper
 
@@ -17,7 +21,7 @@ private val log = KotlinLogging.logger {}
 
 @Service
 class LlmService(
-    private val properties: OllamaProperties,
+    private val properties: LlmProperties,
     private val objectMapper: ObjectMapper,
     webClientFactory: WebClientFactory,
 ) {
@@ -26,32 +30,22 @@ class LlmService(
             baseUrl = properties.baseUrl,
         )
 
-    fun generate(userMessage: String): List<LlmAction> {
-        val request =
-            OllamaChatRequest(
-                model = properties.model,
-                messages = listOf(OllamaMessage(role = "user", content = userMessage)),
-                options = OllamaOptions(temperature = properties.temperature),
-            )
+    private val systemPrompt: String by lazy {
+        ClassPathResource("llm/system-prompt.txt").getContentAsString(Charsets.UTF_8)
+    }
 
+    fun generate(userMessage: String): List<LlmAction> {
         var lastException: Exception? = null
         repeat(MAX_RETRIES) { attempt ->
             try {
-                val response =
-                    webClient
-                        .post()
-                        .uri("/api/chat")
-                        .bodyValue(request)
-                        .retrieve()
-                        .bodyToMono(OllamaChatResponse::class.java)
-                        .block()
-                        ?: throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
-
-                logMetrics(response)
-
                 val content =
-                    response.message?.content
-                        ?: throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
+                    when (properties.provider) {
+                        "ollama" -> callOllama(userMessage)
+                        "openai" -> callOpenAi(userMessage)
+                        else -> throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
+                    }
+                log.info { "llm response : $content"}
+
 
                 return parseActions(content)
             } catch (e: CustomException) {
@@ -65,7 +59,77 @@ class LlmService(
         throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
     }
 
-    private fun logMetrics(response: OllamaChatResponse) {
+    private fun callOllama(userMessage: String): String {
+        val request =
+            OllamaChatRequest(
+                model = properties.model,
+                messages =
+                    listOf(
+                        OllamaMessage(role = "user", content = userMessage),
+                    ),
+                options = OllamaOptions(temperature = properties.temperature),
+            )
+
+        val response =
+            webClient
+                .post()
+                .uri("/api/chat")
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(OllamaChatResponse::class.java)
+                .block()
+                ?: throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
+
+        logOllamaMetrics(response)
+
+        return response.message?.content
+            ?: throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
+    }
+
+    private fun callOpenAi(userMessage: String): String {
+        val request =
+            OpenAiChatRequest(
+                model = properties.model,
+                messages =
+                    listOf(
+                        OpenAiMessage(role = "system", content = systemPrompt),
+                        OpenAiMessage(role = "user", content = userMessage),
+                    ),
+                temperature = properties.temperature,
+            )
+
+        val response =
+            webClient
+                .post()
+                .uri("/v1/chat/completions")
+                .headers { headers ->
+                    if (properties.apiKey.isNotBlank()) {
+                        headers.setBearerAuth(properties.apiKey)
+                    }
+                }
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(OpenAiChatResponse::class.java)
+                .block()
+                ?: throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
+
+        logOpenAiUsage(response)
+
+        return response.choices.firstOrNull()?.message?.content
+            ?: throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
+    }
+
+    private fun logOpenAiUsage(response: OpenAiChatResponse) {
+        val usage = response.usage ?: return
+        log.info {
+            "[LLM 사용량] 모델: ${response.model} | " +
+                "프롬프트: ${usage.promptTokens} tokens | " +
+                "생성: ${usage.completionTokens} tokens | " +
+                "총: ${usage.totalTokens} tokens"
+        }
+    }
+
+    private fun logOllamaMetrics(response: OllamaChatResponse) {
         val promptMs = response.promptEvalDuration / 1_000_000
         val genMs = response.evalDuration / 1_000_000
         val totalMs = response.totalDuration / 1_000_000
