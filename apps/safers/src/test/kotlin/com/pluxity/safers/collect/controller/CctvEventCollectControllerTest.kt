@@ -74,7 +74,7 @@ class CctvEventCollectControllerTest(
             When("POST $baseUrl/video - 유효한 요청") {
                 every { cctvEventCollector.collectVideo(any()) } just runs
 
-                val request = mapOf("eventId" to "EVT-20260101-001", "video" to "http://localhost:8080/videos/clip.mp4")
+                val request = mapOf("event_id" to "EVT-20260101-001", "video" to "http://localhost:8080/videos/clip.mp4")
                 val result =
                     mockMvc.post("$baseUrl/video") {
                         contentType = MediaType.APPLICATION_JSON
@@ -95,7 +95,7 @@ class CctvEventCollectControllerTest(
             }
 
             When("POST $baseUrl/video - 필수 필드 누락") {
-                val invalidRequest = mapOf("eventId" to "", "video" to "")
+                val invalidRequest = mapOf("event_id" to "", "video" to "")
 
                 val result =
                     mockMvc.post("$baseUrl/video") {
