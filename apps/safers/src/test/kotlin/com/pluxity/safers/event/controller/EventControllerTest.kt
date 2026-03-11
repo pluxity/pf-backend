@@ -1,27 +1,82 @@
 package com.pluxity.safers.event.controller
 
 import com.ninjasquad.springmockk.MockkBean
+import com.pluxity.common.core.aop.ResponseCreatedAspect
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.safers.event.dto.EventResponse
+import com.pluxity.safers.event.dto.dummyEventCreateRequest
 import com.pluxity.safers.event.dto.dummyEventResponse
 import com.pluxity.safers.event.entity.EventCategory
 import com.pluxity.safers.event.service.EventFacade
 import com.pluxity.safers.global.constant.SafersErrorCode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.every
+import io.mockk.just
+import io.mockk.runs
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
+import org.springframework.context.annotation.EnableAspectJAutoProxy
+import org.springframework.context.annotation.Import
+import org.springframework.http.MediaType
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
+import tools.jackson.databind.ObjectMapper
 
 @WebMvcTest(EventController::class)
+@Import(ResponseCreatedAspect::class)
+@EnableAspectJAutoProxy
 class EventControllerTest(
     private val mockMvc: MockMvc,
+    private val objectMapper: ObjectMapper,
     @MockkBean private val eventFacade: EventFacade,
 ) : BehaviorSpec({
 
         val baseUrl = "/events"
+
+        Given("이벤트 생성 API") {
+
+            When("POST $baseUrl - 유효한 요청") {
+                val request = dummyEventCreateRequest()
+
+                every { eventFacade.create(any()) } returns 1L
+
+                val result =
+                    mockMvc.post(baseUrl) {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = objectMapper.writeValueAsString(request)
+                        with(csrf())
+                        with(user("tester"))
+                    }
+
+                Then("201 Created가 반환된다") {
+                    result.andExpect {
+                        status { isCreated() }
+                        header { string("Location", "/events/1") }
+                    }
+                }
+            }
+
+            When("POST $baseUrl - 필수 필드 누락") {
+                val invalidRequest = dummyEventCreateRequest(eventId = "", name = "", snapshot = "")
+
+                val result =
+                    mockMvc.post(baseUrl) {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = objectMapper.writeValueAsString(invalidRequest)
+                        with(csrf())
+                        with(user("tester"))
+                    }
+
+                Then("400 Bad Request가 반환된다") {
+                    result.andExpect {
+                        status { isBadRequest() }
+                    }
+                }
+            }
+        }
 
         Given("이벤트 단건 조회 API") {
 
@@ -120,6 +175,47 @@ class EventControllerTest(
                         status { isOk() }
                         jsonPath("$.data.content") { isArray() }
                         jsonPath("$.data.totalElements") { value(0) }
+                    }
+                }
+            }
+        }
+
+        Given("이벤트 영상 등록 API") {
+
+            When("POST $baseUrl/{eventId}/video - 유효한 요청") {
+                val request = mapOf("video" to "http://localhost:8080/videos/clip.mp4")
+
+                every { eventFacade.uploadVideo(1L, any()) } just runs
+
+                val result =
+                    mockMvc.post("$baseUrl/1/video") {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = objectMapper.writeValueAsString(request)
+                        with(csrf())
+                        with(user("tester"))
+                    }
+
+                Then("200 OK가 반환된다") {
+                    result.andExpect {
+                        status { isOk() }
+                    }
+                }
+            }
+
+            When("POST $baseUrl/{eventId}/video - 영상 URL 누락") {
+                val invalidRequest = mapOf("video" to "")
+
+                val result =
+                    mockMvc.post("$baseUrl/1/video") {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = objectMapper.writeValueAsString(invalidRequest)
+                        with(csrf())
+                        with(user("tester"))
+                    }
+
+                Then("400 Bad Request가 반환된다") {
+                    result.andExpect {
+                        status { isBadRequest() }
                     }
                 }
             }
