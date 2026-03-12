@@ -7,6 +7,16 @@ data class ActionResult(
     val data: Any? = null,
     val candidates: List<Map<String, String>>? = null,
     val partial: Map<String, Any?>? = null,
+    val target: String? = null,
+    val requiredFields: List<FieldSpec>? = null,
+)
+
+data class FieldSpec(
+    val key: String,
+    val label: String,
+    val type: String = "text",
+    val required: Boolean = false,
+    val options: List<Map<String, String>>? = null,
 )
 
 enum class ActionResultType {
@@ -18,7 +28,8 @@ enum class ActionResultType {
 
 enum class ActionType {
     READ,
-    UPSERT,
+    CREATE,
+    UPDATE,
     DELETE,
     CLARIFY,
     UNKNOWN,
