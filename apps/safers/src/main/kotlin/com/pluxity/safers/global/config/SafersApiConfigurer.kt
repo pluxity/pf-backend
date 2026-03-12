@@ -20,4 +20,10 @@ class SafersApiConfigurer : ApiConfigurer {
 
     @Bean
     fun eventApi(): GroupedOpenApi = apiGroup("6. 이벤트", "/events/**")
+
+    @Bean
+    fun cctvApi(): GroupedOpenApi = apiGroup("7. CCTV", "/cctvs/**")
+
+    @Bean
+    fun collectApi(): GroupedOpenApi = apiGroup("8. 수집", "/collect/**")
 }
