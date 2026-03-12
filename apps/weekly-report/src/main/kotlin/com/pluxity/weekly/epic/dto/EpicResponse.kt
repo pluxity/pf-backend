@@ -1,6 +1,7 @@
 package com.pluxity.weekly.epic.dto
 
 import com.fasterxml.jackson.annotation.JsonUnwrapped
+import com.pluxity.common.auth.user.entity.Permissible
 import com.pluxity.common.core.response.BaseResponse
 import com.pluxity.common.core.response.toBaseResponse
 import com.pluxity.weekly.epic.entity.Epic
@@ -28,7 +29,10 @@ data class EpicResponse(
     val teamId: Long?,
     @field:JsonUnwrapped
     val baseResponse: BaseResponse,
-)
+) : Permissible {
+    override val resourceId: String get() = id.toString()
+    override val resourceType: String get() = "EPIC"
+}
 
 fun Epic.toResponse(): EpicResponse =
     EpicResponse(

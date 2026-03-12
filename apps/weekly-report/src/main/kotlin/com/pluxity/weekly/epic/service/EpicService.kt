@@ -4,6 +4,7 @@ import com.pluxity.common.auth.annotation.CheckPermission
 import com.pluxity.common.auth.user.entity.PermissionAction
 import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.auth.user.repository.UserRepository
+import com.pluxity.common.auth.user.service.UserResourcePermissionService
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.epic.dto.EpicAssignmentResponse
 import com.pluxity.weekly.epic.dto.EpicRequest
@@ -29,6 +30,7 @@ class EpicService(
     private val projectRepository: ProjectRepository,
     private val teamRepository: TeamRepository,
     private val userRepository: UserRepository,
+    private val userResourcePermissionService: UserResourcePermissionService,
 ) {
     @CheckPermission(action = PermissionAction.READ_LIST, resourceType = "epic")
     fun findAll(): List<EpicResponse> = epicRepository.findAll().map { it.toResponse() }
@@ -91,6 +93,8 @@ class EpicService(
         if (epic.assignments.any { it.assignedBy == user }) {
             throw CustomException(WeeklyReportErrorCode.DUPLICATE_EPIC_ASSIGNMENT, userId, epicId)
         }
+        userResourcePermissionService.create(userId, "epic", epicId.toString())
+        userResourcePermissionService.create(userId, "project", epic.project.requiredId.toString())
         epic.assign(user)
     }
 

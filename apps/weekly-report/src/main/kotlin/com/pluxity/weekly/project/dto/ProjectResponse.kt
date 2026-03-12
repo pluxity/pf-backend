@@ -1,6 +1,7 @@
 package com.pluxity.weekly.project.dto
 
 import com.fasterxml.jackson.annotation.JsonUnwrapped
+import com.pluxity.common.auth.user.entity.Permissible
 import com.pluxity.common.core.response.BaseResponse
 import com.pluxity.common.core.response.toBaseResponse
 import com.pluxity.weekly.project.entity.Project
@@ -28,7 +29,10 @@ data class ProjectResponse(
     val members: List<ProjectMemberResponse>,
     @field:JsonUnwrapped
     val baseResponse: BaseResponse,
-)
+) : Permissible {
+    override val resourceId: String get() = id.toString()
+    override val resourceType: String get() = "PROJECT"
+}
 
 @Schema(description = "프로젝트 참여자 정보")
 data class ProjectMemberResponse(

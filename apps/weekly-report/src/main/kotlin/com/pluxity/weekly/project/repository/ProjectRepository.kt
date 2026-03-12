@@ -11,6 +11,8 @@ interface ProjectRepository :
     KotlinJdslJpqlExecutor {
     fun findByNameContainingIgnoreCase(name: String): List<Project>
 
+    fun findByPmId(pmId: Long): List<Project>
+
     @Query(
         """
         SELECT new com.pluxity.weekly.project.dto.ProjectMemberResponse(
