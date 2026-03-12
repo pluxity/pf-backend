@@ -18,13 +18,12 @@ import org.aspectj.lang.annotation.AfterReturning
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.annotation.Before
-import org.springframework.context.annotation.Profile
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
 
+// @Profile("local")
 @Aspect
 @Component
-@Profile("!local")
 class PermissionCheckAspect(
     private val userService: UserService,
     private val permissionStrategy: PermissionStrategy,
