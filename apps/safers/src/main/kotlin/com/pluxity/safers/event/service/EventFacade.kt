@@ -16,14 +16,6 @@ class EventFacade(
         return eventService.create(request, snapshotFileId)
     }
 
-    fun uploadVideo(
-        eventId: Long,
-        videoUrl: String,
-    ) {
-        val videoFileId = eventFileDownloadService.downloadAndInitiateUpload(videoUrl)
-        eventService.uploadVideo(eventId, videoFileId)
-    }
-
     fun uploadVideoByEventId(
         eventId: String,
         videoUrl: String,
