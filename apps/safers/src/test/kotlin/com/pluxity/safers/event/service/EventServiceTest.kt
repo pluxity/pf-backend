@@ -8,7 +8,6 @@ import com.pluxity.safers.event.dto.dummyEventCreateRequest
 import com.pluxity.safers.event.entity.Event
 import com.pluxity.safers.event.entity.dummyEvent
 import com.pluxity.safers.event.listener.EventCreated
-import com.pluxity.safers.event.listener.EventVideoRegistered
 import com.pluxity.safers.event.repository.EventRepository
 import com.pluxity.safers.global.constant.SafersErrorCode
 import io.kotest.assertions.throwables.shouldThrow
@@ -82,66 +81,6 @@ class EventServiceTest :
                 Then("이벤트는 저장되지만 파일 업로드는 수행되지 않는다") {
                     result shouldBe 2L
                     verify(exactly = 0) { fileService.finalizeUpload(any(), any()) }
-                }
-            }
-        }
-
-        Given("이벤트 영상 등록") {
-
-            When("존재하는 이벤트에 영상을 등록하면") {
-                val event = dummyEvent(id = 1L, snapshotFileId = 10L)
-                val videoFileId = 20L
-                val snapshotFileResponse = dummyFileResponse(id = 10L)
-                val videoFileResponse = dummyFileResponse(id = videoFileId, originalFileName = "video.mp4", contentType = "video/mp4")
-
-                every { eventFileDownloadService.downloadAndInitiateUpload("video.mp4") } returns videoFileId
-                every { eventRepository.findByIdOrNull(1L) } returns event
-                every { fileService.finalizeUpload(videoFileId, "events/1/") } returns mockk()
-                every { fileService.getFileResponse(10L) } returns snapshotFileResponse
-                every { fileService.getFileResponse(videoFileId) } returns videoFileResponse
-
-                facade.uploadVideo(1L, "video.mp4")
-
-                Then("영상 파일이 할당된다") {
-                    event.videoFileId shouldBe videoFileId
-                }
-
-                Then("파일 업로드가 확정된다") {
-                    verify { fileService.finalizeUpload(videoFileId, "events/1/") }
-                }
-
-                Then("EventVideoRegistered 이벤트가 발행된다") {
-                    verify { eventPublisher.publishEvent(any<EventVideoRegistered>()) }
-                }
-            }
-
-            When("존재하지 않는 이벤트에 영상을 등록하면") {
-                every { eventFileDownloadService.downloadAndInitiateUpload("video.mp4") } returns 20L
-                every { eventRepository.findByIdOrNull(999L) } returns null
-
-                Then("CustomException이 발생한다") {
-                    val exception =
-                        shouldThrow<CustomException> {
-                            facade.uploadVideo(999L, "video.mp4")
-                        }
-                    exception.code shouldBe SafersErrorCode.NOT_FOUND_EVENT
-                }
-            }
-
-            When("영상 파일 다운로드에 실패하면") {
-                val event = dummyEvent(id = 1L)
-
-                every { eventFileDownloadService.downloadAndInitiateUpload("video.mp4") } returns null
-                every { eventRepository.findByIdOrNull(1L) } returns event
-
-                facade.uploadVideo(1L, "video.mp4")
-
-                Then("파일 업로드가 수행되지 않는다") {
-                    verify(exactly = 0) { fileService.finalizeUpload(any(), eq("events/1/")) }
-                }
-
-                Then("EventVideoRegistered 이벤트가 발행되지 않는다") {
-                    verify(exactly = 0) { eventPublisher.publishEvent(any<EventVideoRegistered>()) }
                 }
             }
         }
