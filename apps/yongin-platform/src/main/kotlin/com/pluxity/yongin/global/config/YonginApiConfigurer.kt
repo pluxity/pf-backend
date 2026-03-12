@@ -26,4 +26,28 @@ class YonginApiConfigurer : ApiConfigurer {
 
     @Bean
     fun attendanceApi(): GroupedOpenApi = apiGroup("8. 출역현황 관리 API", "/attendances/**")
+
+    @Bean
+    fun cctvApi(): GroupedOpenApi = apiGroup("9. CCTV API", "/cctvs/**", "/cctv-bookmarks/**")
+
+    @Bean
+    fun safetyEquipmentApi(): GroupedOpenApi = apiGroup("10. 안전장비 API", "/safety-equipments/**")
+
+    @Bean
+    fun observationApi(): GroupedOpenApi = apiGroup("11. 관측 API", "/observations/**")
+
+    @Bean
+    fun noticeApi(): GroupedOpenApi = apiGroup("12. 공지사항 API", "/notices/**")
+
+    @Bean
+    fun announcementApi(): GroupedOpenApi = apiGroup("13. 안내방송 API", "/announcement/**")
+
+    @Bean
+    fun weatherApi(): GroupedOpenApi = apiGroup("14. 날씨 API", "/weather/**")
+
+    @Bean
+    fun systemSettingApi(): GroupedOpenApi = apiGroup("15. 시스템설정 API", "/system-settings/**")
+
+    @Bean
+    fun workerLocationApi(): GroupedOpenApi = apiGroup("16. 근로자 위치 API", "/worker-locations/**")
 }
