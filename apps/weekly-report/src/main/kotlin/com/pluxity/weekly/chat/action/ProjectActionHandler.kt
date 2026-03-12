@@ -63,109 +63,49 @@ class ProjectActionHandler(
         actionType: ActionType,
     ): ActionResult {
         val resolve = action as? ResolveAction
-        val step = resolve?.step ?: 0
         val pmId = resolve?.pmId
 
-        // Step 0: name (required)
-        if (step < 1 && action.name == null) {
-            return askField(
-                action,
-                actionType,
-                nextStep = 1,
-                message = "프로젝트명을 입력해주세요.",
-                field = FieldSpec(key = "name", label = "프로젝트명", required = true),
-            )
+        // resolve에서 모든 필드가 채워진 경우 → 생성
+        if (action.name != null && pmId != null) {
+            val status = action.status?.let { parseEnum<ProjectStatus>(it) } ?: ProjectStatus.TODO
+            val request =
+                ProjectRequest(
+                    name = action.name!!,
+                    description = action.description?.takeIf { it.isNotBlank() },
+                    status = status,
+                    startDate = action.startDate?.let { LocalDate.parse(it) },
+                    dueDate = action.dueDate?.let { LocalDate.parse(it) },
+                    pmId = pmId,
+                )
+            val id = projectService.create(request)
+            return ActionResult(ActionResultType.SUCCESS, actionType, "프로젝트 '${action.name}'이(가) 생성되었습니다. (ID: $id)", target = "project")
         }
 
-        // Step 1: description (optional)
-        if (step < 2) {
-            return askField(
-                action,
-                actionType,
-                nextStep = 2,
-                message = "프로젝트 설명을 입력해주세요. (건너뛰기 가능)",
-                field = FieldSpec(key = "description", label = "설명"),
-            )
-        }
-
-        // Step 2: pmId (required, select)
-        if (step < 3 && pmId == null) {
-            val users = userRepository.findAll()
-            val options =
-                users.map { u ->
-                    mapOf("value" to u.requiredId.toString(), "label" to u.name)
-                }
-            return askField(
-                action,
-                actionType,
-                nextStep = 3,
-                message = "PM을 선택해주세요.",
-                field = FieldSpec(key = "pmId", label = "PM", type = "select", required = true, options = options),
-            )
-        }
-
-        // Step 3: startDate (optional)
-        if (step < 4) {
-            return askField(
-                action,
-                actionType,
-                nextStep = 4,
-                message = "시작일을 입력해주세요. (건너뛰기 가능)",
-                field = FieldSpec(key = "startDate", label = "시작일", type = "date"),
-            )
-        }
-
-        // Step 4: dueDate (optional)
-        if (step < 5) {
-            return askField(
-                action,
-                actionType,
-                nextStep = 5,
-                message = "마감일을 입력해주세요. (건너뛰기 가능)",
-                field = FieldSpec(key = "dueDate", label = "마감일", type = "date"),
-            )
-        }
-
-        // All done → create
-        val status = action.status?.let { parseEnum<ProjectStatus>(it) } ?: ProjectStatus.TODO
-        val request =
-            ProjectRequest(
-                name = action.name!!,
-                description = action.description?.takeIf { it.isNotBlank() },
-                status = status,
-                startDate = action.startDate?.let { LocalDate.parse(it) },
-                dueDate = action.dueDate?.let { LocalDate.parse(it) },
-                pmId = pmId,
-            )
-        val id = projectService.create(request)
-        return ActionResult(ActionResultType.SUCCESS, actionType, "프로젝트 '${action.name}'이(가) 생성되었습니다. (ID: $id)", target = "project")
-    }
-
-    private fun askField(
-        action: ActionRequest,
-        actionType: ActionType,
-        nextStep: Int,
-        message: String,
-        field: FieldSpec,
-    ): ActionResult {
-        val resolve = action as? ResolveAction
+        // 필드 목록 한번에 내려주기
+        val users = userRepository.findAll()
+        val pmOptions =
+            users.map { u ->
+                mapOf("value" to u.requiredId.toString(), "label" to u.name)
+            }
         return ActionResult(
             ActionResultType.CLARIFY,
             actionType,
-            message,
+            "프로젝트를 생성합니다. 아래 정보를 입력해주세요.",
             target = "project",
             partial =
                 buildMap {
                     put("action", "create")
                     put("target", "project")
-                    put("_step", nextStep)
                     if (action.name != null) put("name", action.name)
-                    if (action.description != null) put("description", action.description)
-                    if (resolve?.pmId != null) put("pmId", resolve.pmId)
-                    if (action.startDate != null) put("startDate", action.startDate)
-                    if (action.dueDate != null) put("dueDate", action.dueDate)
                 },
-            requiredFields = listOf(field),
+            requiredFields =
+                listOf(
+                    FieldSpec(key = "name", label = "프로젝트명", required = true),
+                    FieldSpec(key = "description", label = "설명"),
+                    FieldSpec(key = "pmId", label = "PM", type = "select", required = true, options = pmOptions),
+                    FieldSpec(key = "startDate", label = "시작일", type = "date"),
+                    FieldSpec(key = "dueDate", label = "마감일", type = "date"),
+                ),
         )
     }
 
