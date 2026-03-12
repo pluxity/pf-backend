@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDateTime
 
 @RestController
-@RequestMapping("/api/worker-locations")
+@RequestMapping("/worker-locations")
 @Tag(name = "Worker Location Controller", description = "근로자 위치 정보 API")
 class WorkerLocationController {
     @Operation(summary = "전체 근로자 위치 조회", description = "모든 근로자의 현재 위치 정보를 조회합니다")
