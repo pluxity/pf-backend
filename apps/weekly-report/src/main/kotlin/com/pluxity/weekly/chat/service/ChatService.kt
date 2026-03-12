@@ -81,7 +81,6 @@ class ChatService(
                 startDate = selected["startDate"] ?: partial["startDate"] as? String,
                 dueDate = selected["dueDate"] ?: partial["dueDate"] as? String,
                 pmId = (selected["pmId"] ?: partial["pmId"])?.toString()?.toLongOrNull(),
-                step = (partial["_step"] as? Number)?.toInt(),
                 filters = partial["filters"] as? Map<String, Any?>,
             )
 
