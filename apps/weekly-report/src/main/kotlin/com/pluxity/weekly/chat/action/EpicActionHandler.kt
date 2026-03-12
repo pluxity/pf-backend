@@ -40,6 +40,8 @@ class EpicActionHandler(
         action: ActionRequest,
         actionType: ActionType,
     ): ActionResult {
+
+        // todo: jdsl로 동적쿼리로 변경
         val epics = epicService.findAll()
         val filters = action.filters ?: emptyMap()
         val filtered =
@@ -54,6 +56,7 @@ class EpicActionHandler(
                 statusMatch && nameMatch && projectMatch
             }
         val results =
+            // todo: response dto로 변경
             filtered.map { e ->
                 mapOf(
                     "id" to e.id,
@@ -69,111 +72,55 @@ class EpicActionHandler(
         action: ActionRequest,
         actionType: ActionType,
     ): ActionResult {
-        val step = (action as? ResolveAction)?.step ?: 0
-
-        // Step 0: project (required, select)
         val projectId = resolveProjectId(action)
-        if (step < 1 && projectId == null) {
-            val projects = projectService.findAll()
-            val options =
-                projects.map { p ->
-                    mapOf("value" to p.id.toString(), "label" to p.name)
-                }
-            return askField(
-                action,
-                actionType,
-                nextStep = 1,
-                message = "어떤 프로젝트에 에픽을 추가할까요?",
-                field = FieldSpec(key = "projectId", label = "프로젝트", type = "select", required = true, options = options),
-            )
+
+        // resolve에서 모든 필수 필드가 채워진 경우 → 생성
+        // 사실상 필요없음.
+        if (projectId != null && action.name != null) {
+            val status = action.status?.let { parseEnum<EpicStatus>(it) } ?: EpicStatus.TODO
+            val request =
+                EpicRequest(
+                    projectId = projectId,
+                    name = action.name!!,
+                    description = action.description?.takeIf { it.isNotBlank() },
+                    status = status,
+                    startDate = action.startDate?.let { LocalDate.parse(it) },
+                    dueDate = action.dueDate?.let { LocalDate.parse(it) },
+                )
+            val id = epicService.create(request)
+            return ActionResult(ActionResultType.SUCCESS, actionType, "에픽 '${action.name}'이(가) 생성되었습니다. (ID: $id)", target = "epic")
         }
 
-        // Step 1: name (required)
-        if (step < 2 && action.name == null) {
-            return askField(
-                action,
-                actionType,
-                nextStep = 2,
-                message = "에픽 이름을 입력해주세요.",
-                field = FieldSpec(key = "name", label = "에픽명", required = true),
-            )
-        }
-
-        // Step 2: description (optional)
-        if (step < 3) {
-            return askField(
-                action,
-                actionType,
-                nextStep = 3,
-                message = "에픽 설명을 입력해주세요. (건너뛰기 가능)",
-                field = FieldSpec(key = "description", label = "설명"),
-            )
-        }
-
-        // Step 3: startDate (optional)
-        if (step < 4) {
-            return askField(
-                action,
-                actionType,
-                nextStep = 4,
-                message = "시작일을 입력해주세요. (건너뛰기 가능)",
-                field = FieldSpec(key = "startDate", label = "시작일", type = "date"),
-            )
-        }
-
-        // Step 4: dueDate (optional)
-        if (step < 5) {
-            return askField(
-                action,
-                actionType,
-                nextStep = 5,
-                message = "마감일을 입력해주세요. (건너뛰기 가능)",
-                field = FieldSpec(key = "dueDate", label = "마감일", type = "date"),
-            )
-        }
-
-        // All done → create
-        val resolvedProjectId = projectId ?: resolveProjectId(action)!!
-        val status = action.status?.let { parseEnum<EpicStatus>(it) } ?: EpicStatus.TODO
-        val request =
-            EpicRequest(
-                projectId = resolvedProjectId,
-                name = action.name!!,
-                description = action.description?.takeIf { it.isNotBlank() },
-                status = status,
-                startDate = action.startDate?.let { LocalDate.parse(it) },
-                dueDate = action.dueDate?.let { LocalDate.parse(it) },
-            )
-        val id = epicService.create(request)
-        return ActionResult(ActionResultType.SUCCESS, actionType, "에픽 '${action.name}'이(가) 생성되었습니다. (ID: $id)", target = "epic")
-    }
-
-    private fun askField(
-        action: ActionRequest,
-        actionType: ActionType,
-        nextStep: Int,
-        message: String,
-        field: FieldSpec,
-    ): ActionResult =
-        ActionResult(
+        // 필드 목록 한번에 내려주기
+        // 프로젝트 조회도 권한대로
+        val projects = projectService.findAll()
+        val projectOptions =
+            projects.map { p ->
+                mapOf("value" to p.id.toString(), "label" to p.name)
+            }
+        return ActionResult(
             ActionResultType.CLARIFY,
             actionType,
-            message,
+            "에픽을 생성합니다. 아래 정보를 입력해주세요.",
             target = "epic",
             partial =
                 buildMap {
                     put("action", "create")
                     put("target", "epic")
-                    put("_step", nextStep)
                     if (action.project != null) put("project", action.project)
                     if (action.projectId != null) put("projectId", action.projectId)
                     if (action.name != null) put("name", action.name)
-                    if (action.description != null) put("description", action.description)
-                    if (action.startDate != null) put("startDate", action.startDate)
-                    if (action.dueDate != null) put("dueDate", action.dueDate)
                 },
-            requiredFields = listOf(field),
+            requiredFields =
+                listOf(
+                    FieldSpec(key = "projectId", label = "프로젝트", type = "select", required = true, options = projectOptions),
+                    FieldSpec(key = "name", label = "에픽명", required = true),
+                    FieldSpec(key = "description", label = "설명"),
+                    FieldSpec(key = "startDate", label = "시작일", type = "date"),
+                    FieldSpec(key = "dueDate", label = "마감일", type = "date"),
+                ),
         )
+    }
 
     private fun handleUpdate(
         action: ActionRequest,

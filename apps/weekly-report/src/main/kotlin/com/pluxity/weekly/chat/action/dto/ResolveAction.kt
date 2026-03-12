@@ -16,5 +16,4 @@ data class ResolveAction(
     override val dueDate: String? = null,
     override val filters: Map<String, Any?>? = null,
     val pmId: Long? = null,
-    val step: Int? = null,
 ) : ActionRequest
