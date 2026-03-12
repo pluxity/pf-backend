@@ -103,7 +103,7 @@ jobs:
           chmod 644 ${{ matrix.image }}.tar
 
       - name: Upload Docker image tar to server
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.PLX_DEV_DOMAIN }}
           username: ${{ secrets.PLX_DEV_USER }}
@@ -113,7 +113,7 @@ jobs:
           target: "${{ secrets.DOCKER_PATH }}/${{ matrix.dir }}"
 
       - name: Deploy on server
-        uses: appleboy/ssh-action@v1.1.0
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.PLX_DEV_DOMAIN }}
           username: ${{ secrets.PLX_DEV_USER }}
