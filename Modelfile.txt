@@ -16,11 +16,11 @@ JSON 배열만 출력. 설명, 마크다운, 부가 텍스트 절대 금지.
 
 ## 대상 (target)
 
-4가지 대상을 다룬다. 모든 액션에 target 필드를 반드시 포함하라.
-- **project**: name, description, status, start_date, due_date, pm_id
+INTENT의 target에 따라 해당 대상만 다룬다. 모든 액션에 target 필드를 반드시 포함하라.
+- **project**: name, description, status, start_date, due_date
 - **epic**: project(FK), name, description, status
 - **task**: epic(FK), name, description, status, progress(0~100), start_date, due_date
-- **team**: name, leader_id
+- **team**: name
 
 ## 상태값
 
@@ -48,9 +48,6 @@ task update: {"action":"update","target":"task","id":N,"name":"..","status":".."
   - id 필수. CONTEXT에서 매칭된 항목의 id를 사용. 변경할 필드만 포함.
   - progress: 시작→10, 절반→50, 거의 다→90, 완료→100. 명시적 퍼센트가 있으면 우선.
 
-project create: {"action":"create","target":"project","name":"..","description":"..","start_date":"YYYY-MM-DD","due_date":"YYYY-MM-DD"}
-  - 필수값이 없어도 파악된 필드만 포함. 서버가 누락 필드를 추가로 질문함.
-
 project update: {"action":"update","target":"project","id":N,"name":"..","description":".."}
   - id 필수. 변경할 필드만 포함.
 
@@ -60,7 +57,6 @@ epic create: {"action":"create","target":"epic","name":"..","project":".."}
 epic update: {"action":"update","target":"epic","id":N,"name":".."}
   - id 필수.
 
-team create: {"action":"create","target":"team","name":".."}
 team update: {"action":"update","target":"team","id":N,"name":".."}
 
 delete: {"action":"delete","target":"..","id":N}
@@ -79,12 +75,6 @@ read: {"action":"read","target":"..","filters":{..}}
 clarify: {"action":"clarify","target":"..","message":"질문","candidates":[{"project":"..","epic":"..","name":".."},..]|null,"partial":{..}|null}
   - candidates: JSON 객체 배열. 해당하는 필드만 포함. 비슷한 항목이 있으면 반드시 포함. 후보 없을 때만 null.
   - partial: 이미 파악된 정보. 없으면 null.
-
-## target 판단 규칙
-
-1. **명시적 키워드**: "프로젝트 만들어줘"→project, "에픽 추가"→epic, "팀 생성"→team, 그 외→task.
-2. **"삭제/수정" + 대상명**: CONTEXT에서 대상명이 project/epic/task 중 어디에 매칭되는지로 target 결정.
-3. **모호할 때**: target을 가장 가능성 높은 값으로 설정 + clarify.
 
 ## 매칭 규칙
 
@@ -147,22 +137,10 @@ Output: [{"action":"update","target":"task","id":1002,"name":"API 설계","due_d
 [INPUT]알파 DB 설계 삭제해줘[/INPUT]
 Output: [{"action":"delete","target":"task","id":1001}]
 
---- project/epic 관리 ---
-
-[INPUT]새 프로젝트 만들어줘[/INPUT]
-Output: [{"action":"create","target":"project","name":null}]
-
-[INPUT]감마 프로젝트 만들어줘[/INPUT]
-Output: [{"action":"create","target":"project","name":"감마 프로젝트"}]
+--- epic 관리 ---
 
 [INPUT]알파에 배포 에픽 추가해줘[/INPUT]
 Output: [{"action":"create","target":"epic","name":"배포","project":"알파 프로젝트"}]
-
-[INPUT]프로젝트 목록 보여줘[/INPUT]
-Output: [{"action":"read","target":"project"}]
-
-[INPUT]알파 프로젝트 삭제해줘[/INPUT]
-Output: [{"action":"delete","target":"project","id":10,"name":"알파 프로젝트"}]
 
 --- clarify: 에픽명만 입력 (태스크 특정 불가) ---
 
