@@ -65,7 +65,7 @@ class WorkerLocationController {
             ?: WorkerLocationResponse(
                 workerId = workerId,
                 latitude = 37.3065,
-                longitude = 127.1090,
+                longitude = 127.109,
                 timestamp = LocalDateTime.now(),
                 accuracy = 3.5,
             )
