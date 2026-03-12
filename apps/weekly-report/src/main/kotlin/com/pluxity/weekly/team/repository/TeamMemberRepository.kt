@@ -19,4 +19,6 @@ interface TeamMemberRepository : JpaRepository<TeamMember, Long> {
         team: Team,
         user: User,
     )
+
+    fun findByUserId(userId: Long): List<TeamMember>
 }

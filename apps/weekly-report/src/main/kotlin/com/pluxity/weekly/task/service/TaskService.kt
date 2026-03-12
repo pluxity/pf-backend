@@ -50,7 +50,6 @@ class TaskService(
     @CheckPermission(action = PermissionAction.READ_SINGLE, resourceType = "task")
     fun findById(id: Long): TaskResponse = getTaskById(id).toResponse()
 
-    @CheckPermission(action = PermissionAction.CREATE, resourceType = "task")
     @Transactional
     fun create(request: TaskRequest): Long {
         if (taskRepository.existsByEpicIdAndName(request.epicId, request.name)) {
@@ -69,6 +68,8 @@ class TaskService(
                     assignee = request.assigneeId?.let { getUserById(it) },
                 ),
             ).requiredId
+
+        // resource_permission 직접 추가
     }
 
     @CheckPermission(action = PermissionAction.UPDATE, resourceType = "task")
