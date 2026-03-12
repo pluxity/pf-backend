@@ -41,18 +41,32 @@ class WorkerLocationController {
     private fun mockWorkerLocations(): List<WorkerLocationResponse> {
         val now = LocalDateTime.now()
         return listOf(
-            WorkerLocationResponse(workerId = 1L, latitude = 37.2411, longitude = 127.1775, timestamp = now, accuracy = 3.5),
-            WorkerLocationResponse(workerId = 2L, latitude = 37.2425, longitude = 127.1790, timestamp = now, accuracy = 2.1),
-            WorkerLocationResponse(workerId = 3L, latitude = 37.2398, longitude = 127.1762, timestamp = now, accuracy = 5.0),
+            // 1공구 1구역
+            WorkerLocationResponse(workerId = 1L, latitude = 37.3065, longitude = 127.1090, timestamp = now, accuracy = 3.5),
+            WorkerLocationResponse(workerId = 2L, latitude = 37.3050, longitude = 127.1110, timestamp = now, accuracy = 2.1),
+            WorkerLocationResponse(workerId = 3L, latitude = 37.3040, longitude = 127.1070, timestamp = now, accuracy = 4.2),
+            // 1공구 2구역 (북측)
+            WorkerLocationResponse(workerId = 4L, latitude = 37.2995, longitude = 127.1060, timestamp = now, accuracy = 3.0),
+            WorkerLocationResponse(workerId = 5L, latitude = 37.3010, longitude = 127.1090, timestamp = now, accuracy = 1.8),
+            WorkerLocationResponse(workerId = 6L, latitude = 37.2980, longitude = 127.1030, timestamp = now, accuracy = 5.0),
+            // 1공구 2구역 (남측)
+            WorkerLocationResponse(workerId = 7L, latitude = 37.2910, longitude = 127.1100, timestamp = now, accuracy = 2.5),
+            WorkerLocationResponse(workerId = 8L, latitude = 37.2890, longitude = 127.1080, timestamp = now, accuracy = 3.8),
+            WorkerLocationResponse(workerId = 9L, latitude = 37.2920, longitude = 127.1120, timestamp = now, accuracy = 4.0),
+            // 1공구 3구역
+            WorkerLocationResponse(workerId = 10L, latitude = 37.2970, longitude = 127.0940, timestamp = now, accuracy = 2.3),
+            WorkerLocationResponse(workerId = 11L, latitude = 37.3000, longitude = 127.0920, timestamp = now, accuracy = 3.1),
+            WorkerLocationResponse(workerId = 12L, latitude = 37.2950, longitude = 127.0960, timestamp = now, accuracy = 4.5),
         )
     }
 
     private fun mockWorkerLocation(workerId: Long): WorkerLocationResponse =
-        WorkerLocationResponse(
-            workerId = workerId,
-            latitude = 37.2411,
-            longitude = 127.1775,
-            timestamp = LocalDateTime.now(),
-            accuracy = 3.5,
-        )
+        mockWorkerLocations().find { it.workerId == workerId }
+            ?: WorkerLocationResponse(
+                workerId = workerId,
+                latitude = 37.3065,
+                longitude = 127.1090,
+                timestamp = LocalDateTime.now(),
+                accuracy = 3.5,
+            )
 }
