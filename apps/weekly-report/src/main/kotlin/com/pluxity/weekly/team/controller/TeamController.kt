@@ -1,12 +1,12 @@
 package com.pluxity.weekly.team.controller
 
+import com.pluxity.common.auth.user.dto.UserResponse
 import com.pluxity.common.core.annotation.ResponseCreated
 import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.response.DataResponseBody
 import com.pluxity.common.core.response.ErrorResponseBody
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.weekly.team.dto.TeamMemberRequest
-import com.pluxity.weekly.team.dto.TeamMemberResponse
 import com.pluxity.weekly.team.dto.TeamRequest
 import com.pluxity.weekly.team.dto.TeamResponse
 import com.pluxity.weekly.team.service.TeamService
@@ -141,7 +141,7 @@ class TeamController(
     @GetMapping("/{teamId}/members")
     fun findMembers(
         @PathVariable teamId: Long,
-    ): ResponseEntity<DataResponseBody<List<TeamMemberResponse>>> = ResponseEntity.ok(DataResponseBody(service.findMembers(teamId)))
+    ): ResponseEntity<DataResponseBody<List<UserResponse>>> = ResponseEntity.ok(DataResponseBody(service.findMembers(teamId)))
 
     @Operation(summary = "팀원 추가", description = "팀에 사용자를 추가합니다")
     @ApiResponses(

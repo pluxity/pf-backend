@@ -189,8 +189,8 @@ class TeamServiceTest :
 
                 Then("팀원 목록이 반환된다") {
                     result.size shouldBe 2
-                    result[0].userId shouldBe 10L
-                    result[1].userId shouldBe 20L
+                    result[0].id shouldBe 10L
+                    result[1].id shouldBe 20L
                 }
             }
         }
