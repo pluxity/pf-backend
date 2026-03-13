@@ -22,4 +22,6 @@ interface TaskRepository :
         epicId: Long,
         name: String,
     ): Task?
+
+    fun findByEpicIn(epics: List<Epic>): List<Task>
 }

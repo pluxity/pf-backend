@@ -4,6 +4,7 @@ import com.pluxity.common.core.config.WebClientFactory
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.chat.action.dto.LlmAction
 import com.pluxity.weekly.chat.config.LlmProperties
+import com.pluxity.weekly.chat.llm.dto.IntentResult
 import com.pluxity.weekly.chat.llm.dto.OllamaChatRequest
 import com.pluxity.weekly.chat.llm.dto.OllamaChatResponse
 import com.pluxity.weekly.chat.llm.dto.OllamaMessage
@@ -34,18 +35,16 @@ class LlmService(
         ClassPathResource("llm/system-prompt.txt").getContentAsString(Charsets.UTF_8)
     }
 
+    private val intentPrompt: String by lazy {
+        ClassPathResource("llm/intent-prompt.txt").getContentAsString(Charsets.UTF_8)
+    }
+
     fun generate(userMessage: String): List<LlmAction> {
         var lastException: Exception? = null
         repeat(MAX_RETRIES) { attempt ->
             try {
-                val content =
-                    when (properties.provider) {
-                        "ollama" -> callOllama(userMessage)
-                        "openai" -> callOpenAi(userMessage)
-                        else -> throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
-                    }
-                log.info { "llm response : $content"}
-
+                val content = callLlm(systemPrompt, userMessage)
+                log.info { "llm response : $content" }
 
                 return parseActions(content)
             } catch (e: CustomException) {
@@ -59,12 +58,44 @@ class LlmService(
         throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
     }
 
-    private fun callOllama(userMessage: String): String {
+    fun extractIntent(message: String): IntentResult {
+        var lastException: Exception? = null
+        repeat(MAX_RETRIES) { attempt ->
+            try {
+                val content = callLlm(intentPrompt, message)
+                log.info { "intent response : $content" }
+                return parseIntent(content)
+            } catch (e: CustomException) {
+                throw e
+            } catch (e: Exception) {
+                lastException = e
+                log.warn { "Intent 추출 실패 (시도 ${attempt + 1}/$MAX_RETRIES): ${e.message}" }
+            }
+        }
+        log.error(lastException) { "Intent 추출 $MAX_RETRIES 회 재시도 실패" }
+        throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
+    }
+
+    internal fun callLlm(
+        systemPrompt: String,
+        userMessage: String,
+    ): String =
+        when (properties.provider) {
+            "ollama" -> callOllama(systemPrompt, userMessage)
+            "openai" -> callOpenAi(systemPrompt, userMessage)
+            else -> throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
+        }
+
+    private fun callOllama(
+        systemPrompt: String,
+        userMessage: String,
+    ): String {
         val request =
             OllamaChatRequest(
                 model = properties.model,
                 messages =
                     listOf(
+                        OllamaMessage(role = "system", content = systemPrompt),
                         OllamaMessage(role = "user", content = userMessage),
                     ),
                 options = OllamaOptions(temperature = properties.temperature),
@@ -86,7 +117,10 @@ class LlmService(
             ?: throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
     }
 
-    private fun callOpenAi(userMessage: String): String {
+    private fun callOpenAi(
+        systemPrompt: String,
+        userMessage: String,
+    ): String {
         val request =
             OpenAiChatRequest(
                 model = properties.model,
@@ -106,8 +140,7 @@ class LlmService(
                     if (properties.apiKey.isNotBlank()) {
                         headers.setBearerAuth(properties.apiKey)
                     }
-                }
-                .bodyValue(request)
+                }.bodyValue(request)
                 .retrieve()
                 .bodyToMono(OpenAiChatResponse::class.java)
                 .block()
@@ -115,7 +148,10 @@ class LlmService(
 
         logOpenAiUsage(response)
 
-        return response.choices.firstOrNull()?.message?.content
+        return response.choices
+            .firstOrNull()
+            ?.message
+            ?.content
             ?: throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
     }
 
@@ -123,9 +159,9 @@ class LlmService(
         val usage = response.usage ?: return
         log.info {
             "[LLM 사용량] 모델: ${response.model} | " +
-                "프롬프트: ${usage.promptTokens} tokens | " +
-                "생성: ${usage.completionTokens} tokens | " +
-                "총: ${usage.totalTokens} tokens"
+                    "프롬프트: ${usage.promptTokens} tokens | " +
+                    "생성: ${usage.completionTokens} tokens | " +
+                    "총: ${usage.totalTokens} tokens"
         }
     }
 
@@ -138,8 +174,8 @@ class LlmService(
 
         log.info {
             "[LLM 메트릭] 프롬프트: ${response.promptEvalCount} tokens (${promptMs}ms) | " +
-                "생성: ${response.evalCount} tokens (${genMs}ms, ${"%.1f".format(tokPerSec)} tok/s) | " +
-                "총: ${totalMs}ms | 로드: ${loadMs}ms"
+                    "생성: ${response.evalCount} tokens (${genMs}ms, ${"%.1f".format(tokPerSec)} tok/s) | " +
+                    "총: ${totalMs}ms | 로드: ${loadMs}ms"
         }
     }
 
@@ -160,6 +196,20 @@ class LlmService(
             }
         } catch (_: Exception) {
             log.error { "LLM 응답 JSON 파싱 실패: $json" }
+            throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
+        }
+    }
+
+    internal fun parseIntent(raw: String): IntentResult {
+        val json = stripCodeFence(raw).trim()
+        if (json.isBlank()) {
+            throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
+        }
+
+        return try {
+            objectMapper.readValue(json, IntentResult::class.java)
+        } catch (_: Exception) {
+            log.error { "Intent JSON 파싱 실패: $json" }
             throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
         }
     }

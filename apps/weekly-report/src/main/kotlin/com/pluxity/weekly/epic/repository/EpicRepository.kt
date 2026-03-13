@@ -15,4 +15,6 @@ interface EpicRepository :
     ): List<Epic>
 
     fun findByAssignmentsAssignedById(userId: Long): List<Epic>
+
+    fun findByProjectIdIn(projectIds: List<Long>): List<Epic>
 }
