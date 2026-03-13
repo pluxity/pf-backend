@@ -10,5 +10,11 @@
     "dir": "yonginplatform",
     "dockerfile": "apps/yongin-platform/Dockerfile",
     "image": "yongin-platform-api"
+  },
+  {
+    "name": "weekly-report",
+    "dir": "weeklyReport",
+    "dockerfile": "apps/weekly-report/Dockerfile",
+    "image": "weekly-report-api"
   }
 ]
