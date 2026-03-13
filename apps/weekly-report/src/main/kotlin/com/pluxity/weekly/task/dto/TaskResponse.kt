@@ -1,6 +1,7 @@
 package com.pluxity.weekly.task.dto
 
 import com.fasterxml.jackson.annotation.JsonUnwrapped
+import com.pluxity.common.auth.user.entity.Permissible
 import com.pluxity.common.core.response.BaseResponse
 import com.pluxity.common.core.response.toBaseResponse
 import com.pluxity.weekly.task.entity.Task
@@ -12,8 +13,14 @@ import java.time.LocalDate
 data class TaskResponse(
     @field:Schema(description = "ID", example = "1")
     val id: Long,
+    @field:Schema(description = "프로젝트 ID", example = "1")
+    val projectId: Long,
+    @field:Schema(description = "프로젝트명", example = "SAFERS 관제 시스템")
+    val projectName: String,
     @field:Schema(description = "에픽 ID", example = "1")
     val epicId: Long,
+    @field:Schema(description = "에픽명", example = "기획")
+    val epicName: String,
     @field:Schema(description = "태스크명", example = "로그인 API 개발")
     val name: String,
     @field:Schema(description = "설명", example = "태스크 설명입니다")
@@ -26,19 +33,31 @@ data class TaskResponse(
     val startDate: LocalDate?,
     @field:Schema(description = "마감일", example = "2026-03-31")
     val dueDate: LocalDate?,
+    @field:Schema(description = "담당자 ID", example = "1")
+    val assigneeId: Long?,
+    @field:Schema(description = "담당자 이름", example = "홍길동")
+    val assigneeName: String?,
     @field:JsonUnwrapped
     val baseResponse: BaseResponse,
-)
+) : Permissible {
+    override val resourceId: String get() = id.toString()
+    override val resourceType: String get() = "TASK"
+}
 
 fun Task.toResponse(): TaskResponse =
     TaskResponse(
         id = this.requiredId,
         epicId = this.epic.requiredId,
+        epicName = this.epic.name,
+        projectId = this.epic.project.requiredId,
+        projectName = this.epic.project.name,
         name = this.name,
         description = this.description,
         status = this.status,
         progress = this.progress,
         startDate = this.startDate,
         dueDate = this.dueDate,
+        assigneeId = this.assignee?.id,
+        assigneeName = this.assignee?.name,
         baseResponse = this.toBaseResponse(),
     )

@@ -3,17 +3,19 @@ server:
     context-path: /api
 
 spring:
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      timeout: 1000
   application:
     name: weekly-report
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/weekly_report
     username: ${DB_USERNAME:pluxity}
     password: ${DB_PASSWORD:pluxity0304}
+
+llm:
+  provider: ollama
+  base-url: http://192.168.10.183:11434
+  model: qwen3:14b
+  temperature: 0.1
+  timeout-ms: 60000
 
 domain:
   url: ${API_URL:}

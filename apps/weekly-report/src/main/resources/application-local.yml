@@ -1,9 +1,4 @@
 spring:
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      timeout: 1000
   application:
     name: core
   datasource:
@@ -11,6 +6,13 @@ spring:
     username: pluxity
     password: pluxity0304
     driver-class-name: org.postgresql.Driver
+
+llm:
+  provider: ollama
+  base-url:  http://192.168.10.183:11434
+  model: qwen3:14b
+  temperature: 0.1
+  timeout-ms: 60000
 
 domain:
   url: ${API_URL:http://localhost:8080}
