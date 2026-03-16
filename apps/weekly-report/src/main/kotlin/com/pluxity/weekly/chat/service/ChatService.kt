@@ -15,6 +15,7 @@ class ChatService(
     private val contextBuilder: ContextBuilder,
     private val chatDtoMapper: ChatDtoMapper,
     private val beforeActionResolver: BeforeActionResolver,
+    private val chatReadHandler: ChatReadHandler,
     private val objectMapper: ObjectMapper,
 ) {
     fun chat(
@@ -37,14 +38,22 @@ class ChatService(
 
         // LlmAction → ChatActionResponse 변환
         return actions.map { action ->
-            val beforeAction = beforeActionResolver.resolve(action)
-            ChatActionResponse(
-                action = action.action,
-                target = action.target ?: "task",
-                id = action.id,
-                dto = chatDtoMapper.toDto(action),
-                beforeAction = beforeAction.ifEmpty { null },
-            )
+            if (action.action == "read") {
+                ChatActionResponse(
+                    action = action.action,
+                    target = action.target ?: "task",
+                    readResult = chatReadHandler.handle(action),
+                )
+            } else {
+                val beforeAction = beforeActionResolver.resolve(action)
+                ChatActionResponse(
+                    action = action.action,
+                    target = action.target ?: "task",
+                    id = action.id,
+                    dto = chatDtoMapper.toDto(action),
+                    beforeAction = beforeAction.ifEmpty { null },
+                )
+            }
         }
     }
 }
