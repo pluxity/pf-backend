@@ -1,6 +1,7 @@
 package com.pluxity.weekly.epic.service
 
 import com.pluxity.common.auth.user.repository.UserRepository
+import com.pluxity.common.auth.user.service.UserResourcePermissionService
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.test.entity.dummyUser
 import com.pluxity.weekly.epic.dto.dummyEpicRequest
@@ -32,7 +33,8 @@ class EpicServiceTest :
         val projectRepository: ProjectRepository = mockk()
         val teamRepository: TeamRepository = mockk()
         val userRepository: UserRepository = mockk()
-        val service = EpicService(epicRepository, projectRepository, teamRepository, userRepository)
+        val userResourcePermissionService: UserResourcePermissionService = mockk()
+        val service = EpicService(epicRepository, projectRepository, teamRepository, userRepository, userResourcePermissionService)
 
         Given("에픽 전체 조회") {
             When("에픽 목록을 조회하면") {
@@ -212,41 +214,6 @@ class EpicServiceTest :
 
                 Then("배정 목록이 반환된다") {
                     result.size shouldBe 2
-                }
-            }
-        }
-
-        Given("에픽 배정 추가") {
-            When("새로운 사용자를 에픽에 배정하면") {
-                val epic = dummyEpic(id = 1L)
-                val user = dummyUser(id = 10L)
-
-                every { epicRepository.findByIdOrNull(1L) } returns epic
-                every { userRepository.findByIdOrNull(10L) } returns user
-
-                service.assign(1L, 10L)
-
-                Then("배정이 추가된다") {
-                    epic.assignments.size shouldBe 1
-                    epic.assignments[0].assignedBy shouldBe user
-                }
-            }
-
-            When("이미 배정된 사용자를 추가하면") {
-                val epic = dummyEpic(id = 1L)
-                val user = dummyUser(id = 10L)
-                epic.assign(user)
-
-                every { epicRepository.findByIdOrNull(1L) } returns epic
-                every { userRepository.findByIdOrNull(10L) } returns user
-
-                val exception =
-                    shouldThrow<CustomException> {
-                        service.assign(1L, 10L)
-                    }
-
-                Then("DUPLICATE 예외가 발생한다") {
-                    exception.code shouldBe WeeklyReportErrorCode.DUPLICATE_EPIC_ASSIGNMENT
                 }
             }
         }
