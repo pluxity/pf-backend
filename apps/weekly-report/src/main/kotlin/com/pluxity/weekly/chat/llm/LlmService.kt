@@ -2,7 +2,7 @@ package com.pluxity.weekly.chat.llm
 
 import com.pluxity.common.core.config.WebClientFactory
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.weekly.chat.action.dto.LlmAction
+import com.pluxity.weekly.chat.dto.LlmAction
 import com.pluxity.weekly.chat.config.LlmProperties
 import com.pluxity.weekly.chat.llm.dto.IntentResult
 import com.pluxity.weekly.chat.llm.dto.OllamaChatRequest

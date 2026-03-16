@@ -12,6 +12,7 @@ target: project, epic, task, team
 - 주간 보고, 이번주/차주 → actions:["update"], target:"task"
 - "프로젝트" 키워드 → target:"project"
 - "에픽" 키워드 → target:"epic"
+- "할당", "배정", "추가해줘" + 사람 이름 + 에픽 → actions:["update"], target:"epic"
 - "팀" 키워드 → target:"team"
 - 그 외(태스크, 업무, 진행률, 완료 등) → target:"task"
 - 모호하면 actions:["clarify"], target은 가장 가능성 높은 값
@@ -36,5 +37,7 @@ create 힌트 규칙:
 "백엔드 개발 에픽에 API 설계 태스크 추가해줘" → {"actions":["create"],"target":"task","epic":"백엔드 개발","name":"API 설계"}
 "PMS 프로젝트 백엔드 에픽에 태스크 만들어줘" → {"actions":["create"],"target":"task","project":"PMS","epic":"백엔드"}
 "진행중" → {"actions":["clarify"],"target":"task"}
+"OO 에픽에 OO 할당해줘" → {"actions":["update"],"target":"epic"}
+"OO 에픽에 OO, OO 배정해줘" → {"actions":["update"],"target":"epic"}
 
 출력: {"actions":["..",.."],"target":".."}
