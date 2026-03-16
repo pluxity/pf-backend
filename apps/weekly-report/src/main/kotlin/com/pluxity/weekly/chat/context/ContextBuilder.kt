@@ -10,11 +10,29 @@ import com.pluxity.weekly.project.service.ProjectService
 import com.pluxity.weekly.task.dto.TaskResponse
 import com.pluxity.weekly.task.service.TaskService
 import com.pluxity.weekly.team.service.TeamService
+import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 import java.time.LocalDate
 
+
+
+
+/**
+ * target + action 별 CONTEXT 포함 데이터
+ *
+ * project create/update → projects(simple) + users(PM 권한)
+ * project delete        → projects(simple)
+ * epic    create/update → projects > epics + users(전체)
+ * epic    delete        → projects > epics
+ * task    create        → projects > epics
+ * task    update/delete → projects > epics > tasks
+ * team    create/update → teams + users(전체)
+ * team    delete        → teams
+ *
+ * TODO: 권한별 조회 — findAll() + 필터 대신 사용자 권한 기반 조회 메서드로 교체
+ */
 @Component
 class ContextBuilder(
     private val userRepository: UserRepository,
@@ -24,11 +42,10 @@ class ContextBuilder(
     private val teamService: TeamService,
     private val objectMapper: ObjectMapper,
 ) {
-    fun build(userId: Long): String = build(userId, "task")
-
     fun build(
         userId: Long,
         target: String,
+        actions: List<String>,
     ): String {
         val user =
             userRepository.findByIdOrNull(userId)
@@ -40,44 +57,93 @@ class ContextBuilder(
                 "user" to mapOf("id" to user.requiredId, "name" to user.name),
             )
 
+        val hasMutation = "create" in actions || "update" in actions
+        val hasCreateOnly = "create" in actions && "update" !in actions
+
         when (target) {
-            "project" -> {
-                val projects = projectService.findAll()
-                context["projects"] = projects.map { projectMapSimple(it) }
-            }
-            "epic" -> {
-                val projects = projectService.findAll()
-                val epics = epicService.findAll()
-                val epicsByProject = epics.groupBy { it.projectId }
-                context["projects"] =
-                    projects.map { project ->
-                        projectMapWithEpics(project, epicsByProject[project.id] ?: emptyList())
-                    }
-            }
-            "team" -> {
-                val page =
-                    teamService.findAll(
-                        com.pluxity.common.core.dto
-                            .PageSearchRequest(page = 1, size = 100),
-                    )
-                context["teams"] = page.content.map { mapOf("id" to it.id, "name" to it.name) }
-            }
-            else -> {
-                // task: full hierarchy
-                val projects = projectService.findAll()
-                val epics = epicService.findAll()
-                val tasks = taskService.findAll()
-                val tasksByEpicId = tasks.groupBy { it.epicId }
-                val epicsByProject = epics.groupBy { it.projectId }
-                context["projects"] =
-                    projects.map { project ->
-                        projectMapFull(project, epicsByProject[project.id] ?: emptyList(), tasksByEpicId)
-                    }
-            }
+            "project" -> buildProjectContext(context, hasMutation)
+            "epic" -> buildEpicContext(context, hasMutation)
+            "team" -> buildTeamContext(context, hasMutation)
+            else -> buildTaskContext(context, hasCreateOnly)
         }
 
         return objectMapper.writeValueAsString(context)
     }
+
+    private fun buildProjectContext(
+        context: MutableMap<String, Any?>,
+        hasMutation: Boolean,
+    ) {
+        val projects = projectService.findAll()
+        context["projects"] = projects.map { projectMapSimple(it) }
+        if (hasMutation) {
+            context["users"] = findUsersByRole("PM")
+        }
+    }
+
+    private fun buildEpicContext(
+        context: MutableMap<String, Any?>,
+        hasMutation: Boolean,
+    ) {
+        val projects = projectService.findAll()
+        val epics = epicService.findAll()
+        val epicsByProject = epics.groupBy { it.projectId }
+        context["projects"] =
+            projects.map { project ->
+                projectMapWithEpics(project, epicsByProject[project.id] ?: emptyList())
+            }
+        if (hasMutation) {
+            context["users"] = findAllUsers()
+        }
+    }
+
+    private fun buildTaskContext(
+        context: MutableMap<String, Any?>,
+        createOnly: Boolean,
+    ) {
+        val projects = projectService.findAll()
+        val epics = epicService.findAll()
+        val epicsByProject = epics.groupBy { it.projectId }
+
+        if (createOnly) {
+            // create: 에픽까지만 (태스크 불필요)
+            context["projects"] =
+                projects.map { project ->
+                    projectMapWithEpics(project, epicsByProject[project.id] ?: emptyList())
+                }
+        } else {
+            // update/delete/read: full hierarchy
+            val tasks = taskService.findAll()
+            val tasksByEpicId = tasks.groupBy { it.epicId }
+            context["projects"] =
+                projects.map { project ->
+                    projectMapFull(project, epicsByProject[project.id] ?: emptyList(), tasksByEpicId)
+                }
+        }
+    }
+
+    private fun buildTeamContext(
+        context: MutableMap<String, Any?>,
+        hasMutation: Boolean,
+    ) {
+        val page =
+            teamService.findAll(
+                com.pluxity.common.core.dto.PageSearchRequest(page = 1, size = 100),
+            )
+        context["teams"] = page.content.map { mapOf("id" to it.id, "name" to it.name) }
+        if (hasMutation) {
+            context["users"] = findAllUsers()
+        }
+    }
+
+    private fun findUsersByRole(roleName: String): List<Map<String, Any?>> =
+        userRepository.findAllBy(Sort.by("name"))
+            .filter { user -> user.userRoles.any { it.role.name.uppercase() == roleName } }
+            .map { mapOf("id" to it.requiredId, "name" to it.name) }
+
+    private fun findAllUsers(): List<Map<String, Any?>> =
+        userRepository.findAllBy(Sort.by("name"))
+            .map { mapOf("id" to it.requiredId, "name" to it.name) }
 
     private fun projectMapSimple(project: ProjectResponse): Map<String, Any?> =
         mapOf(
