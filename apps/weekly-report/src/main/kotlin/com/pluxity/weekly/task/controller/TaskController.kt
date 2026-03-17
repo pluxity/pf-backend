@@ -4,6 +4,8 @@ import com.pluxity.common.core.annotation.ResponseCreated
 import com.pluxity.common.core.response.DataResponseBody
 import com.pluxity.common.core.response.ErrorResponseBody
 import com.pluxity.weekly.task.dto.TaskRequest
+import com.pluxity.weekly.task.dto.TaskUpdateRequest
+import org.springframework.web.bind.annotation.PatchMapping
 import com.pluxity.weekly.task.dto.TaskResponse
 import com.pluxity.weekly.task.service.TaskService
 import io.swagger.v3.oas.annotations.Operation
@@ -76,7 +78,7 @@ class TaskController(
         @RequestBody @Valid request: TaskRequest,
     ): ResponseEntity<Long> = ResponseEntity.ok(service.create(request))
 
-    @Operation(summary = "태스크 수정", description = "태스크 정보를 수정합니다")
+    @Operation(summary = "태스크 부분 수정", description = "전달된 필드만 수정합니다")
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "204", description = "수정 성공"),
@@ -87,10 +89,10 @@ class TaskController(
             ),
         ],
     )
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     fun update(
         @PathVariable id: Long,
-        @RequestBody @Valid request: TaskRequest,
+        @RequestBody @Valid request: TaskUpdateRequest,
     ): ResponseEntity<Void> {
         service.update(id, request)
         return ResponseEntity.noContent().build()

@@ -37,22 +37,22 @@ class Task(
     var assignee: User? = null,
 ) : IdentityIdEntity() {
     fun update(
-        epic: Epic,
-        name: String,
-        description: String?,
-        status: TaskStatus,
-        progress: Int,
-        startDate: LocalDate?,
-        dueDate: LocalDate?,
-        assignee: User?,
+        epic: Epic? = null,
+        name: String? = null,
+        description: String? = null,
+        status: TaskStatus? = null,
+        progress: Int? = null,
+        startDate: LocalDate? = null,
+        dueDate: LocalDate? = null,
+        assignee: User? = null,
     ) {
-        this.epic = epic
-        this.name = name
-        this.description = description
-        this.status = status
-        this.progress = progress
-        this.startDate = startDate
-        this.dueDate = dueDate
-        this.assignee = assignee
+        epic?.let { this.epic = it }
+        name?.let { this.name = it }
+        description?.let { this.description = it }
+        status?.let { this.status = it }
+        progress?.let { this.progress = it }
+        startDate?.let { this.startDate = it }
+        dueDate?.let { this.dueDate = it }
+        assignee?.let { this.assignee = it }
     }
 }

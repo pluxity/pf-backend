@@ -12,6 +12,7 @@ import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.entity.Project
 import com.pluxity.weekly.task.dto.TaskRequest
+import com.pluxity.weekly.task.dto.TaskUpdateRequest
 import com.pluxity.weekly.task.dto.TaskResponse
 import com.pluxity.weekly.task.dto.toResponse
 import com.pluxity.weekly.task.entity.Task
@@ -76,10 +77,10 @@ class TaskService(
     @Transactional
     fun update(
         id: Long,
-        request: TaskRequest,
+        request: TaskUpdateRequest,
     ) {
         getTaskById(id).update(
-            epic = getEpicById(request.epicId),
+            epic = request.epicId?.let { getEpicById(it) },
             name = request.name,
             description = request.description,
             status = request.status,
