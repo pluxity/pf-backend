@@ -23,26 +23,26 @@ class ChatReadHandler(
         val filters = action.filters ?: emptyMap()
 
         return when (target) {
-            "task" -> ChatReadResponse(
-
-                tasks = taskService.search(buildTaskFilter(filters)),
-            )
-            "project" -> ChatReadResponse(
-
-                projects = projectService.findAll(),
-            )
-            "epic" -> ChatReadResponse(
-
-                epics = epicService.findAll(),
-            )
-            "team" -> ChatReadResponse(
-
-                teams = teamService.findAll(),
-            )
-            else -> ChatReadResponse(
-
-                tasks = taskService.search(buildTaskFilter(filters)),
-            )
+            "task" ->
+                ChatReadResponse(
+                    tasks = taskService.search(buildTaskFilter(filters)),
+                )
+            "project" ->
+                ChatReadResponse(
+                    projects = projectService.findAll(),
+                )
+            "epic" ->
+                ChatReadResponse(
+                    epics = epicService.findAll(),
+                )
+            "team" ->
+                ChatReadResponse(
+                    teams = teamService.findAll(),
+                )
+            else ->
+                ChatReadResponse(
+                    tasks = taskService.search(buildTaskFilter(filters)),
+                )
         }
     }
 

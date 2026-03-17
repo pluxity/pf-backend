@@ -16,9 +16,6 @@ import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 import java.time.LocalDate
 
-
-
-
 /**
  * target + action 별 CONTEXT 포함 데이터
  *
@@ -133,12 +130,14 @@ class ContextBuilder(
     }
 
     private fun findUsersByRole(roleName: String): List<Map<String, Any?>> =
-        userRepository.findAllBy(Sort.by("name"))
+        userRepository
+            .findAllBy(Sort.by("name"))
             .filter { user -> user.userRoles.any { it.role.name.uppercase() == roleName } }
             .map { mapOf("id" to it.requiredId, "name" to it.name) }
 
     private fun findAllUsers(): List<Map<String, Any?>> =
-        userRepository.findAllBy(Sort.by("name"))
+        userRepository
+            .findAllBy(Sort.by("name"))
             .map { mapOf("id" to it.requiredId, "name" to it.name) }
 
     private fun projectMapSimple(project: ProjectResponse): Map<String, Any?> =

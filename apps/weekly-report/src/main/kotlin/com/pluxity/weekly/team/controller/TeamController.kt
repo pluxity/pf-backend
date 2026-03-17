@@ -43,8 +43,7 @@ class TeamController(
         ],
     )
     @GetMapping
-    fun findAll(): ResponseEntity<DataResponseBody<List<TeamResponse>>> =
-        ResponseEntity.ok(DataResponseBody(service.findAll()))
+    fun findAll(): ResponseEntity<DataResponseBody<List<TeamResponse>>> = ResponseEntity.ok(DataResponseBody(service.findAll()))
 
     @Operation(summary = "팀 단건 조회", description = "ID로 팀을 조회합니다")
     @ApiResponses(

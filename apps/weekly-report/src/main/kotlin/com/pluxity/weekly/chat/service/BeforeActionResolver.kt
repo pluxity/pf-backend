@@ -24,12 +24,13 @@ class BeforeActionResolver(
         val result = mutableListOf<BeforeAction>()
 
         for (field in missingFields) {
-            val beforeAction = when (field) {
-                "id" -> resolveIdCandidates(action.target, candidateIds)
-                "project_id" -> resolveProjectCandidates(candidateIds)
-                "epic_id" -> resolveEpicCandidates(candidateIds)
-                else -> null
-            }
+            val beforeAction =
+                when (field) {
+                    "id" -> resolveIdCandidates(action.target, candidateIds)
+                    "project_id" -> resolveProjectCandidates(candidateIds)
+                    "epic_id" -> resolveEpicCandidates(candidateIds)
+                    else -> null
+                }
             if (beforeAction != null) result.add(beforeAction)
         }
 
@@ -43,54 +44,60 @@ class BeforeActionResolver(
         candidateIds: List<Long>,
     ): BeforeAction? {
         if (candidateIds.isEmpty()) return null
-        val candidates = when (target) {
-            "task" -> candidateIds.mapNotNull { id ->
-                taskRepository.findByIdOrNull(id)?.let { task ->
-                    val epic = epicRepository.findByIdOrNull(task.epic.id!!)
-                    val project = epic?.let { projectRepository.findByIdOrNull(it.project.id!!) }
-                    Candidate(id, "${task.name} (${project?.name ?: ""}/${epic?.name ?: ""})")
-                }
+        val candidates =
+            when (target) {
+                "task" ->
+                    candidateIds.mapNotNull { id ->
+                        taskRepository.findByIdOrNull(id)?.let { task ->
+                            val epic = epicRepository.findByIdOrNull(task.epic.id!!)
+                            val project = epic?.let { projectRepository.findByIdOrNull(it.project.id!!) }
+                            Candidate(id, "${task.name} (${project?.name ?: ""}/${epic?.name ?: ""})")
+                        }
+                    }
+                "epic" ->
+                    candidateIds.mapNotNull { id ->
+                        epicRepository.findByIdOrNull(id)?.let { epic ->
+                            val project = projectRepository.findByIdOrNull(epic.project.id!!)
+                            Candidate(id, "${epic.name} (${project?.name ?: ""})")
+                        }
+                    }
+                "project" ->
+                    candidateIds.mapNotNull { id ->
+                        projectRepository.findByIdOrNull(id)?.let { Candidate(id, it.name) }
+                    }
+                else -> return null
             }
-            "epic" -> candidateIds.mapNotNull { id ->
-                epicRepository.findByIdOrNull(id)?.let { epic ->
-                    val project = projectRepository.findByIdOrNull(epic.project.id!!)
-                    Candidate(id, "${epic.name} (${project?.name ?: ""})")
-                }
-            }
-            "project" -> candidateIds.mapNotNull { id ->
-                projectRepository.findByIdOrNull(id)?.let { Candidate(id, it.name) }
-            }
-            else -> return null
-        }
         return BeforeAction(field = "id", candidates = candidates)
     }
 
     private fun resolveProjectCandidates(candidateIds: List<Long>): BeforeAction? {
-        val candidates = if (candidateIds.isNotEmpty()) {
-            candidateIds.mapNotNull { id ->
-                projectRepository.findByIdOrNull(id)?.let { Candidate(id, it.name) }
+        val candidates =
+            if (candidateIds.isNotEmpty()) {
+                candidateIds.mapNotNull { id ->
+                    projectRepository.findByIdOrNull(id)?.let { Candidate(id, it.name) }
+                }
+            } else {
+                projectRepository.findAll().map { Candidate(it.requiredId, it.name) }
             }
-        } else {
-            projectRepository.findAll().map { Candidate(it.requiredId, it.name) }
-        }
         if (candidates.isEmpty()) return null
         return BeforeAction(field = "projectId", candidates = candidates)
     }
 
     private fun resolveEpicCandidates(candidateIds: List<Long>): BeforeAction? {
-        val candidates = if (candidateIds.isNotEmpty()) {
-            candidateIds.mapNotNull { id ->
-                epicRepository.findByIdOrNull(id)?.let { epic ->
+        val candidates =
+            if (candidateIds.isNotEmpty()) {
+                candidateIds.mapNotNull { id ->
+                    epicRepository.findByIdOrNull(id)?.let { epic ->
+                        val project = projectRepository.findByIdOrNull(epic.project.id!!)
+                        Candidate(id, "${epic.name} (${project?.name ?: ""})")
+                    }
+                }
+            } else {
+                epicRepository.findAll().map { epic ->
                     val project = projectRepository.findByIdOrNull(epic.project.id!!)
-                    Candidate(id, "${epic.name} (${project?.name ?: ""})")
+                    Candidate(epic.requiredId, "${epic.name} (${project?.name ?: ""})")
                 }
             }
-        } else {
-            epicRepository.findAll().map { epic ->
-                val project = projectRepository.findByIdOrNull(epic.project.id!!)
-                Candidate(epic.requiredId, "${epic.name} (${project?.name ?: ""})")
-            }
-        }
         if (candidates.isEmpty()) return null
         return BeforeAction(field = "epicId", candidates = candidates)
     }
@@ -100,11 +107,12 @@ class BeforeActionResolver(
         roleName: String? = null,
     ): BeforeAction {
         val users = userRepository.findAllBy(Sort.by("name"))
-        val candidates = if (roleName != null) {
-            users.filter { user -> user.userRoles.any { it.role.name.uppercase() == roleName } }
-        } else {
-            users
-        }.map { Candidate(it.requiredId, it.name) }
+        val candidates =
+            if (roleName != null) {
+                users.filter { user -> user.userRoles.any { it.role.name.uppercase() == roleName } }
+            } else {
+                users
+            }.map { Candidate(it.requiredId, it.name) }
         return BeforeAction(field = field, candidates = candidates)
     }
 
