@@ -2,16 +2,13 @@ package com.pluxity.weekly.team.controller
 
 import com.pluxity.common.auth.user.dto.UserResponse
 import com.pluxity.common.core.annotation.ResponseCreated
-import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.response.DataResponseBody
 import com.pluxity.common.core.response.ErrorResponseBody
-import com.pluxity.common.core.response.PageResponse
 import com.pluxity.weekly.team.dto.TeamMemberRequest
 import com.pluxity.weekly.team.dto.TeamRequest
 import com.pluxity.weekly.team.dto.TeamResponse
 import com.pluxity.weekly.team.service.TeamService
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -26,7 +23,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -47,11 +43,8 @@ class TeamController(
         ],
     )
     @GetMapping
-    fun findAll(
-        @Parameter(description = "조회 페이지번호", example = "1") @RequestParam("page") page: Int = 1,
-        @Parameter(description = "페이지당 개수", example = "9999") @RequestParam("size") size: Int = 9999,
-    ): ResponseEntity<DataResponseBody<PageResponse<TeamResponse>>> =
-        ResponseEntity.ok(DataResponseBody(service.findAll(PageSearchRequest(page, size))))
+    fun findAll(): ResponseEntity<DataResponseBody<List<TeamResponse>>> =
+        ResponseEntity.ok(DataResponseBody(service.findAll()))
 
     @Operation(summary = "팀 단건 조회", description = "ID로 팀을 조회합니다")
     @ApiResponses(

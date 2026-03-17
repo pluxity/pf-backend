@@ -126,11 +126,7 @@ class ContextBuilder(
         context: MutableMap<String, Any?>,
         hasMutation: Boolean,
     ) {
-        val page =
-            teamService.findAll(
-                com.pluxity.common.core.dto.PageSearchRequest(page = 1, size = 100),
-            )
-        context["teams"] = page.content.map { mapOf("id" to it.id, "name" to it.name) }
+        context["teams"] = teamService.findAll().map { mapOf("id" to it.id, "name" to it.name) }
         if (hasMutation) {
             context["users"] = findAllUsers()
         }

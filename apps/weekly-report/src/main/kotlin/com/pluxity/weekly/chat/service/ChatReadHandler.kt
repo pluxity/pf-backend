@@ -1,6 +1,5 @@
 package com.pluxity.weekly.chat.service
 
-import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.weekly.chat.dto.ChatReadResponse
 import com.pluxity.weekly.chat.dto.LlmAction
 import com.pluxity.weekly.chat.dto.TaskSearchFilter
@@ -38,7 +37,7 @@ class ChatReadHandler(
             )
             "team" -> ChatReadResponse(
 
-                teams = teamService.findAll(PageSearchRequest(page = 1, size = 100)).content,
+                teams = teamService.findAll(),
             )
             else -> ChatReadResponse(
 

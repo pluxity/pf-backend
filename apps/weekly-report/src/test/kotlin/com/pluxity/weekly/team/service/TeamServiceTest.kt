@@ -1,12 +1,7 @@
 package com.pluxity.weekly.team.service
 
-import com.linecorp.kotlinjdsl.dsl.jpql.Jpql
-import com.linecorp.kotlinjdsl.querymodel.jpql.JpqlQueryable
-import com.linecorp.kotlinjdsl.querymodel.jpql.select.SelectQuery
 import com.pluxity.common.auth.user.repository.UserRepository
-import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.common.test.entity.dummyUser
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.team.dto.dummyTeamRequest
@@ -22,18 +17,12 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.verify
-import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 
 class TeamServiceTest :
     BehaviorSpec({
-
-        mockkStatic("com.pluxity.common.core.utils.KotlinJdslExtensionsKt")
 
         val repository: TeamRepository = mockk()
         val memberRepository: TeamMemberRepository = mockk()
@@ -48,22 +37,16 @@ class TeamServiceTest :
                         dummyTeam(id = 2L, name = "디자인팀"),
                         dummyTeam(id = 3L, name = "기획팀"),
                     )
-                val pageable = PageRequest.of(0, 9999)
-                val page = PageImpl(entities, pageable, entities.size.toLong())
 
-                every {
-                    repository.findPageNotNull(
-                        any<Pageable>(),
-                        any<Jpql.() -> JpqlQueryable<SelectQuery<Team>>>(),
-                    )
-                } returns page
+                every { repository.findAll() } returns entities
 
-                val result = service.findAll(PageSearchRequest(page = 1, size = 9999))
+                val result = service.findAll()
 
-                Then("페이징된 결과가 반환된다") {
-                    result.content.size shouldBe 3
-                    result.totalElements shouldBe 3
-                    result.pageNumber shouldBe 1
+                Then("팀 목록이 반환된다") {
+                    result.size shouldBe 3
+                    result[0].name shouldBe "개발팀"
+                    result[1].name shouldBe "디자인팀"
+                    result[2].name shouldBe "기획팀"
                 }
             }
         }
