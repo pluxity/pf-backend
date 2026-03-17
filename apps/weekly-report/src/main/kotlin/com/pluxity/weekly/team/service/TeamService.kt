@@ -42,7 +42,6 @@ class TeamService(
                 ),
             ).requiredId
 
-
     @CheckPermission(action = PermissionAction.UPDATE, resourceType = "team")
     @Transactional
     fun update(

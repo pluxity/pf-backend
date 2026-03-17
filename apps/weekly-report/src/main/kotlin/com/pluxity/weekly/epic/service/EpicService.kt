@@ -8,8 +8,8 @@ import com.pluxity.common.auth.user.service.UserResourcePermissionService
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.epic.dto.EpicAssignmentResponse
 import com.pluxity.weekly.epic.dto.EpicRequest
-import com.pluxity.weekly.epic.dto.EpicUpdateRequest
 import com.pluxity.weekly.epic.dto.EpicResponse
+import com.pluxity.weekly.epic.dto.EpicUpdateRequest
 import com.pluxity.weekly.epic.dto.toResponse
 import com.pluxity.weekly.epic.entity.Epic
 import com.pluxity.weekly.epic.repository.EpicRepository
