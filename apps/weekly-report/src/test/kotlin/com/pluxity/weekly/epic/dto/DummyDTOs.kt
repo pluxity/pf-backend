@@ -10,7 +10,6 @@ fun dummyEpicRequest(
     status: EpicStatus = EpicStatus.TODO,
     startDate: LocalDate? = null,
     dueDate: LocalDate? = null,
-    teamId: Long? = null,
 ) = EpicRequest(
     projectId = projectId,
     name = name,
@@ -18,5 +17,4 @@ fun dummyEpicRequest(
     status = status,
     startDate = startDate,
     dueDate = dueDate,
-    teamId = teamId,
 )

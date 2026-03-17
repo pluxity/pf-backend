@@ -25,8 +25,6 @@ data class EpicResponse(
     val startDate: LocalDate?,
     @field:Schema(description = "마감일", example = "2026-03-31")
     val dueDate: LocalDate?,
-    @field:Schema(description = "담당 팀 ID", example = "1")
-    val teamId: Long?,
     @field:JsonUnwrapped
     val baseResponse: BaseResponse,
 ) : Permissible {
@@ -43,6 +41,5 @@ fun Epic.toResponse(): EpicResponse =
         status = this.status,
         startDate = this.startDate,
         dueDate = this.dueDate,
-        teamId = this.team?.requiredId,
         baseResponse = this.toBaseResponse(),
     )

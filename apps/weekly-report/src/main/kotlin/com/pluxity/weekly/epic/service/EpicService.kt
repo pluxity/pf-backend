@@ -15,8 +15,6 @@ import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.entity.Project
 import com.pluxity.weekly.project.repository.ProjectRepository
-import com.pluxity.weekly.team.entity.Team
-import com.pluxity.weekly.team.repository.TeamRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -28,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional
 class EpicService(
     private val epicRepository: EpicRepository,
     private val projectRepository: ProjectRepository,
-    private val teamRepository: TeamRepository,
     private val userRepository: UserRepository,
     private val userResourcePermissionService: UserResourcePermissionService,
 ) {
@@ -50,7 +47,6 @@ class EpicService(
                     status = request.status,
                     startDate = request.startDate,
                     dueDate = request.dueDate,
-                    team = request.teamId?.let { getTeamById(it) },
                 ),
             ).requiredId
 
@@ -67,7 +63,6 @@ class EpicService(
             status = request.status,
             startDate = request.startDate,
             dueDate = request.dueDate,
-            team = request.teamId?.let { getTeamById(it) },
         )
     }
 
@@ -119,10 +114,6 @@ class EpicService(
     private fun getProjectById(id: Long): Project =
         projectRepository.findByIdOrNull(id)
             ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_PROJECT, id)
-
-    private fun getTeamById(id: Long): Team =
-        teamRepository.findByIdOrNull(id)
-            ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_TEAM, id)
 
     private fun getUserById(id: Long): User =
         userRepository.findByIdOrNull(id)
