@@ -5,6 +5,8 @@ import com.pluxity.common.core.response.DataResponseBody
 import com.pluxity.common.core.response.ErrorResponseBody
 import com.pluxity.weekly.epic.dto.EpicAssignmentResponse
 import com.pluxity.weekly.epic.dto.EpicRequest
+import com.pluxity.weekly.epic.dto.EpicUpdateRequest
+import org.springframework.web.bind.annotation.PatchMapping
 import com.pluxity.weekly.epic.dto.EpicResponse
 import com.pluxity.weekly.epic.service.EpicService
 import io.swagger.v3.oas.annotations.Operation
@@ -19,7 +21,6 @@ import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -77,7 +78,7 @@ class EpicController(
         @RequestBody @Valid request: EpicRequest,
     ): ResponseEntity<Long> = ResponseEntity.ok(service.create(request))
 
-    @Operation(summary = "에픽 수정", description = "에픽 정보를 수정합니다")
+    @Operation(summary = "에픽 부분 수정", description = "전달된 필드만 수정합니다")
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "204", description = "수정 성공"),
@@ -88,10 +89,10 @@ class EpicController(
             ),
         ],
     )
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     fun update(
         @PathVariable id: Long,
-        @RequestBody @Valid request: EpicRequest,
+        @RequestBody @Valid request: EpicUpdateRequest,
     ): ResponseEntity<Void> {
         service.update(id, request)
         return ResponseEntity.noContent().build()

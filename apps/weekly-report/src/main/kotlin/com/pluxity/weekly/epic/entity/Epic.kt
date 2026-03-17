@@ -46,19 +46,19 @@ class Epic(
         assignments.removeIf { it.assignedBy == user }
     }
 
-    fun update(
-        project: Project,
-        name: String,
-        description: String?,
-        status: EpicStatus,
-        startDate: LocalDate?,
-        dueDate: LocalDate?,
+    fun patch(
+        project: Project? = null,
+        name: String? = null,
+        description: String? = null,
+        status: EpicStatus? = null,
+        startDate: LocalDate? = null,
+        dueDate: LocalDate? = null,
     ) {
-        this.project = project
-        this.name = name
-        this.description = description
-        this.status = status
-        this.startDate = startDate
-        this.dueDate = dueDate
+        project?.let { this.project = it }
+        name?.let { this.name = it }
+        description?.let { this.description = it }
+        status?.let { this.status = it }
+        startDate?.let { this.startDate = it }
+        dueDate?.let { this.dueDate = it }
     }
 }

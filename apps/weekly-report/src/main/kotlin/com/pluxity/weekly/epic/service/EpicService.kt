@@ -8,6 +8,7 @@ import com.pluxity.common.auth.user.service.UserResourcePermissionService
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.epic.dto.EpicAssignmentResponse
 import com.pluxity.weekly.epic.dto.EpicRequest
+import com.pluxity.weekly.epic.dto.EpicUpdateRequest
 import com.pluxity.weekly.epic.dto.EpicResponse
 import com.pluxity.weekly.epic.dto.toResponse
 import com.pluxity.weekly.epic.entity.Epic
@@ -37,9 +38,9 @@ class EpicService(
 
     @CheckPermission(action = PermissionAction.CREATE, resourceType = "epic")
     @Transactional
-    fun create(request: EpicRequest): Long =
-        epicRepository
-            .save(
+    fun create(request: EpicRequest): Long {
+        val epic =
+            epicRepository.save(
                 Epic(
                     project = getProjectById(request.projectId),
                     name = request.name,
@@ -48,22 +49,34 @@ class EpicService(
                     startDate = request.startDate,
                     dueDate = request.dueDate,
                 ),
-            ).requiredId
+            )
+        request.userIds?.forEach { userId ->
+            val user = getUserById(userId)
+            epic.assign(user)
+        }
+        return epic.requiredId
+    }
 
-    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "epic")
     @Transactional
     fun update(
         id: Long,
-        request: EpicRequest,
+        request: EpicUpdateRequest,
     ) {
-        getEpicById(id).update(
-            project = getProjectById(request.projectId),
+        val epic = getEpicById(id)
+        epic.patch(
+            project = request.projectId?.let { getProjectById(it) },
             name = request.name,
             description = request.description,
             status = request.status,
             startDate = request.startDate,
             dueDate = request.dueDate,
         )
+        request.userIds?.forEach { userId ->
+            val user = getUserById(userId)
+            if (epic.assignments.none { it.assignedBy == user }) {
+                epic.assign(user)
+            }
+        }
     }
 
     @CheckPermission(action = PermissionAction.DELETE, resourceType = "epic")
