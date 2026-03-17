@@ -6,6 +6,8 @@ import com.pluxity.common.core.response.DataResponseBody
 import com.pluxity.common.core.response.ErrorResponseBody
 import com.pluxity.weekly.team.dto.TeamMemberRequest
 import com.pluxity.weekly.team.dto.TeamRequest
+import com.pluxity.weekly.team.dto.TeamUpdateRequest
+import org.springframework.web.bind.annotation.PatchMapping
 import com.pluxity.weekly.team.dto.TeamResponse
 import com.pluxity.weekly.team.service.TeamService
 import io.swagger.v3.oas.annotations.Operation
@@ -78,7 +80,7 @@ class TeamController(
         @RequestBody @Valid request: TeamRequest,
     ): ResponseEntity<Long> = ResponseEntity.ok(service.create(request))
 
-    @Operation(summary = "팀 수정", description = "팀 정보를 수정합니다")
+    @Operation(summary = "팀 부분 수정", description = "전달된 필드만 수정합니다")
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "204", description = "수정 성공"),
@@ -89,10 +91,10 @@ class TeamController(
             ),
         ],
     )
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     fun update(
         @PathVariable id: Long,
-        @RequestBody @Valid request: TeamRequest,
+        @RequestBody @Valid request: TeamUpdateRequest,
     ): ResponseEntity<Void> {
         service.update(id, request)
         return ResponseEntity.noContent().build()
