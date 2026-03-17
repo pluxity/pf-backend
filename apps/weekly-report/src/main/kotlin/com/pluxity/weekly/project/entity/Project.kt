@@ -25,19 +25,20 @@ class Project(
     @Column(name = "pm_id")
     var pmId: Long? = null,
 ) : IdentityIdEntity() {
+
     fun update(
-        name: String,
-        description: String?,
-        status: ProjectStatus,
-        startDate: LocalDate?,
-        dueDate: LocalDate?,
-        pmId: Long?,
+        name: String? = null,
+        description: String? = null,
+        status: ProjectStatus? = null,
+        startDate: LocalDate? = null,
+        dueDate: LocalDate? = null,
+        pmId: Long? = null,
     ) {
-        this.name = name
-        this.description = description
-        this.status = status
-        this.startDate = startDate
-        this.dueDate = dueDate
-        this.pmId = pmId
+        name?.let { this.name = it }
+        description?.let { this.description = it }
+        status?.let { this.status = it }
+        startDate?.let { this.startDate = it }
+        dueDate?.let { this.dueDate = it }
+        pmId?.let { this.pmId = it }
     }
 }
