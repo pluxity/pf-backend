@@ -18,3 +18,21 @@ fun dummyEpicRequest(
     startDate = startDate,
     dueDate = dueDate,
 )
+
+fun dummyEpicUpdateRequest(
+    projectId: Long? = null,
+    name: String? = null,
+    description: String? = null,
+    status: EpicStatus? = null,
+    startDate: LocalDate? = null,
+    dueDate: LocalDate? = null,
+    userIds: List<Long>? = null,
+) = EpicUpdateRequest(
+    projectId = projectId,
+    name = name,
+    description = description,
+    status = status,
+    startDate = startDate,
+    dueDate = dueDate,
+    userIds = userIds,
+)

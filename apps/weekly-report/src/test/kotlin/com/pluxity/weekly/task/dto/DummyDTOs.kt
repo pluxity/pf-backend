@@ -20,3 +20,23 @@ fun dummyTaskRequest(
     startDate = startDate,
     dueDate = dueDate,
 )
+
+fun dummyTaskUpdateRequest(
+    epicId: Long? = null,
+    name: String? = null,
+    description: String? = null,
+    status: TaskStatus? = null,
+    progress: Int? = null,
+    startDate: LocalDate? = null,
+    dueDate: LocalDate? = null,
+    assigneeId: Long? = null,
+) = TaskUpdateRequest(
+    epicId = epicId,
+    name = name,
+    description = description,
+    status = status,
+    progress = progress,
+    startDate = startDate,
+    dueDate = dueDate,
+    assigneeId = assigneeId,
+)

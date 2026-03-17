@@ -5,6 +5,7 @@ import com.pluxity.common.auth.user.service.UserResourcePermissionService
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.test.entity.dummyUser
 import com.pluxity.weekly.epic.dto.dummyEpicRequest
+import com.pluxity.weekly.epic.dto.dummyEpicUpdateRequest
 import com.pluxity.weekly.epic.entity.Epic
 import com.pluxity.weekly.epic.entity.EpicStatus
 import com.pluxity.weekly.epic.entity.dummyEpic
@@ -124,7 +125,7 @@ class EpicServiceTest :
                 val project = dummyProject(id = 1L)
                 val entity = dummyEpic(id = 1L, project = project, name = "기존 에픽")
                 val request =
-                    dummyEpicRequest(
+                    dummyEpicUpdateRequest(
                         projectId = 1L,
                         name = "수정된 에픽",
                         status = EpicStatus.IN_PROGRESS,
@@ -146,7 +147,7 @@ class EpicServiceTest :
 
                 val exception =
                     shouldThrow<CustomException> {
-                        service.update(999L, dummyEpicRequest())
+                        service.update(999L, dummyEpicUpdateRequest())
                     }
 
                 Then("NOT_FOUND 예외가 발생한다") {

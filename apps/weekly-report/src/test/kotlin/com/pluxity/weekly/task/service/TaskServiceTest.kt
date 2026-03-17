@@ -6,6 +6,7 @@ import com.pluxity.weekly.epic.entity.dummyEpic
 import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.task.dto.dummyTaskRequest
+import com.pluxity.weekly.task.dto.dummyTaskUpdateRequest
 import com.pluxity.weekly.task.entity.Task
 import com.pluxity.weekly.task.entity.TaskStatus
 import com.pluxity.weekly.task.entity.dummyTask
@@ -124,15 +125,13 @@ class TaskServiceTest :
                 val epic = dummyEpic(id = 1L)
                 val entity = dummyTask(id = 1L, epic = epic, name = "기존 태스크")
                 val request =
-                    dummyTaskRequest(
-                        epicId = 1L,
+                    dummyTaskUpdateRequest(
                         name = "수정된 태스크",
                         status = TaskStatus.IN_PROGRESS,
                         progress = 30,
                     )
 
                 every { taskRepository.findByIdOrNull(1L) } returns entity
-                every { epicRepository.findByIdOrNull(1L) } returns epic
 
                 service.update(1L, request)
 
@@ -148,7 +147,7 @@ class TaskServiceTest :
 
                 val exception =
                     shouldThrow<CustomException> {
-                        service.update(999L, dummyTaskRequest())
+                        service.update(999L, dummyTaskUpdateRequest())
                     }
 
                 Then("NOT_FOUND 예외가 발생한다") {
