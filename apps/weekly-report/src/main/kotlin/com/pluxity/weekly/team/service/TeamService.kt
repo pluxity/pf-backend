@@ -10,6 +10,7 @@ import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.team.dto.TeamRequest
 import com.pluxity.weekly.team.dto.TeamResponse
+import com.pluxity.weekly.team.dto.TeamUpdateRequest
 import com.pluxity.weekly.team.dto.toResponse
 import com.pluxity.weekly.team.entity.Team
 import com.pluxity.weekly.team.entity.TeamMember
@@ -41,11 +42,12 @@ class TeamService(
                 ),
             ).requiredId
 
+
     @CheckPermission(action = PermissionAction.UPDATE, resourceType = "team")
     @Transactional
     fun update(
         id: Long,
-        request: TeamRequest,
+        request: TeamUpdateRequest,
     ) {
         getTeamById(id).update(
             name = request.name,

@@ -14,10 +14,10 @@ class Team(
     var leaderId: Long? = null,
 ) : IdentityIdEntity() {
     fun update(
-        name: String,
-        leaderId: Long?,
+        name: String? = null,
+        leaderId: Long? = null,
     ) {
-        this.name = name
-        this.leaderId = leaderId
+        name?.let { this.name = it }
+        leaderId?.let { this.leaderId = it }
     }
 }
