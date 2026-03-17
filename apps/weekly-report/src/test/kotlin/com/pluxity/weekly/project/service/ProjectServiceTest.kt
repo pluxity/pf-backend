@@ -3,6 +3,7 @@ package com.pluxity.weekly.project.service
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.dto.dummyProjectRequest
+import com.pluxity.weekly.project.dto.dummyProjectUpdateRequest
 import com.pluxity.weekly.project.entity.Project
 import com.pluxity.weekly.project.entity.ProjectStatus
 import com.pluxity.weekly.project.entity.dummyProject
@@ -112,7 +113,7 @@ class ProjectServiceTest :
             When("존재하는 프로젝트를 수정하면") {
                 val entity = dummyProject(id = 1L, name = "기존 프로젝트")
                 val request =
-                    dummyProjectRequest(
+                    dummyProjectUpdateRequest(
                         name = "수정된 프로젝트",
                         status = ProjectStatus.IN_PROGRESS,
                         pmId = 10L,
@@ -134,7 +135,7 @@ class ProjectServiceTest :
 
                 val exception =
                     shouldThrow<CustomException> {
-                        service.update(999L, dummyProjectRequest())
+                        service.update(999L, dummyProjectUpdateRequest())
                     }
 
                 Then("NOT_FOUND 예외가 발생한다") {

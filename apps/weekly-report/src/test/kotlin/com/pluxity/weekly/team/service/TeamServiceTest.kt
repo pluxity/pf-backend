@@ -5,6 +5,7 @@ import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.test.entity.dummyUser
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.team.dto.dummyTeamRequest
+import com.pluxity.weekly.team.dto.dummyTeamUpdateRequest
 import com.pluxity.weekly.team.entity.Team
 import com.pluxity.weekly.team.entity.TeamMember
 import com.pluxity.weekly.team.entity.dummyTeam
@@ -98,7 +99,7 @@ class TeamServiceTest :
         Given("팀 수정") {
             When("존재하는 팀을 수정하면") {
                 val entity = dummyTeam(id = 1L, name = "기존팀")
-                val request = dummyTeamRequest(name = "수정팀", leaderId = 10L)
+                val request = dummyTeamUpdateRequest(name = "수정팀", leaderId = 10L)
 
                 every { repository.findByIdOrNull(1L) } returns entity
 
@@ -115,7 +116,7 @@ class TeamServiceTest :
 
                 val exception =
                     shouldThrow<CustomException> {
-                        service.update(999L, dummyTeamRequest())
+                        service.update(999L, dummyTeamUpdateRequest())
                     }
 
                 Then("NOT_FOUND 예외가 발생한다") {

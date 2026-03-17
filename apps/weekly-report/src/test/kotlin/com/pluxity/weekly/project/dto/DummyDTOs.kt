@@ -18,3 +18,19 @@ fun dummyProjectRequest(
     dueDate = dueDate,
     pmId = pmId,
 )
+
+fun dummyProjectUpdateRequest(
+    name: String? = null,
+    description: String? = null,
+    status: ProjectStatus? = null,
+    startDate: LocalDate? = null,
+    dueDate: LocalDate? = null,
+    pmId: Long? = null,
+) = ProjectUpdateRequest(
+    name = name,
+    description = description,
+    status = status,
+    startDate = startDate,
+    dueDate = dueDate,
+    pmId = pmId,
+)

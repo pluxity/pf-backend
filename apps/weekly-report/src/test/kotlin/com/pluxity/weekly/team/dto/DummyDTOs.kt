@@ -7,3 +7,11 @@ fun dummyTeamRequest(
     name = name,
     leaderId = leaderId,
 )
+
+fun dummyTeamUpdateRequest(
+    name: String? = null,
+    leaderId: Long? = null,
+) = TeamUpdateRequest(
+    name = name,
+    leaderId = leaderId,
+)
