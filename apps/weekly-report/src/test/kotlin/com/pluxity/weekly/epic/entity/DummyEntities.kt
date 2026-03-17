@@ -6,7 +6,6 @@ import com.pluxity.common.core.test.withId
 import com.pluxity.common.test.entity.dummyUser
 import com.pluxity.weekly.project.entity.Project
 import com.pluxity.weekly.project.entity.dummyProject
-import com.pluxity.weekly.team.entity.Team
 import java.time.LocalDate
 
 fun dummyEpic(
@@ -17,7 +16,6 @@ fun dummyEpic(
     status: EpicStatus = EpicStatus.TODO,
     startDate: LocalDate? = null,
     dueDate: LocalDate? = null,
-    team: Team? = null,
 ) = Epic(
     project = project,
     name = name,
@@ -25,7 +23,6 @@ fun dummyEpic(
     status = status,
     startDate = startDate,
     dueDate = dueDate,
-    team = team,
 ).withId(id).withAudit()
 
 fun dummyEpicAssignment(

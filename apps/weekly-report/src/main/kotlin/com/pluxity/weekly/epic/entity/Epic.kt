@@ -3,7 +3,6 @@ package com.pluxity.weekly.epic.entity
 import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.core.entity.IdentityIdEntity
 import com.pluxity.weekly.project.entity.Project
-import com.pluxity.weekly.team.entity.Team
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -33,9 +32,6 @@ class Epic(
     var startDate: LocalDate? = null,
     @Column(name = "due_date")
     var dueDate: LocalDate? = null,
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id")
-    var team: Team? = null,
 ) : IdentityIdEntity() {
     @OneToMany(mappedBy = "epic", cascade = [CascadeType.ALL], orphanRemoval = true)
     val assignments: MutableList<EpicAssignment> = mutableListOf()
@@ -57,7 +53,6 @@ class Epic(
         status: EpicStatus,
         startDate: LocalDate?,
         dueDate: LocalDate?,
-        team: Team?,
     ) {
         this.project = project
         this.name = name
@@ -65,6 +60,5 @@ class Epic(
         this.status = status
         this.startDate = startDate
         this.dueDate = dueDate
-        this.team = team
     }
 }

@@ -13,8 +13,6 @@ import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.entity.dummyProject
 import com.pluxity.weekly.project.repository.ProjectRepository
-import com.pluxity.weekly.team.entity.dummyTeam
-import com.pluxity.weekly.team.repository.TeamRepository
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -31,10 +29,9 @@ class EpicServiceTest :
 
         val epicRepository: EpicRepository = mockk()
         val projectRepository: ProjectRepository = mockk()
-        val teamRepository: TeamRepository = mockk()
         val userRepository: UserRepository = mockk()
         val userResourcePermissionService: UserResourcePermissionService = mockk()
-        val service = EpicService(epicRepository, projectRepository, teamRepository, userRepository, userResourcePermissionService)
+        val service = EpicService(epicRepository, projectRepository, userRepository, userResourcePermissionService)
 
         Given("에픽 전체 조회") {
             When("에픽 목록을 조회하면") {
@@ -60,7 +57,6 @@ class EpicServiceTest :
         Given("에픽 단건 조회") {
             When("존재하는 에픽을 조회하면") {
                 val project = dummyProject(id = 1L)
-                val team = dummyTeam(id = 5L)
                 val entity =
                     dummyEpic(
                         id = 1L,
@@ -70,7 +66,6 @@ class EpicServiceTest :
                         status = EpicStatus.IN_PROGRESS,
                         startDate = LocalDate.of(2026, 1, 1),
                         dueDate = LocalDate.of(2026, 3, 31),
-                        team = team,
                     )
 
                 every { epicRepository.findByIdOrNull(1L) } returns entity
@@ -85,7 +80,6 @@ class EpicServiceTest :
                     result.status shouldBe EpicStatus.IN_PROGRESS
                     result.startDate shouldBe LocalDate.of(2026, 1, 1)
                     result.dueDate shouldBe LocalDate.of(2026, 3, 31)
-                    result.teamId shouldBe 5L
                 }
             }
 
@@ -106,18 +100,15 @@ class EpicServiceTest :
         Given("에픽 생성") {
             When("유효한 요청으로 에픽을 생성하면") {
                 val project = dummyProject(id = 1L)
-                val team = dummyTeam(id = 5L)
                 val request =
                     dummyEpicRequest(
                         projectId = 1L,
                         name = "신규 에픽",
                         status = EpicStatus.TODO,
-                        teamId = 5L,
                     )
-                val saved = dummyEpic(id = 1L, project = project, name = "신규 에픽", team = team)
+                val saved = dummyEpic(id = 1L, project = project, name = "신규 에픽")
 
                 every { projectRepository.findByIdOrNull(1L) } returns project
-                every { teamRepository.findByIdOrNull(5L) } returns team
                 every { epicRepository.save(any<Epic>()) } returns saved
 
                 val result = service.create(request)
@@ -137,7 +128,6 @@ class EpicServiceTest :
                         projectId = 1L,
                         name = "수정된 에픽",
                         status = EpicStatus.IN_PROGRESS,
-                        teamId = null,
                     )
 
                 every { epicRepository.findByIdOrNull(1L) } returns entity
@@ -148,7 +138,6 @@ class EpicServiceTest :
                 Then("에픽 정보가 수정된다") {
                     entity.name shouldBe "수정된 에픽"
                     entity.status shouldBe EpicStatus.IN_PROGRESS
-                    entity.team shouldBe null
                 }
             }
 
