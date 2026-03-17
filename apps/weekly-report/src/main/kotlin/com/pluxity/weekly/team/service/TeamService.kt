@@ -6,11 +6,7 @@ import com.pluxity.common.auth.user.dto.toResponse
 import com.pluxity.common.auth.user.entity.PermissionAction
 import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.auth.user.repository.UserRepository
-import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.response.PageResponse
-import com.pluxity.common.core.response.toPageResponse
-import com.pluxity.common.core.utils.findPageNotNull
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.team.dto.TeamRequest
 import com.pluxity.weekly.team.dto.TeamResponse
@@ -19,7 +15,6 @@ import com.pluxity.weekly.team.entity.Team
 import com.pluxity.weekly.team.entity.TeamMember
 import com.pluxity.weekly.team.repository.TeamMemberRepository
 import com.pluxity.weekly.team.repository.TeamRepository
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -31,16 +26,7 @@ class TeamService(
     private val memberRepository: TeamMemberRepository,
     private val userRepository: UserRepository,
 ) {
-    fun findAll(request: PageSearchRequest): PageResponse<TeamResponse> {
-        val pageable = PageRequest.of(request.page - 1, request.size)
-        val page =
-            teamRepository.findPageNotNull(pageable) {
-                select(entity(Team::class))
-                    .from(entity(Team::class))
-                    .orderBy(path(Team::id).desc())
-            }
-        return page.toPageResponse { it.toResponse() }
-    }
+    fun findAll(): List<TeamResponse> = teamRepository.findAll().map { it.toResponse() }
 
     fun findById(id: Long): TeamResponse = getTeamById(id).toResponse()
 
