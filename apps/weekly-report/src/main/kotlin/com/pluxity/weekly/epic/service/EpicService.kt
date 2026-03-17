@@ -63,7 +63,7 @@ class EpicService(
         request: EpicUpdateRequest,
     ) {
         val epic = getEpicById(id)
-        epic.patch(
+        epic.update(
             project = request.projectId?.let { getProjectById(it) },
             name = request.name,
             description = request.description,

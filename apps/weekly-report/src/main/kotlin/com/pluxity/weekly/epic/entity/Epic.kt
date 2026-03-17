@@ -46,7 +46,7 @@ class Epic(
         assignments.removeIf { it.assignedBy == user }
     }
 
-    fun patch(
+    fun update(
         project: Project? = null,
         name: String? = null,
         description: String? = null,
