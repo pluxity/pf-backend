@@ -25,7 +25,6 @@ class Project(
     @Column(name = "pm_id")
     var pmId: Long? = null,
 ) : IdentityIdEntity() {
-
     fun update(
         name: String? = null,
         description: String? = null,
