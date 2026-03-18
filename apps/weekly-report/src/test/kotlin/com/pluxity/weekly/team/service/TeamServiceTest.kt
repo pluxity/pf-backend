@@ -32,14 +32,23 @@ class TeamServiceTest :
 
         Given("팀 전체 조회") {
             When("팀 목록을 조회하면") {
-                val entities =
+                val team1 = dummyTeam(id = 1L, name = "개발팀")
+                val team2 = dummyTeam(id = 2L, name = "디자인팀")
+                val team3 = dummyTeam(id = 3L, name = "기획팀")
+                val entities = listOf(team1, team2, team3)
+
+                val user1 = dummyUser(id = 10L, name = "홍길동")
+                val user2 = dummyUser(id = 20L, name = "김영희")
+                val members =
                     listOf(
-                        dummyTeam(id = 1L, name = "개발팀"),
-                        dummyTeam(id = 2L, name = "디자인팀"),
-                        dummyTeam(id = 3L, name = "기획팀"),
+                        dummyTeamMember(id = 1L, team = team1, user = user1),
+                        dummyTeamMember(id = 2L, team = team1, user = user2),
                     )
 
                 every { repository.findAll() } returns entities
+                every { memberRepository.findByTeam(team1) } returns members
+                every { memberRepository.findByTeam(team2) } returns emptyList()
+                every { memberRepository.findByTeam(team3) } returns emptyList()
 
                 val result = service.findAll()
 
@@ -48,6 +57,14 @@ class TeamServiceTest :
                     result[0].name shouldBe "개발팀"
                     result[1].name shouldBe "디자인팀"
                     result[2].name shouldBe "기획팀"
+                }
+
+                Then("팀원이 포함되어 반환된다") {
+                    result[0].members.size shouldBe 2
+                    result[0].members[0].id shouldBe 10L
+                    result[0].members[1].id shouldBe 20L
+                    result[1].members shouldBe emptyList()
+                    result[2].members shouldBe emptyList()
                 }
             }
         }

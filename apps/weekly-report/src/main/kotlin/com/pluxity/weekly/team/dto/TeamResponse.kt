@@ -3,6 +3,7 @@ package com.pluxity.weekly.team.dto
 import com.fasterxml.jackson.annotation.JsonUnwrapped
 import com.pluxity.common.core.response.BaseResponse
 import com.pluxity.common.core.response.toBaseResponse
+import com.pluxity.common.auth.user.dto.UserResponse
 import com.pluxity.weekly.team.entity.Team
 import io.swagger.v3.oas.annotations.media.Schema
 
@@ -14,14 +15,17 @@ data class TeamResponse(
     val name: String,
     @field:Schema(description = "팀장 사용자 ID", example = "1")
     val leaderId: Long?,
+    @field:Schema(description = "팀 멤버 목록")
+    val members: List<UserResponse> = emptyList(),
     @field:JsonUnwrapped
     val baseResponse: BaseResponse,
 )
 
-fun Team.toResponse(): TeamResponse =
+fun Team.toResponse(members: List<UserResponse> = emptyList()): TeamResponse =
     TeamResponse(
         id = this.requiredId,
         name = this.name,
         leaderId = this.leaderId,
+        members = members,
         baseResponse = this.toBaseResponse(),
     )

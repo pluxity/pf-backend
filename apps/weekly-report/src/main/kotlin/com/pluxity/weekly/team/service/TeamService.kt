@@ -27,7 +27,11 @@ class TeamService(
     private val memberRepository: TeamMemberRepository,
     private val userRepository: UserRepository,
 ) {
-    fun findAll(): List<TeamResponse> = teamRepository.findAll().map { it.toResponse() }
+    fun findAll(): List<TeamResponse> =
+        teamRepository.findAll().map { team ->
+            val members = memberRepository.findByTeam(team).map { it.user.toResponse() }
+            team.toResponse(members = members)
+        }
 
     fun findById(id: Long): TeamResponse = getTeamById(id).toResponse()
 
