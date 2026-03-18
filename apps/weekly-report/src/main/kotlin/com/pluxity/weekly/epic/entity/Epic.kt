@@ -37,13 +37,13 @@ class Epic(
     val assignments: MutableList<EpicAssignment> = mutableListOf()
 
     fun assign(user: User) {
-        if (assignments.none { it.assignedBy == user }) {
-            assignments.add(EpicAssignment(epic = this, assignedBy = user))
+        if (assignments.none { it.user == user }) {
+            assignments.add(EpicAssignment(epic = this, user = user))
         }
     }
 
     fun unassign(user: User) {
-        assignments.removeIf { it.assignedBy == user }
+        assignments.removeIf { it.user == user }
     }
 
     fun update(

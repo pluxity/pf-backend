@@ -28,8 +28,8 @@ fun dummyEpic(
 fun dummyEpicAssignment(
     id: Long? = null,
     epic: Epic = dummyEpic(id = 1L),
-    assignedBy: User = dummyUser(id = 1L),
+    user: User = dummyUser(id = 1L),
 ) = EpicAssignment(
     epic = epic,
-    assignedBy = assignedBy,
+    user = user,
 ).withId(id).withAudit()

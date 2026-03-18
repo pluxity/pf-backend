@@ -15,6 +15,6 @@ class EpicAssignment(
     @JoinColumn(name = "epic_id", nullable = false)
     val epic: Epic,
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_by", nullable = false)
-    val assignedBy: User,
+    @JoinColumn(name = "user_id", nullable = false)
+    val user: User,
 ) : IdentityIdEntity()
