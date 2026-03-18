@@ -19,6 +19,7 @@ enum class WeeklyReportErrorCode(
     DUPLICATE_TASK(HttpStatus.BAD_REQUEST, "에픽 '%s'에 이미 '%s' 태스크가 존재합니다."),
     LLM_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "LLM 서비스에 연결할 수 없습니다."),
     LLM_INVALID_RESPONSE(HttpStatus.INTERNAL_SERVER_ERROR, "LLM 응답을 파싱할 수 없습니다."),
+    LLM_AMBIGUOUS_REQUEST(HttpStatus.BAD_REQUEST, "%s"),
     ;
 
     override fun getHttpStatus(): HttpStatus = httpStatus

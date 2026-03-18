@@ -50,6 +50,9 @@ TODO, IN_PROGRESS, DONE, HOLD
   // read — 조회 필터
   "filters": {...},
 
+  // missing_fields 또는 clarify 시 사용자에게 보여줄 안내 메시지
+  "message": "...",
+
   // 필수인데 확정 못한 필드
   "missing_fields": ["field_name", ...],
 
@@ -70,7 +73,8 @@ read: target별 filters:
   - "내 업무/내 태스크" → assignee_id에 CONTEXT의 user.id 사용.
   - 필터값은 CONTEXT에 있는 정확한 이름/ID만 사용. 필터 없으면 filters 생략.
   - target 생략 시 기본값은 "task".
-clarify: 의도 자체가 모호할 때만 사용.
+clarify: 의도 자체가 모호할 때만 사용. message 필수.
+message: missing_fields가 있거나 clarify일 때만 포함. 사용자에게 보여줄 자연어 안내 메시지. 확정된 액션에는 포함하지 말 것.
 
 ## missing_fields + candidates 규칙
 
@@ -92,8 +96,9 @@ clarify: 의도 자체가 모호할 때만 사용.
 3. **이름 비교 기준**:
    - 정확 일치 (대소문자 무시, 한↔영 음차) → ID 직접 사용.
    - 비슷하지만 정확하지 않음 (부분, 약어, 생략) → missing_fields + candidates.
-4. **유사 항목 없음** → 신규 create (id 없이). 상위 계층 특정이 안 되면 missing_fields + candidates.
-5. **프로젝트명이 입력에 있으면** 해당 프로젝트 내에서만 검색. **없으면 전체에서 검색 후 중복 시 missing_fields + candidates.**
+4. **유사 항목 없음 + update/delete** → CONTEXT에 이름이 전혀 매칭되지 않으면 해당 항목을 액션에서 제외하라. id를 추측하거나 임의의 id를 넣지 말 것. 대신 clarify로 처리: {"action":"clarify","target":"..","message":"'OO' 항목을 찾을 수 없습니다."}. 복합 지시에서도 매칭 안 되는 항목은 반드시 clarify로 분리할 것.
+5. **유사 항목 없음 + create** → 신규 create (id 없이). 상위 계층 특정이 안 되면 missing_fields + candidates.
+6. **프로젝트명이 입력에 있으면** 해당 프로젝트 내에서만 검색. **없으면 전체에서 검색 후 중복 시 missing_fields + candidates.**
 
 ## 상태 매핑
 
@@ -163,42 +168,52 @@ Output: [{"action":"create","target":"epic","project_id":10,"name":"배포"}]
 --- epic create (프로젝트 미지정 → missing_fields) ---
 
 [INPUT]배포 에픽 추가해줘[/INPUT]
-Output: [{"action":"create","target":"epic","name":"배포","missing_fields":["project_id"],"candidates":[10,11]}]
+Output: [{"action":"create","target":"epic","name":"배포","message":"어느 프로젝트에 생성할까요?","missing_fields":["project_id"],"candidates":[10,11]}]
 
 --- create with missing FK (동명 에픽이 여러 프로젝트에 존재) ---
 
 [INPUT]백엔드 구축 - 신규 태스크 추가해줘[/INPUT]
-Output: [{"action":"create","target":"task","name":"신규 태스크","missing_fields":["epic_id"],"candidates":[100,103]}]
+Output: [{"action":"create","target":"task","name":"신규 태스크","message":"'백엔드 구축' 에픽이 여러 프로젝트에 있습니다.","missing_fields":["epic_id"],"candidates":[100,103]}]
 
 --- update with ambiguous id (동명 태스크가 여러 에픽에 존재) ---
 
 [INPUT]DB 설계 완료[/INPUT]
-Output: [{"action":"update","target":"task","status":"DONE","progress":100,"missing_fields":["id"],"candidates":[1001,1005]}]
+Output: [{"action":"update","target":"task","status":"DONE","progress":100,"message":"'DB 설계' 태스크가 여러 곳에 있습니다.","missing_fields":["id"],"candidates":[1001,1005]}]
 
 --- update with ambiguous id (이름 변경) ---
 
 [INPUT]DB 설계 이름 DB 스키마 설계로 변경해줘[/INPUT]
-Output: [{"action":"update","target":"task","name":"DB 스키마 설계","missing_fields":["id"],"candidates":[1001,1005]}]
+Output: [{"action":"update","target":"task","name":"DB 스키마 설계","message":"'DB 설계' 태스크가 여러 곳에 있습니다. 어떤 것을 수정할까요?","missing_fields":["id"],"candidates":[1001,1005]}]
 
 --- update with ambiguous id (진행률 변경) ---
 
 [INPUT]DB 설계 50%[/INPUT]
-Output: [{"action":"update","target":"task","status":"IN_PROGRESS","progress":50,"missing_fields":["id"],"candidates":[1001,1005]}]
+Output: [{"action":"update","target":"task","status":"IN_PROGRESS","progress":50,"message":"'DB 설계' 태스크가 여러 곳에 있습니다.","missing_fields":["id"],"candidates":[1001,1005]}]
 
 --- delete with ambiguous id ---
 
 [INPUT]DB 설계 삭제해줘[/INPUT]
-Output: [{"action":"delete","target":"task","missing_fields":["id"],"candidates":[1001,1005]}]
+Output: [{"action":"delete","target":"task","message":"'DB 설계' 태스크가 여러 곳에 있습니다. 어떤 것을 삭제할까요?","missing_fields":["id"],"candidates":[1001,1005]}]
 
 --- partial match ---
 
 [INPUT]크롤 50%[/INPUT]
-Output: [{"action":"update","target":"task","status":"IN_PROGRESS","progress":50,"missing_fields":["id"],"candidates":[1004]}]
+Output: [{"action":"update","target":"task","status":"IN_PROGRESS","progress":50,"message":"'크롤러 개발' 태스크를 말씀하시는 건가요?","missing_fields":["id"],"candidates":[1004]}]
 
 --- true clarify (의도 자체가 모호) ---
 
 [INPUT]진행중[/INPUT]
-Output: [{"action":"clarify","target":"task"}]
+Output: [{"action":"clarify","target":"task","message":"어떤 태스크가 진행 중인지 알려주세요."}]
+
+--- CONTEXT에 없는 항목 (단건) ---
+
+[INPUT]잠자기 완료[/INPUT]
+Output: [{"action":"clarify","target":"task","message":"'잠자기' 태스크를 찾을 수 없습니다."}]
+
+--- CONTEXT에 없는 항목 (복합 — 하나는 있고 하나는 없음) ---
+
+[INPUT]DB 설계 완료했고 잠자기 50%[/INPUT]
+Output: [{"action":"update","target":"task","id":1001,"status":"DONE","progress":100},{"action":"clarify","target":"task","message":"'잠자기' 태스크를 찾을 수 없습니다."}]
 
 --- 복합 지시 ---
 
