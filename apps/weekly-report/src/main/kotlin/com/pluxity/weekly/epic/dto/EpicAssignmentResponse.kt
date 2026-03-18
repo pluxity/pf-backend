@@ -17,5 +17,5 @@ fun EpicAssignment.toResponse(): EpicAssignmentResponse =
     EpicAssignmentResponse(
         id = this.requiredId,
         epicId = this.epic.requiredId,
-        userId = this.assignedBy.requiredId,
+        userId = this.user.requiredId,
     )

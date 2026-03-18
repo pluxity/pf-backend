@@ -7,14 +7,12 @@ import org.springframework.data.jpa.repository.JpaRepository
 interface EpicRepository :
     JpaRepository<Epic, Long>,
     KotlinJdslJpqlExecutor {
-    fun findByNameContainingIgnoreCase(name: String): List<Epic>
+    fun findByAssignmentsUserId(userId: Long): List<Epic>
 
-    fun findByNameContainingIgnoreCaseAndProjectId(
-        name: String,
-        projectId: Long,
-    ): List<Epic>
-
-    fun findByAssignmentsAssignedById(userId: Long): List<Epic>
+    fun existsByAssignmentsUserIdAndId(
+        userId: Long,
+        epicId: Long,
+    ): Boolean
 
     fun findByProjectIdIn(projectIds: List<Long>): List<Epic>
 }
