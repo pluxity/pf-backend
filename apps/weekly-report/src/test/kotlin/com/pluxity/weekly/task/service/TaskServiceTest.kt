@@ -1,10 +1,15 @@
 package com.pluxity.weekly.task.service
 
+import com.pluxity.common.auth.user.entity.RoleType
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.test.entity.dummyRole
+import com.pluxity.common.test.entity.dummyUser
 import com.pluxity.weekly.epic.entity.dummyEpic
 import com.pluxity.weekly.epic.repository.EpicRepository
+import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
+import com.pluxity.weekly.project.repository.ProjectRepository
 import com.pluxity.weekly.task.dto.dummyTaskRequest
 import com.pluxity.weekly.task.dto.dummyTaskUpdateRequest
 import com.pluxity.weekly.task.entity.Task
@@ -28,7 +33,20 @@ class TaskServiceTest :
         val taskRepository: TaskRepository = mockk()
         val epicRepository: EpicRepository = mockk()
         val userRepository: UserRepository = mockk()
-        val service = TaskService(taskRepository, epicRepository, userRepository)
+        val authorizationService: AuthorizationService = mockk()
+        val projectRepository: ProjectRepository = mockk()
+        val service = TaskService(taskRepository, epicRepository, userRepository, authorizationService, projectRepository)
+
+        val adminUser =
+            dummyUser(id = 1L, name = "관리자").apply {
+                addRole(dummyRole(id = 1L, name = "ADMIN").apply { auth = RoleType.ADMIN.name })
+            }
+
+        beforeSpec {
+            every { authorizationService.currentUser() } returns adminUser
+            every { authorizationService.requireEpicAccess(any(), any()) } just runs
+            every { authorizationService.requireTaskOwner(any(), any()) } just runs
+        }
 
         Given("태스크 전체 조회") {
             When("태스크 목록을 조회하면") {
