@@ -52,3 +52,7 @@ springwolf: # socket documentation ui
 logging:
   level:
     com: DEBUG
+
+llm:
+  base-url: http://192.168.10.183:11434/api/chat
+  model: qwen3:14b

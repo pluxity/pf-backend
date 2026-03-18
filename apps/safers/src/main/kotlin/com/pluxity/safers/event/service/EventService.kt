@@ -14,6 +14,7 @@ import com.pluxity.safers.event.listener.EventCreated
 import com.pluxity.safers.event.listener.EventVideoRegistered
 import com.pluxity.safers.event.repository.EventRepository
 import com.pluxity.safers.global.constant.SafersErrorCode
+import com.pluxity.safers.llm.LlmClient
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
@@ -28,6 +29,7 @@ class EventService(
     private val eventRepository: EventRepository,
     private val fileService: FileService,
     private val eventPublisher: ApplicationEventPublisher,
+    private val llmClient: LlmClient,
 ) {
     companion object {
         private const val EVENT_PATH = "events/"
@@ -99,13 +101,16 @@ class EventService(
         request: PageSearchRequest,
         startDate: String? = null,
         endDate: String? = null,
+        query: String? = null,
     ): PageResponse<EventResponse> {
         val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
-        val start = startDate?.let { LocalDateTime.parse(it, formatter) }
-        val end = endDate?.let { LocalDateTime.parse(it, formatter) }
+        val criteria = query?.let { llmClient.parseEventFilter(it) }
+
+        val start = criteria?.startDate ?: startDate?.let { LocalDateTime.parse(it, formatter) }
+        val end = criteria?.endDate ?: endDate?.let { LocalDateTime.parse(it, formatter) }
 
         val pageable = PageRequest.of(request.page - 1, request.size)
-        val page = eventRepository.findAllByDateRange(pageable, start, end)
+        val page = eventRepository.findAllByDateRange(pageable, start, end, criteria?.types)
 
         val fileMap = fileService.getFileMapByIds(page.content) { listOf(it.snapshotFileId, it.videoFileId) }
         return page.toPageResponse {

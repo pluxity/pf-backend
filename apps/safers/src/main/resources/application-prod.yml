@@ -50,3 +50,7 @@ springwolf: # socket documentation ui
     stomp:
       endpoint:
         app: /app
+
+llm:
+  base-url: http://192.168.10.183:11434/api/chat
+  model: qwen3:14b
