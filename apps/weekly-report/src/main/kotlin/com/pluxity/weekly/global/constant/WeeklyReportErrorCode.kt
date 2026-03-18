@@ -20,6 +20,7 @@ enum class WeeklyReportErrorCode(
     LLM_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "LLM 서비스에 연결할 수 없습니다."),
     LLM_INVALID_RESPONSE(HttpStatus.INTERNAL_SERVER_ERROR, "LLM 응답을 파싱할 수 없습니다."),
     LLM_AMBIGUOUS_REQUEST(HttpStatus.BAD_REQUEST, "%s"),
+    PERMISSION_DENIED(HttpStatus.FORBIDDEN, "해당 작업에 대한 권한이 없습니다."),
     ;
 
     override fun getHttpStatus(): HttpStatus = httpStatus
