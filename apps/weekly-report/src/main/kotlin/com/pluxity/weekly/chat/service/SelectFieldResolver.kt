@@ -1,7 +1,7 @@
 package com.pluxity.weekly.chat.service
 
 import com.pluxity.common.auth.user.repository.UserRepository
-import com.pluxity.weekly.chat.dto.BeforeAction
+import com.pluxity.weekly.chat.dto.SelectField
 import com.pluxity.weekly.chat.dto.Candidate
 import com.pluxity.weekly.chat.dto.LlmAction
 import com.pluxity.weekly.epic.repository.EpicRepository
@@ -12,26 +12,26 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 
 @Component
-class BeforeActionResolver(
+class SelectFieldResolver(
     private val projectRepository: ProjectRepository,
     private val epicRepository: EpicRepository,
     private val taskRepository: TaskRepository,
     private val userRepository: UserRepository,
 ) {
-    fun resolve(action: LlmAction): List<BeforeAction> {
+    fun resolve(action: LlmAction): List<SelectField> {
         val missingFields = action.missingFields ?: emptyList()
         val candidateIds = action.candidates ?: emptyList()
-        val result = mutableListOf<BeforeAction>()
+        val result = mutableListOf<SelectField>()
 
         for (field in missingFields) {
-            val beforeAction =
+            val selectField =
                 when (field) {
                     "id" -> resolveIdCandidates(action.target, candidateIds)
                     "project_id" -> resolveProjectCandidates(candidateIds)
                     "epic_id" -> resolveEpicCandidates(candidateIds)
                     else -> null
                 }
-            if (beforeAction != null) result.add(beforeAction)
+            if (selectField != null) result.add(selectField)
         }
 
         addSelectFields(action, result)
@@ -42,7 +42,7 @@ class BeforeActionResolver(
     private fun resolveIdCandidates(
         target: String?,
         candidateIds: List<Long>,
-    ): BeforeAction? {
+    ): SelectField? {
         if (candidateIds.isEmpty()) return null
         val candidates =
             when (target) {
@@ -67,10 +67,10 @@ class BeforeActionResolver(
                     }
                 else -> return null
             }
-        return BeforeAction(field = "id", candidates = candidates)
+        return SelectField(field = "id", candidates = candidates)
     }
 
-    private fun resolveProjectCandidates(candidateIds: List<Long>): BeforeAction? {
+    private fun resolveProjectCandidates(candidateIds: List<Long>): SelectField? {
         val candidates =
             if (candidateIds.isNotEmpty()) {
                 candidateIds.mapNotNull { id ->
@@ -80,10 +80,10 @@ class BeforeActionResolver(
                 projectRepository.findAll().map { Candidate(it.requiredId, it.name) }
             }
         if (candidates.isEmpty()) return null
-        return BeforeAction(field = "projectId", candidates = candidates)
+        return SelectField(field = "projectId", candidates = candidates)
     }
 
-    private fun resolveEpicCandidates(candidateIds: List<Long>): BeforeAction? {
+    private fun resolveEpicCandidates(candidateIds: List<Long>): SelectField? {
         val candidates =
             if (candidateIds.isNotEmpty()) {
                 candidateIds.mapNotNull { id ->
@@ -99,13 +99,13 @@ class BeforeActionResolver(
                 }
             }
         if (candidates.isEmpty()) return null
-        return BeforeAction(field = "epicId", candidates = candidates)
+        return SelectField(field = "epicId", candidates = candidates)
     }
 
     private fun resolveUserCandidates(
         field: String,
         roleName: String? = null,
-    ): BeforeAction {
+    ): SelectField {
         val users = userRepository.findAllBy(Sort.by("name"))
         val candidates =
             if (roleName != null) {
@@ -113,12 +113,12 @@ class BeforeActionResolver(
             } else {
                 users
             }.map { Candidate(it.requiredId, it.name) }
-        return BeforeAction(field = field, candidates = candidates)
+        return SelectField(field = field, candidates = candidates)
     }
 
     private fun addSelectFields(
         action: LlmAction,
-        result: MutableList<BeforeAction>,
+        result: MutableList<SelectField>,
     ) {
         if (action.action != "create") return
 
