@@ -4,6 +4,7 @@ import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.epic.dto.EpicResponse
 import com.pluxity.weekly.epic.service.EpicService
+import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.dto.ProjectResponse
 import com.pluxity.weekly.project.service.ProjectService
@@ -13,6 +14,7 @@ import com.pluxity.weekly.team.service.TeamService
 import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import tools.jackson.databind.ObjectMapper
 import java.time.LocalDate
 
@@ -31,12 +33,14 @@ import java.time.LocalDate
  * TODO: 권한별 조회 — findAll() + 필터 대신 사용자 권한 기반 조회 메서드로 교체
  */
 @Component
+@Transactional(readOnly = true)
 class ContextBuilder(
     private val userRepository: UserRepository,
     private val projectService: ProjectService,
     private val epicService: EpicService,
     private val taskService: TaskService,
     private val teamService: TeamService,
+    private val authorizationService: AuthorizationService,
     private val objectMapper: ObjectMapper,
 ) {
     fun build(
@@ -47,6 +51,8 @@ class ContextBuilder(
         val user =
             userRepository.findByIdOrNull(userId)
                 ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_USER, userId)
+
+        authorizationService.checkChatPermission(user, target, actions)
 
         val context =
             mutableMapOf<String, Any?>(

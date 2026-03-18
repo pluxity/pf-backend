@@ -5,7 +5,9 @@ import com.pluxity.weekly.chat.dto.Candidate
 import com.pluxity.weekly.chat.dto.LlmAction
 import com.pluxity.weekly.chat.dto.SelectField
 import com.pluxity.weekly.epic.repository.EpicRepository
+import com.pluxity.weekly.epic.service.EpicService
 import com.pluxity.weekly.project.repository.ProjectRepository
+import com.pluxity.weekly.project.service.ProjectService
 import com.pluxity.weekly.task.repository.TaskRepository
 import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
@@ -17,6 +19,8 @@ class SelectFieldResolver(
     private val epicRepository: EpicRepository,
     private val taskRepository: TaskRepository,
     private val userRepository: UserRepository,
+    private val projectService: ProjectService,
+    private val epicService: EpicService,
 ) {
     fun resolve(action: LlmAction): List<SelectField> {
         val missingFields = action.missingFields ?: emptyList()
@@ -77,7 +81,7 @@ class SelectFieldResolver(
                     projectRepository.findByIdOrNull(id)?.let { Candidate(id.toString(), it.name) }
                 }
             } else {
-                projectRepository.findAll().map { Candidate(it.requiredId.toString(), it.name) }
+                projectService.findAll().map { Candidate(it.id.toString(), it.name) }
             }
         if (candidates.isEmpty()) return null
         return SelectField(field = "projectId", candidates = candidates)
@@ -93,10 +97,7 @@ class SelectFieldResolver(
                     }
                 }
             } else {
-                epicRepository.findAll().map { epic ->
-                    val project = projectRepository.findByIdOrNull(epic.project.id!!)
-                    Candidate(epic.requiredId.toString(), "${epic.name} (${project?.name ?: ""})")
-                }
+                epicService.findAll().map { Candidate(it.id.toString(), it.name) }
             }
         if (candidates.isEmpty()) return null
         return SelectField(field = "epicId", candidates = candidates)
@@ -117,10 +118,11 @@ class SelectFieldResolver(
     }
 
     private fun resolveStatusCandidates(target: String): SelectField {
-        val statuses = when (target) {
-            "project" -> listOf("TODO", "IN_PROGRESS", "DONE")
-            else -> listOf("TODO", "IN_PROGRESS", "DONE")
-        }
+        val statuses =
+            when (target) {
+                "project" -> listOf("TODO", "IN_PROGRESS", "DONE")
+                else -> listOf("TODO", "IN_PROGRESS", "DONE")
+            }
         return SelectField(
             field = "status",
             candidates = statuses.map { Candidate(it, it) },
