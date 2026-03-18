@@ -1,7 +1,5 @@
 package com.pluxity.weekly.task.service
 
-import com.pluxity.common.auth.annotation.CheckPermission
-import com.pluxity.common.auth.user.entity.PermissionAction
 import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
@@ -9,8 +7,10 @@ import com.pluxity.common.core.utils.findAllNotNull
 import com.pluxity.weekly.chat.dto.TaskSearchFilter
 import com.pluxity.weekly.epic.entity.Epic
 import com.pluxity.weekly.epic.repository.EpicRepository
+import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.entity.Project
+import com.pluxity.weekly.project.repository.ProjectRepository
 import com.pluxity.weekly.task.dto.TaskRequest
 import com.pluxity.weekly.task.dto.TaskResponse
 import com.pluxity.weekly.task.dto.TaskUpdateRequest
@@ -27,11 +27,22 @@ class TaskService(
     private val taskRepository: TaskRepository,
     private val epicRepository: EpicRepository,
     private val userRepository: UserRepository,
+    private val authorizationService: AuthorizationService,
+    private val projectRepository: ProjectRepository,
 ) {
-    @CheckPermission(action = PermissionAction.READ_LIST, resourceType = "task")
-    fun findAll(): List<TaskResponse> = taskRepository.findAll().map { it.toResponse() }
+    fun findAll(): List<TaskResponse> {
+        val user = authorizationService.currentUser()
+        if (user.isAdmin()) return taskRepository.findAll().map { it.toResponse() }
+        val pmProjects = projectRepository.findByPmId(user.requiredId)
+        if (pmProjects.isNotEmpty()) {
+            val epics = epicRepository.findByProjectIdIn(pmProjects.map { it.requiredId })
+            return taskRepository.findByEpicIn(epics).map { it.toResponse() }
+        }
+        val epics = epicRepository.findByAssignmentsUserId(user.requiredId)
+        if (epics.isEmpty()) return emptyList()
+        return taskRepository.findByEpicInAndAssigneeId(epics, user.requiredId).map { it.toResponse() }
+    }
 
-    @CheckPermission(action = PermissionAction.READ_LIST, resourceType = "task")
     fun search(filter: TaskSearchFilter): List<TaskResponse> =
         taskRepository
             .findAllNotNull {
@@ -48,11 +59,12 @@ class TaskService(
                     )
             }.map { it.toResponse() }
 
-    @CheckPermission(action = PermissionAction.READ_SINGLE, resourceType = "task")
     fun findById(id: Long): TaskResponse = getTaskById(id).toResponse()
 
     @Transactional
     fun create(request: TaskRequest): Long {
+        val user = authorizationService.currentUser()
+        authorizationService.requireEpicAccess(user, request.epicId)
         if (taskRepository.existsByEpicIdAndName(request.epicId, request.name)) {
             throw CustomException(WeeklyReportErrorCode.DUPLICATE_TASK, request.epicId, request.name)
         }
@@ -66,20 +78,20 @@ class TaskService(
                     progress = request.progress,
                     startDate = request.startDate,
                     dueDate = request.dueDate,
-                    assignee = request.assigneeId?.let { getUserById(it) },
+                    assignee = request.assigneeId?.let { getUserById(it) } ?: user,
                 ),
             ).requiredId
-
-        // resource_permission 직접 추가
     }
 
-    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "task")
     @Transactional
     fun update(
         id: Long,
         request: TaskUpdateRequest,
     ) {
-        getTaskById(id).update(
+        val user = authorizationService.currentUser()
+        val task = getTaskById(id)
+        authorizationService.requireTaskOwner(user, task)
+        task.update(
             epic = request.epicId?.let { getEpicById(it) },
             name = request.name,
             description = request.description,
@@ -91,10 +103,12 @@ class TaskService(
         )
     }
 
-    @CheckPermission(action = PermissionAction.DELETE, resourceType = "task")
     @Transactional
     fun delete(id: Long) {
-        taskRepository.delete(getTaskById(id))
+        val user = authorizationService.currentUser()
+        val task = getTaskById(id)
+        authorizationService.requireTaskOwner(user, task)
+        taskRepository.delete(task)
     }
 
     private fun getTaskById(id: Long): Task =

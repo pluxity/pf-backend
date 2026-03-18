@@ -1,7 +1,6 @@
 package com.pluxity.weekly.task.dto
 
 import com.fasterxml.jackson.annotation.JsonUnwrapped
-import com.pluxity.common.auth.user.entity.Permissible
 import com.pluxity.common.core.response.BaseResponse
 import com.pluxity.common.core.response.toBaseResponse
 import com.pluxity.weekly.task.entity.Task
@@ -39,10 +38,7 @@ data class TaskResponse(
     val assigneeName: String?,
     @field:JsonUnwrapped
     val baseResponse: BaseResponse,
-) : Permissible {
-    override val resourceId: String get() = id.toString()
-    override val resourceType: String get() = "TASK"
-}
+)
 
 fun Task.toResponse(): TaskResponse =
     TaskResponse(

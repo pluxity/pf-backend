@@ -1,10 +1,7 @@
 package com.pluxity.weekly.epic.service
 
-import com.pluxity.common.auth.annotation.CheckPermission
-import com.pluxity.common.auth.user.entity.PermissionAction
 import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.auth.user.repository.UserRepository
-import com.pluxity.common.auth.user.service.UserResourcePermissionService
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.epic.dto.EpicAssignmentResponse
 import com.pluxity.weekly.epic.dto.EpicRequest
@@ -13,6 +10,7 @@ import com.pluxity.weekly.epic.dto.EpicUpdateRequest
 import com.pluxity.weekly.epic.dto.toResponse
 import com.pluxity.weekly.epic.entity.Epic
 import com.pluxity.weekly.epic.repository.EpicRepository
+import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.entity.Project
 import com.pluxity.weekly.project.repository.ProjectRepository
@@ -28,17 +26,24 @@ class EpicService(
     private val epicRepository: EpicRepository,
     private val projectRepository: ProjectRepository,
     private val userRepository: UserRepository,
-    private val userResourcePermissionService: UserResourcePermissionService,
+    private val authorizationService: AuthorizationService,
 ) {
-    @CheckPermission(action = PermissionAction.READ_LIST, resourceType = "epic")
-    fun findAll(): List<EpicResponse> = epicRepository.findAll().map { it.toResponse() }
+    fun findAll(): List<EpicResponse> {
+        val user = authorizationService.currentUser()
+        if (user.isAdmin()) return epicRepository.findAll().map { it.toResponse() }
+        val pmProjects = projectRepository.findByPmId(user.requiredId)
+        if (pmProjects.isNotEmpty()) {
+            return epicRepository.findByProjectIdIn(pmProjects.map { it.requiredId }).map { it.toResponse() }
+        }
+        return epicRepository.findByAssignmentsUserId(user.requiredId).map { it.toResponse() }
+    }
 
-    @CheckPermission(action = PermissionAction.READ_SINGLE, resourceType = "epic")
     fun findById(id: Long): EpicResponse = getEpicById(id).toResponse()
 
-    @CheckPermission(action = PermissionAction.CREATE, resourceType = "epic")
     @Transactional
     fun create(request: EpicRequest): Long {
+        val user = authorizationService.currentUser()
+        authorizationService.requireEpicManage(user, request.projectId)
         val epic =
             epicRepository.save(
                 Epic(
@@ -51,8 +56,8 @@ class EpicService(
                 ),
             )
         request.userIds?.forEach { userId ->
-            val user = getUserById(userId)
-            epic.assign(user)
+            val assignee = getUserById(userId)
+            epic.assign(assignee)
         }
         return epic.requiredId
     }
@@ -62,7 +67,9 @@ class EpicService(
         id: Long,
         request: EpicUpdateRequest,
     ) {
+        val user = authorizationService.currentUser()
         val epic = getEpicById(id)
+        authorizationService.requireEpicManage(user, epic.project.requiredId)
         epic.update(
             project = request.projectId?.let { getProjectById(it) },
             name = request.name,
@@ -72,52 +79,53 @@ class EpicService(
             dueDate = request.dueDate,
         )
         request.userIds?.forEach { userId ->
-            val user = getUserById(userId)
-            if (epic.assignments.none { it.assignedBy == user }) {
-                epic.assign(user)
+            val assignee = getUserById(userId)
+            if (epic.assignments.none { it.user == assignee }) {
+                epic.assign(assignee)
             }
         }
     }
 
-    @CheckPermission(action = PermissionAction.DELETE, resourceType = "epic")
     @Transactional
     fun delete(id: Long) {
-        epicRepository.delete(getEpicById(id))
+        val user = authorizationService.currentUser()
+        val epic = getEpicById(id)
+        authorizationService.requireEpicManage(user, epic.project.requiredId)
+        epicRepository.delete(epic)
     }
 
     // ── EpicAssignment ──
 
-    @CheckPermission(action = PermissionAction.READ_LIST, resourceType = "epic")
     fun findAssignments(epicId: Long): List<EpicAssignmentResponse> = getEpicById(epicId).assignments.map { it.toResponse() }
 
-    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "epic")
     @Transactional
     fun assign(
         epicId: Long,
         userId: Long,
     ) {
+        val user = authorizationService.currentUser()
+        authorizationService.requireEpicAssign(user, epicId)
         val epic = getEpicById(epicId)
-        val user = getUserById(userId)
-        if (epic.assignments.any { it.assignedBy == user }) {
+        val assignee = getUserById(userId)
+        if (epic.assignments.any { it.user == assignee }) {
             throw CustomException(WeeklyReportErrorCode.DUPLICATE_EPIC_ASSIGNMENT, userId, epicId)
         }
-        userResourcePermissionService.create(userId, "epic", epicId.toString())
-        userResourcePermissionService.create(userId, "project", epic.project.requiredId.toString())
-        epic.assign(user)
+        epic.assign(assignee)
     }
 
-    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "epic")
     @Transactional
     fun unassign(
         epicId: Long,
         userId: Long,
     ) {
+        val user = authorizationService.currentUser()
+        authorizationService.requireEpicAssign(user, epicId)
         val epic = getEpicById(epicId)
-        val user = getUserById(userId)
-        if (epic.assignments.none { it.assignedBy == user }) {
+        val assignee = getUserById(userId)
+        if (epic.assignments.none { it.user == assignee }) {
             throw CustomException(WeeklyReportErrorCode.NOT_FOUND_EPIC_ASSIGNMENT, epicId, userId)
         }
-        epic.unassign(user)
+        epic.unassign(assignee)
     }
 
     private fun getEpicById(id: Long): Epic =

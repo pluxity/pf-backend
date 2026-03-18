@@ -1,8 +1,8 @@
 package com.pluxity.weekly.project.service
 
-import com.pluxity.common.auth.annotation.CheckPermission
-import com.pluxity.common.auth.user.entity.PermissionAction
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.weekly.global.auth.AuthorizationService
+import com.pluxity.weekly.global.constant.UserType
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.dto.ProjectRequest
 import com.pluxity.weekly.project.dto.ProjectResponse
@@ -21,10 +21,18 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class ProjectService(
     private val projectRepository: ProjectRepository,
+    private val authorizationService: AuthorizationService,
 ) {
-    @CheckPermission(action = PermissionAction.READ_LIST, resourceType = "project")
     fun findAll(): List<ProjectResponse> {
-        val projects = projectRepository.findAll()
+        val user = authorizationService.currentUser()
+        val projects =
+            if (user.isAdmin()) {
+                projectRepository.findAll()
+            } else if (user.userRoles.any { it.role.name.equals(UserType.PM.roleName, ignoreCase = true)  }) {
+                projectRepository.findByPmId(user.requiredId)
+            } else {
+                emptyList()
+            }
         if (projects.isEmpty()) return emptyList()
         val memberMap =
             projectRepository
@@ -33,16 +41,16 @@ class ProjectService(
         return projects.map { it.toResponse(memberMap[it.requiredId].orEmpty()) }
     }
 
-    @CheckPermission(action = PermissionAction.READ_SINGLE, resourceType = "project")
     fun findById(id: Long): ProjectResponse {
         val project = getById(id)
         return project.toResponse(projectRepository.findMembersByProjectId(project.requiredId))
     }
 
-    @CheckPermission(action = PermissionAction.CREATE, resourceType = "project")
     @Transactional
-    fun create(request: ProjectRequest): Long =
-        projectRepository
+    fun create(request: ProjectRequest): Long {
+        val user = authorizationService.currentUser()
+        authorizationService.requireAdmin(user)
+        return projectRepository
             .save(
                 Project(
                     name = request.name,
@@ -53,13 +61,15 @@ class ProjectService(
                     pmId = request.pmId,
                 ),
             ).requiredId
+    }
 
-    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "project")
     @Transactional
     fun update(
         id: Long,
         request: ProjectUpdateRequest,
     ) {
+        val user = authorizationService.currentUser()
+        authorizationService.requireProjectManager(user, id)
         getById(id).update(
             name = request.name,
             description = request.description,
@@ -70,9 +80,10 @@ class ProjectService(
         )
     }
 
-    @CheckPermission(action = PermissionAction.DELETE, resourceType = "project")
     @Transactional
     fun delete(id: Long) {
+        val user = authorizationService.currentUser()
+        authorizationService.requireProjectManager(user, id)
         projectRepository.delete(getById(id))
     }
 

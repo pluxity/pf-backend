@@ -1,9 +1,9 @@
 package com.pluxity.weekly.team.dto
 
 import com.fasterxml.jackson.annotation.JsonUnwrapped
+import com.pluxity.common.auth.user.dto.UserResponse
 import com.pluxity.common.core.response.BaseResponse
 import com.pluxity.common.core.response.toBaseResponse
-import com.pluxity.common.auth.user.dto.UserResponse
 import com.pluxity.weekly.team.entity.Team
 import io.swagger.v3.oas.annotations.media.Schema
 

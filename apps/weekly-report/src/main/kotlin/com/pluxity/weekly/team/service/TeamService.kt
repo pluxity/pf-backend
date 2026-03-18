@@ -1,12 +1,11 @@
 package com.pluxity.weekly.team.service
 
-import com.pluxity.common.auth.annotation.CheckPermission
 import com.pluxity.common.auth.user.dto.UserResponse
 import com.pluxity.common.auth.user.dto.toResponse
-import com.pluxity.common.auth.user.entity.PermissionAction
 import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.team.dto.TeamRequest
 import com.pluxity.weekly.team.dto.TeamResponse
@@ -26,6 +25,7 @@ class TeamService(
     private val teamRepository: TeamRepository,
     private val memberRepository: TeamMemberRepository,
     private val userRepository: UserRepository,
+    private val authorizationService: AuthorizationService,
 ) {
     fun findAll(): List<TeamResponse> =
         teamRepository.findAll().map { team ->
@@ -35,32 +35,36 @@ class TeamService(
 
     fun findById(id: Long): TeamResponse = getTeamById(id).toResponse()
 
-    @CheckPermission(action = PermissionAction.CREATE, resourceType = "team")
     @Transactional
-    fun create(request: TeamRequest): Long =
-        teamRepository
+    fun create(request: TeamRequest): Long {
+        val user = authorizationService.currentUser()
+        authorizationService.requireAdmin(user)
+        return teamRepository
             .save(
                 Team(
                     name = request.name,
                     leaderId = request.leaderId,
                 ),
             ).requiredId
+    }
 
-    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "team")
     @Transactional
     fun update(
         id: Long,
         request: TeamUpdateRequest,
     ) {
+        val user = authorizationService.currentUser()
+        authorizationService.requireAdmin(user)
         getTeamById(id).update(
             name = request.name,
             leaderId = request.leaderId,
         )
     }
 
-    @CheckPermission(action = PermissionAction.DELETE, resourceType = "team")
     @Transactional
     fun delete(id: Long) {
+        val user = authorizationService.currentUser()
+        authorizationService.requireAdmin(user)
         teamRepository.deleteById(getTeamById(id).requiredId)
     }
 
@@ -71,12 +75,13 @@ class TeamService(
         return memberRepository.findByTeam(team).map { it.user.toResponse() }
     }
 
-    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "team")
     @Transactional
     fun addMember(
         teamId: Long,
         userId: Long,
     ): Long {
+        val currentUser = authorizationService.currentUser()
+        authorizationService.requireAdmin(currentUser)
         val team = getTeamById(teamId)
         val user = getUserById(userId)
         if (memberRepository.existsByTeamAndUser(team, user)) {
@@ -85,12 +90,13 @@ class TeamService(
         return memberRepository.save(TeamMember(team = team, user = user)).requiredId
     }
 
-    @CheckPermission(action = PermissionAction.UPDATE, resourceType = "team")
     @Transactional
     fun removeMember(
         teamId: Long,
         userId: Long,
     ) {
+        val currentUser = authorizationService.currentUser()
+        authorizationService.requireAdmin(currentUser)
         val team = getTeamById(teamId)
         val user = getUserById(userId)
         if (!memberRepository.existsByTeamAndUser(team, user)) {
