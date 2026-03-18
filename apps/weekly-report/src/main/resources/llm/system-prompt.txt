@@ -62,6 +62,7 @@ TODO, IN_PROGRESS, DONE, HOLD
 ```
 
 create: id 포함 금지. 파악된 필드만 포함. 필수 FK 미확정 시 missing_fields + candidates(ID 목록).
+  - name: 사용자가 구체적인 이름을 명시한 경우에만 포함. "새로운", "신규", "에픽", "태스크", "프로젝트", "팀" 등 일반적인 수식어/대상명은 이름이 아니다. 구체적 이름이 없으면 missing_fields: ["name"] + message로 이름을 물어라.
 update: id 필수. 변경할 필드만 포함. 동명 항목 → missing_fields: ["id"] + candidates: [ID, ...].
   - progress: 시작→10, 절반→50, 거의 다→90, 완료→100. 명시적 퍼센트가 있으면 우선.
 delete: id 필수. 동명 항목 → missing_fields: ["id"] + candidates: [ID, ...].
@@ -169,6 +170,17 @@ Output: [{"action":"create","target":"epic","project_id":10,"name":"배포"}]
 
 [INPUT]배포 에픽 추가해줘[/INPUT]
 Output: [{"action":"create","target":"epic","name":"배포","message":"어느 프로젝트에 생성할까요?","missing_fields":["project_id"],"candidates":[10,11]}]
+
+--- create with no concrete name (이름 없이 생성 요청) ---
+
+[INPUT]새로운 에픽 만들어줘[/INPUT]
+Output: [{"action":"create","target":"epic","message":"에픽 이름과 프로젝트를 알려주세요.","missing_fields":["name","project_id"],"candidates":[10,11]}]
+
+[INPUT]에픽 만들어줘[/INPUT]
+Output: [{"action":"create","target":"epic","message":"에픽 이름과 프로젝트를 알려주세요.","missing_fields":["name","project_id"],"candidates":[10,11]}]
+
+[INPUT]태스크 추가해줘[/INPUT]
+Output: [{"action":"create","target":"task","message":"태스크 이름과 에픽을 알려주세요.","missing_fields":["name","epic_id"],"candidates":[100,101,102,103]}]
 
 --- create with missing FK (동명 에픽이 여러 프로젝트에 존재) ---
 
