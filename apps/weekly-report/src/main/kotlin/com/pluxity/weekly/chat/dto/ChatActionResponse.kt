@@ -12,7 +12,7 @@ data class ChatActionResponse(
     val action: String,
     @field:Schema(description = "대상", example = "task", allowableValues = ["project", "epic", "task", "team"])
     val target: String,
-    @field:Schema(description = "update/delete 대상 ID", example = "1")
+    @field:Schema(description = "서버 실행 완료 시 대상 ID", example = "1")
     val id: Long? = null,
     @field:Schema(description = "target별 폼 데이터 (create/update)")
     val dto: ChatDto? = null,

@@ -31,6 +31,7 @@ data class LlmAction(
     val filters: Map<String, Any?>? = null,
     @param:JsonProperty("user_ids")
     val userIds: List<Long>? = null,
+    val message: String? = null,
     @param:JsonProperty("missing_fields")
     val missingFields: List<String>? = null,
     val candidates: List<Long>? = null,
