@@ -14,8 +14,9 @@ class ChatService(
     private val llmService: LlmService,
     private val contextBuilder: ContextBuilder,
     private val chatDtoMapper: ChatDtoMapper,
-    private val beforeActionResolver: BeforeActionResolver,
+    private val selectFieldResolver: SelectFieldResolver,
     private val chatReadHandler: ChatReadHandler,
+    private val chatExecutor: ChatExecutor,
     private val objectMapper: ObjectMapper,
 ) {
     fun chat(

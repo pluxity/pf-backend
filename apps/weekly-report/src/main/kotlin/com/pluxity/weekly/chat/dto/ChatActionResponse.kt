@@ -16,8 +16,8 @@ data class ChatActionResponse(
     val id: Long? = null,
     @field:Schema(description = "target별 폼 데이터 (create/update)")
     val dto: ChatDto? = null,
-    @field:Schema(description = "선택 필드 후보 목록 (프론트 드롭다운용)")
-    val beforeAction: List<BeforeAction>? = null,
+    @field:Schema(description = "미확정 선택 필드 목록 (null이면 서버에서 실행 완료)")
+    val selectFields: List<SelectField>? = null,
     @field:Schema(description = "조회 결과 (action=read 시)")
     val readResult: ChatReadResponse? = null,
 )
@@ -34,8 +34,8 @@ data class ChatReadResponse(
     val teams: List<TeamResponse>? = null,
 )
 
-@Schema(description = "선택 필드 후보")
-data class BeforeAction(
+@Schema(description = "미확정 선택 필드")
+data class SelectField(
     @field:Schema(description = "필드명", example = "projectId")
     val field: String,
     @field:Schema(description = "후보 목록")
