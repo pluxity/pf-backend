@@ -116,6 +116,17 @@ class SelectFieldResolver(
         return SelectField(field = field, candidates = candidates)
     }
 
+    private fun resolveStatusCandidates(target: String): SelectField {
+        val statuses = when (target) {
+            "project" -> listOf("TODO", "IN_PROGRESS", "DONE")
+            else -> listOf("TODO", "IN_PROGRESS", "DONE")
+        }
+        return SelectField(
+            field = "status",
+            candidates = statuses.mapIndexed { index, name -> Candidate(index.toLong(), name) },
+        )
+    }
+
     private fun addSelectFields(
         action: LlmAction,
         result: MutableList<SelectField>,
@@ -129,6 +140,9 @@ class SelectFieldResolver(
                 if ("pmId" !in existingFields) {
                     result.add(resolveUserCandidates("pmId", "PM"))
                 }
+                if ("status" !in existingFields) {
+                    result.add(resolveStatusCandidates("project"))
+                }
             }
             "epic" -> {
                 if ("projectId" !in existingFields) {
@@ -136,6 +150,9 @@ class SelectFieldResolver(
                 }
                 if ("userIds" !in existingFields) {
                     result.add(resolveUserCandidates("userIds"))
+                }
+                if ("status" !in existingFields) {
+                    result.add(resolveStatusCandidates("epic"))
                 }
             }
             "task" -> {
