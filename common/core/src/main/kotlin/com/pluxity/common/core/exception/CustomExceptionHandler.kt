@@ -141,7 +141,12 @@ class CustomExceptionHandler {
         val errorCode =
             when (extractSqlState(e)) {
                 "23505" -> ErrorCode.DUPLICATE_RESOURCE_ID
-                "23503" -> ErrorCode.REFERENCED_RESOURCE_NOT_FOUND
+                "23503" ->
+                    if (isStillReferenced(e)) {
+                        ErrorCode.RESOURCE_STILL_REFERENCED
+                    } else {
+                        ErrorCode.REFERENCED_RESOURCE_NOT_FOUND
+                    }
                 "23502" -> ErrorCode.MISSING_REQUIRED_VALUE
                 else -> ErrorCode.DATA_INTEGRITY_VIOLATION
             }
@@ -156,6 +161,11 @@ class CustomExceptionHandler {
                     error = errorCode.getCodeName(),
                 ),
             ).also { log.error(e) { "DataIntegrityViolationException [${extractSqlState(e)}]: ${e.message}" } }
+    }
+
+    private fun isStillReferenced(e: DataIntegrityViolationException): Boolean {
+        val message = e.mostSpecificCause.message ?: return false
+        return "is still referenced" in message || "여전히 참조" in message
     }
 
     private fun extractSqlState(e: DataIntegrityViolationException): String? {
