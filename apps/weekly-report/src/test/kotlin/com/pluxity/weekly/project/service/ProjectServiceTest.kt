@@ -1,6 +1,10 @@
 package com.pluxity.weekly.project.service
 
+import com.pluxity.common.auth.user.entity.RoleType
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.test.entity.dummyRole
+import com.pluxity.common.test.entity.dummyUser
+import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.dto.dummyProjectRequest
 import com.pluxity.weekly.project.dto.dummyProjectUpdateRequest
@@ -23,7 +27,19 @@ class ProjectServiceTest :
     BehaviorSpec({
 
         val projectRepository: ProjectRepository = mockk()
-        val service = ProjectService(projectRepository)
+        val authorizationService: AuthorizationService = mockk()
+        val service = ProjectService(projectRepository, authorizationService)
+
+        val adminUser =
+            dummyUser(id = 1L, name = "관리자").apply {
+                addRole(dummyRole(id = 1L, name = "ADMIN").apply { auth = RoleType.ADMIN.name })
+            }
+
+        beforeSpec {
+            every { authorizationService.currentUser() } returns adminUser
+            every { authorizationService.requireProjectManager(any(), any()) } just runs
+            every { authorizationService.requireAdmin(any()) } just runs
+        }
 
         Given("프로젝트 전체 조회") {
             When("프로젝트 목록을 조회하면") {

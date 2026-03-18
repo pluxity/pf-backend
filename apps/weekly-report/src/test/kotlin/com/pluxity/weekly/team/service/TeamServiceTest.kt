@@ -3,6 +3,7 @@ package com.pluxity.weekly.team.service
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.test.entity.dummyUser
+import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.team.dto.dummyTeamRequest
 import com.pluxity.weekly.team.dto.dummyTeamUpdateRequest
@@ -28,7 +29,15 @@ class TeamServiceTest :
         val repository: TeamRepository = mockk()
         val memberRepository: TeamMemberRepository = mockk()
         val userRepository: UserRepository = mockk()
-        val service = TeamService(repository, memberRepository, userRepository)
+        val authorizationService: AuthorizationService = mockk()
+        val service = TeamService(repository, memberRepository, userRepository, authorizationService)
+
+        val adminUser = dummyUser(id = 1L, name = "관리자")
+
+        beforeSpec {
+            every { authorizationService.currentUser() } returns adminUser
+            every { authorizationService.requireAdmin(any()) } just runs
+        }
 
         Given("팀 전체 조회") {
             When("팀 목록을 조회하면") {

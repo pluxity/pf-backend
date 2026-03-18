@@ -1,8 +1,9 @@
 package com.pluxity.weekly.epic.service
 
+import com.pluxity.common.auth.user.entity.RoleType
 import com.pluxity.common.auth.user.repository.UserRepository
-import com.pluxity.common.auth.user.service.UserResourcePermissionService
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.test.entity.dummyRole
 import com.pluxity.common.test.entity.dummyUser
 import com.pluxity.weekly.epic.dto.dummyEpicRequest
 import com.pluxity.weekly.epic.dto.dummyEpicUpdateRequest
@@ -11,6 +12,7 @@ import com.pluxity.weekly.epic.entity.EpicStatus
 import com.pluxity.weekly.epic.entity.dummyEpic
 import com.pluxity.weekly.epic.entity.dummyEpicAssignment
 import com.pluxity.weekly.epic.repository.EpicRepository
+import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.entity.dummyProject
 import com.pluxity.weekly.project.repository.ProjectRepository
@@ -31,8 +33,20 @@ class EpicServiceTest :
         val epicRepository: EpicRepository = mockk()
         val projectRepository: ProjectRepository = mockk()
         val userRepository: UserRepository = mockk()
-        val userResourcePermissionService: UserResourcePermissionService = mockk()
-        val service = EpicService(epicRepository, projectRepository, userRepository, userResourcePermissionService)
+        val authorizationService: AuthorizationService = mockk()
+        val service = EpicService(epicRepository, projectRepository, userRepository, authorizationService)
+
+        val adminUser =
+            dummyUser(id = 1L, name = "관리자").apply {
+                addRole(dummyRole(id = 1L, name = "ADMIN").apply { auth = RoleType.ADMIN.name })
+            }
+
+        beforeSpec {
+            every { authorizationService.currentUser() } returns adminUser
+            every { authorizationService.requireEpicManage(any(), any()) } just runs
+            every { authorizationService.requireEpicAccess(any(), any()) } just runs
+            every { authorizationService.requireEpicAssign(any(), any()) } just runs
+        }
 
         Given("에픽 전체 조회") {
             When("에픽 목록을 조회하면") {
@@ -193,8 +207,8 @@ class EpicServiceTest :
                 val user2 = dummyUser(id = 20L, name = "김영희")
                 epic.assignments.addAll(
                     listOf(
-                        dummyEpicAssignment(id = 1L, epic = epic, assignedBy = user1),
-                        dummyEpicAssignment(id = 2L, epic = epic, assignedBy = user2),
+                        dummyEpicAssignment(id = 1L, epic = epic, user = user1),
+                        dummyEpicAssignment(id = 2L, epic = epic, user = user2),
                     ),
                 )
 
