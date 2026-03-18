@@ -1,9 +1,9 @@
 package com.pluxity.weekly.chat.service
 
 import com.pluxity.common.auth.user.repository.UserRepository
-import com.pluxity.weekly.chat.dto.SelectField
 import com.pluxity.weekly.chat.dto.Candidate
 import com.pluxity.weekly.chat.dto.LlmAction
+import com.pluxity.weekly.chat.dto.SelectField
 import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.project.repository.ProjectRepository
 import com.pluxity.weekly.task.repository.TaskRepository
@@ -51,19 +51,19 @@ class SelectFieldResolver(
                         taskRepository.findByIdOrNull(id)?.let { task ->
                             val epic = epicRepository.findByIdOrNull(task.epic.id!!)
                             val project = epic?.let { projectRepository.findByIdOrNull(it.project.id!!) }
-                            Candidate(id, "${task.name} (${project?.name ?: ""}/${epic?.name ?: ""})")
+                            Candidate(id.toString(), "${task.name} (${project?.name ?: ""}/${epic?.name ?: ""})")
                         }
                     }
                 "epic" ->
                     candidateIds.mapNotNull { id ->
                         epicRepository.findByIdOrNull(id)?.let { epic ->
                             val project = projectRepository.findByIdOrNull(epic.project.id!!)
-                            Candidate(id, "${epic.name} (${project?.name ?: ""})")
+                            Candidate(id.toString(), "${epic.name} (${project?.name ?: ""})")
                         }
                     }
                 "project" ->
                     candidateIds.mapNotNull { id ->
-                        projectRepository.findByIdOrNull(id)?.let { Candidate(id, it.name) }
+                        projectRepository.findByIdOrNull(id)?.let { Candidate(id.toString(), it.name) }
                     }
                 else -> return null
             }
@@ -74,10 +74,10 @@ class SelectFieldResolver(
         val candidates =
             if (candidateIds.isNotEmpty()) {
                 candidateIds.mapNotNull { id ->
-                    projectRepository.findByIdOrNull(id)?.let { Candidate(id, it.name) }
+                    projectRepository.findByIdOrNull(id)?.let { Candidate(id.toString(), it.name) }
                 }
             } else {
-                projectRepository.findAll().map { Candidate(it.requiredId, it.name) }
+                projectRepository.findAll().map { Candidate(it.requiredId.toString(), it.name) }
             }
         if (candidates.isEmpty()) return null
         return SelectField(field = "projectId", candidates = candidates)
@@ -89,13 +89,13 @@ class SelectFieldResolver(
                 candidateIds.mapNotNull { id ->
                     epicRepository.findByIdOrNull(id)?.let { epic ->
                         val project = projectRepository.findByIdOrNull(epic.project.id!!)
-                        Candidate(id, "${epic.name} (${project?.name ?: ""})")
+                        Candidate(id.toString(), "${epic.name} (${project?.name ?: ""})")
                     }
                 }
             } else {
                 epicRepository.findAll().map { epic ->
                     val project = projectRepository.findByIdOrNull(epic.project.id!!)
-                    Candidate(epic.requiredId, "${epic.name} (${project?.name ?: ""})")
+                    Candidate(epic.requiredId.toString(), "${epic.name} (${project?.name ?: ""})")
                 }
             }
         if (candidates.isEmpty()) return null
@@ -112,7 +112,7 @@ class SelectFieldResolver(
                 users.filter { user -> user.userRoles.any { it.role.name.uppercase() == roleName } }
             } else {
                 users
-            }.map { Candidate(it.requiredId, it.name) }
+            }.map { Candidate(it.requiredId.toString(), it.name) }
         return SelectField(field = field, candidates = candidates)
     }
 
@@ -123,7 +123,7 @@ class SelectFieldResolver(
         }
         return SelectField(
             field = "status",
-            candidates = statuses.mapIndexed { index, name -> Candidate(index.toLong(), name) },
+            candidates = statuses.map { Candidate(it, it) },
         )
     }
 
