@@ -28,7 +28,6 @@ class EventFacade(
 
     fun findAll(
         request: PageSearchRequest,
-        startDate: String? = null,
-        endDate: String? = null,
-    ): PageResponse<EventResponse> = eventService.findAll(request, startDate, endDate)
+        query: String? = null,
+    ): PageResponse<EventResponse> = eventService.findAll(request, query)
 }

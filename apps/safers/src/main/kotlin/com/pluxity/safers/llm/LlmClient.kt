@@ -62,6 +62,9 @@ class LlmClient(
             |- 날짜만 언급된 경우: startDate는 해당일 00:00:00, endDate는 해당일 23:59:59
             |- "어제" = 오늘 - 1일, "오늘" = 오늘, "이번 주" = 이번 주 월요일~오늘
             |- "최근 N일" = 오늘 - N일 ~ 오늘
+            |- "오전" = 00:00:00 ~ 11:59:59, "오후" = 12:00:00 ~ 23:59:59
+            |- "새벽" = 00:00:00 ~ 05:59:59, "아침" = 06:00:00 ~ 11:59:59
+            |- "점심" = 11:00:00 ~ 13:59:59, "저녁" = 18:00:00 ~ 23:59:59
             |
             |## 이벤트 타입 목록
             |$EVENT_TYPES_DESC
@@ -97,7 +100,9 @@ class LlmClient(
                     callOllama(messages)
                 }
 
-            content?.let { parseJsonResponse(it) }
+            content?.let { parseJsonResponse(it) }?.also {
+                log.info { "LLM 필터 파싱 완료 - query: $query, criteria: $it" }
+            }
         } catch (e: Exception) {
             log.error(e) { "LLM 이벤트 필터 파싱 실패 - query: $query" }
             null

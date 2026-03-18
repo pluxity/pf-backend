@@ -10,6 +10,7 @@ import com.pluxity.safers.event.entity.dummyEvent
 import com.pluxity.safers.event.listener.EventCreated
 import com.pluxity.safers.event.repository.EventRepository
 import com.pluxity.safers.global.constant.SafersErrorCode
+import com.pluxity.safers.llm.LlmClient
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -27,12 +28,14 @@ class EventServiceTest :
         val fileService: FileService = mockk(relaxed = true)
         val eventFileDownloadService: EventFileDownloadService = mockk()
         val eventPublisher: ApplicationEventPublisher = mockk(relaxed = true)
+        val llmClient: LlmClient = mockk(relaxed = true)
 
         val service =
             EventService(
                 eventRepository,
                 fileService,
                 eventPublisher,
+                llmClient,
             )
 
         val facade =
@@ -133,7 +136,7 @@ class EventServiceTest :
                 val page = PageImpl(events)
 
                 every {
-                    eventRepository.findAllByDateRange(any(), any(), any())
+                    eventRepository.findAllByFilter(any(), any())
                 } returns page
 
                 val fileResponse10 = dummyFileResponse(id = 10L)
@@ -154,7 +157,7 @@ class EventServiceTest :
                 val page = PageImpl(emptyList<Event>())
 
                 every {
-                    eventRepository.findAllByDateRange(any(), any(), any())
+                    eventRepository.findAllByFilter(any(), any())
                 } returns page
 
                 every { fileService.getFiles(any()) } returns emptyList()

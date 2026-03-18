@@ -56,14 +56,11 @@ class EventController(
         @Parameter(description = "페이지당 개수", example = "9999")
         @RequestParam("size")
         size: Int = 9999,
-        @Parameter(description = "시작일시 (yyyyMMddHHmmss)", example = "20260101000000")
+        @Parameter(description = "검색어", example = "어제 발생한 헬멧 미착용")
         @RequestParam(required = false)
-        startDate: String? = null,
-        @Parameter(description = "종료일시 (yyyyMMddHHmmss)", example = "20261231235959")
-        @RequestParam(required = false)
-        endDate: String? = null,
+        query: String? = null,
     ): ResponseEntity<DataResponseBody<PageResponse<EventResponse>>> =
-        ResponseEntity.ok(DataResponseBody(eventFacade.findAll(PageSearchRequest(page, size), startDate, endDate)))
+        ResponseEntity.ok(DataResponseBody(eventFacade.findAll(PageSearchRequest(page, size), query)))
 
     @Operation(summary = "이벤트 상세 조회", description = "ID로 특정 이벤트의 상세 정보를 조회합니다")
     @ApiResponses(

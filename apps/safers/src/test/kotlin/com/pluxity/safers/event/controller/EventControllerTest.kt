@@ -75,7 +75,7 @@ class EventControllerTest(
                         first = true,
                     )
 
-                every { eventFacade.findAll(any(), any(), any()) } returns pageResponse
+                every { eventFacade.findAll(any(), any()) } returns pageResponse
 
                 val result =
                     mockMvc.get(baseUrl) {
@@ -93,7 +93,7 @@ class EventControllerTest(
                 }
             }
 
-            When("GET $baseUrl - 날짜 필터링 조회") {
+            When("GET $baseUrl - 자연어 검색 조회") {
                 val pageResponse =
                     PageResponse(
                         content = emptyList<EventResponse>(),
@@ -104,14 +104,13 @@ class EventControllerTest(
                         first = true,
                     )
 
-                every { eventFacade.findAll(any(), any(), any()) } returns pageResponse
+                every { eventFacade.findAll(any(), any()) } returns pageResponse
 
                 val result =
                     mockMvc.get(baseUrl) {
                         param("page", "1")
                         param("size", "10")
-                        param("startDate", "20260101000000")
-                        param("endDate", "20261231235959")
+                        param("query", "어제 헬멧 미착용")
                         with(user("tester"))
                     }
 
