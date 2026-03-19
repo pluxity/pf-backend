@@ -43,6 +43,7 @@ class ProjectService(
         return projects.map { it.toResponse(memberMap[it.requiredId].orEmpty()) }
     }
 
+    // TODO: "내 프로젝트" 필터 — PM은 pmId, 일반 사용자는 Project > Epic > EpicAssignment 2단계 조인 필요
     fun search(filter: ProjectSearchFilter): List<ProjectResponse> =
         projectRepository
             .findAllNotNull {
