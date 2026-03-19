@@ -52,5 +52,10 @@ springwolf: # socket documentation ui
         app: /app
 
 llm:
-  base-url: http://192.168.10.183:11434/api/chat
-  model: qwen3:14b
+  ollama:
+    base-url: http://192.168.10.183:11434
+    model: qwen3:14b
+  openrouter:
+    base-url: https://openrouter.ai
+    model: ${LLM_OPENROUTER_MODEL:openrouter/free}
+    api-key: ${LLM_OPENROUTER_API_KEY:}

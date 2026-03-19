@@ -15,6 +15,7 @@ import com.pluxity.safers.event.listener.EventVideoRegistered
 import com.pluxity.safers.event.repository.EventRepository
 import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.llm.LlmClient
+import com.pluxity.safers.llm.LlmProvider
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
@@ -98,8 +99,9 @@ class EventService(
     fun findAll(
         request: PageSearchRequest,
         query: String? = null,
+        provider: LlmProvider = LlmProvider.OLLAMA,
     ): PageResponse<EventResponse> {
-        val criteria = query?.let { llmClient.parseEventFilter(it) }
+        val criteria = query?.let { llmClient.parseEventFilter(it, provider) }
 
         val pageable = PageRequest.of(request.page - 1, request.size)
         val page = eventRepository.findAllByFilter(pageable, criteria)
