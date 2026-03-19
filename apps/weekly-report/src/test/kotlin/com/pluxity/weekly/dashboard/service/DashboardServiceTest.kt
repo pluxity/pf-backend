@@ -3,12 +3,16 @@ package com.pluxity.weekly.dashboard.service
 import com.pluxity.common.test.entity.dummyUser
 import com.pluxity.weekly.epic.entity.EpicStatus
 import com.pluxity.weekly.epic.entity.dummyEpic
+import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.project.entity.dummyProject
+import com.pluxity.weekly.project.repository.ProjectRepository
 import com.pluxity.weekly.task.entity.TaskStatus
 import com.pluxity.weekly.task.entity.dummyTask
 import com.pluxity.weekly.task.repository.TaskRepository
+import com.pluxity.weekly.team.repository.TeamMemberRepository
+import com.pluxity.weekly.team.repository.TeamRepository
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -21,9 +25,13 @@ class DashboardServiceTest :
     BehaviorSpec({
 
         val authorizationService: AuthorizationService = mockk()
+        val projectRepository: ProjectRepository = mockk()
         val epicRepository: EpicRepository = mockk()
         val taskRepository: TaskRepository = mockk()
-        val service = DashboardService(authorizationService, epicRepository, taskRepository)
+        val userRepository: UserRepository = mockk()
+        val teamRepository: TeamRepository = mockk()
+        val teamMemberRepository: TeamMemberRepository = mockk()
+        val service = DashboardService(authorizationService, projectRepository, epicRepository, taskRepository, userRepository, teamRepository, teamMemberRepository)
 
         val currentUser = dummyUser(id = 1L, name = "작업자")
         val userId = currentUser.requiredId
