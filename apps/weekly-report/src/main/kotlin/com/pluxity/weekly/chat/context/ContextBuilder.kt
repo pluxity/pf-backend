@@ -1,18 +1,15 @@
 package com.pluxity.weekly.chat.context
 
 import com.pluxity.common.auth.user.repository.UserRepository
-import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.epic.dto.EpicResponse
 import com.pluxity.weekly.epic.service.EpicService
 import com.pluxity.weekly.global.auth.AuthorizationService
-import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.dto.ProjectResponse
 import com.pluxity.weekly.project.service.ProjectService
 import com.pluxity.weekly.task.dto.TaskResponse
 import com.pluxity.weekly.task.service.TaskService
 import com.pluxity.weekly.team.service.TeamService
 import org.springframework.data.domain.Sort
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tools.jackson.databind.ObjectMapper
@@ -44,13 +41,10 @@ class ContextBuilder(
     private val objectMapper: ObjectMapper,
 ) {
     fun build(
-        userId: Long,
         target: String,
         actions: List<String>,
     ): String {
-        val user =
-            userRepository.findByIdOrNull(userId)
-                ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_USER, userId)
+        val user = authorizationService.currentUser()
 
         authorizationService.checkChatPermission(user, target, actions)
 
