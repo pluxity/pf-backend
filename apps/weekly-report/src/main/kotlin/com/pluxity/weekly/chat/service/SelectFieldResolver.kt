@@ -117,12 +117,8 @@ class SelectFieldResolver(
         return SelectField(field = field, candidates = candidates)
     }
 
-    private fun resolveStatusCandidates(target: String): SelectField {
-        val statuses =
-            when (target) {
-                "project" -> listOf("TODO", "IN_PROGRESS", "DONE")
-                else -> listOf("TODO", "IN_PROGRESS", "DONE")
-            }
+    private fun resolveStatusCandidates(): SelectField {
+        val statuses = listOf("TODO", "IN_PROGRESS", "DONE")
         return SelectField(
             field = "status",
             candidates = statuses.map { Candidate(it, it) },
@@ -143,7 +139,7 @@ class SelectFieldResolver(
                     result.add(resolveUserCandidates("pmId", "PM"))
                 }
                 if ("status" !in existingFields) {
-                    result.add(resolveStatusCandidates("project"))
+                    result.add(resolveStatusCandidates())
                 }
             }
             "epic" -> {
@@ -154,7 +150,7 @@ class SelectFieldResolver(
                     result.add(resolveUserCandidates("userIds"))
                 }
                 if ("status" !in existingFields) {
-                    result.add(resolveStatusCandidates("epic"))
+                    result.add(resolveStatusCandidates())
                 }
             }
             "task" -> {

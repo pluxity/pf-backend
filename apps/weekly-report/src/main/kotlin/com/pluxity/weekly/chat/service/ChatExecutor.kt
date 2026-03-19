@@ -41,16 +41,17 @@ class ChatExecutor(
     private fun executeCreate(action: LlmAction): Long? {
         val name = action.name ?: return null
         return when (action.target) {
-            "project" -> projectService.create(
-                ProjectRequest(
-                    name = name,
-                    description = action.description,
-                    status = action.status?.let { ProjectStatus.valueOf(it) } ?: ProjectStatus.TODO,
-                    startDate = action.startDate?.let { LocalDate.parse(it) },
-                    dueDate = action.dueDate?.let { LocalDate.parse(it) },
-                    pmId = action.pmId,
-                ),
-            )
+            "project" ->
+                projectService.create(
+                    ProjectRequest(
+                        name = name,
+                        description = action.description,
+                        status = action.status?.let { ProjectStatus.valueOf(it) } ?: ProjectStatus.TODO,
+                        startDate = action.startDate?.let { LocalDate.parse(it) },
+                        dueDate = action.dueDate?.let { LocalDate.parse(it) },
+                        pmId = action.pmId,
+                    ),
+                )
             "epic" -> {
                 val projectId = action.projectId ?: return null
                 epicService.create(
@@ -79,12 +80,13 @@ class ChatExecutor(
                     ),
                 )
             }
-            "team" -> teamService.create(
-                TeamRequest(
-                    name = name,
-                    leaderId = action.leaderId,
-                ),
-            )
+            "team" ->
+                teamService.create(
+                    TeamRequest(
+                        name = name,
+                        leaderId = action.leaderId,
+                    ),
+                )
             else -> null
         }
     }
@@ -92,49 +94,53 @@ class ChatExecutor(
     private fun executeUpdate(action: LlmAction): Long? {
         val id = action.id ?: return null
         when (action.target) {
-            "project" -> projectService.update(
-                id,
-                ProjectUpdateRequest(
-                    name = action.name,
-                    description = action.description,
-                    status = action.status?.let { ProjectStatus.valueOf(it) },
-                    startDate = action.startDate?.let { LocalDate.parse(it) },
-                    dueDate = action.dueDate?.let { LocalDate.parse(it) },
-                    pmId = action.pmId,
-                ),
-            )
-            "epic" -> epicService.update(
-                id,
-                EpicUpdateRequest(
-                    projectId = action.projectId,
-                    name = action.name,
-                    description = action.description,
-                    status = action.status?.let { EpicStatus.valueOf(it) },
-                    startDate = action.startDate?.let { LocalDate.parse(it) },
-                    dueDate = action.dueDate?.let { LocalDate.parse(it) },
-                    userIds = action.userIds,
-                ),
-            )
-            "task" -> taskService.update(
-                id,
-                TaskUpdateRequest(
-                    epicId = action.epicId,
-                    name = action.name,
-                    description = action.description,
-                    status = action.status?.let { TaskStatus.valueOf(it) },
-                    progress = action.progress,
-                    startDate = action.startDate?.let { LocalDate.parse(it) },
-                    dueDate = action.dueDate?.let { LocalDate.parse(it) },
-                    assigneeId = action.assigneeId,
-                ),
-            )
-            "team" -> teamService.update(
-                id,
-                TeamUpdateRequest(
-                    name = action.name,
-                    leaderId = action.leaderId,
-                ),
-            )
+            "project" ->
+                projectService.update(
+                    id,
+                    ProjectUpdateRequest(
+                        name = action.name,
+                        description = action.description,
+                        status = action.status?.let { ProjectStatus.valueOf(it) },
+                        startDate = action.startDate?.let { LocalDate.parse(it) },
+                        dueDate = action.dueDate?.let { LocalDate.parse(it) },
+                        pmId = action.pmId,
+                    ),
+                )
+            "epic" ->
+                epicService.update(
+                    id,
+                    EpicUpdateRequest(
+                        projectId = action.projectId,
+                        name = action.name,
+                        description = action.description,
+                        status = action.status?.let { EpicStatus.valueOf(it) },
+                        startDate = action.startDate?.let { LocalDate.parse(it) },
+                        dueDate = action.dueDate?.let { LocalDate.parse(it) },
+                        userIds = action.userIds,
+                    ),
+                )
+            "task" ->
+                taskService.update(
+                    id,
+                    TaskUpdateRequest(
+                        epicId = action.epicId,
+                        name = action.name,
+                        description = action.description,
+                        status = action.status?.let { TaskStatus.valueOf(it) },
+                        progress = action.progress,
+                        startDate = action.startDate?.let { LocalDate.parse(it) },
+                        dueDate = action.dueDate?.let { LocalDate.parse(it) },
+                        assigneeId = action.assigneeId,
+                    ),
+                )
+            "team" ->
+                teamService.update(
+                    id,
+                    TeamUpdateRequest(
+                        name = action.name,
+                        leaderId = action.leaderId,
+                    ),
+                )
         }
         return id
     }

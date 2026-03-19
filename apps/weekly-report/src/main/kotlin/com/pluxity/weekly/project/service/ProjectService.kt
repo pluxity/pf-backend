@@ -28,7 +28,7 @@ class ProjectService(
         val projects =
             if (user.isAdmin()) {
                 projectRepository.findAll()
-            } else if (user.userRoles.any { it.role.name.equals(UserType.PM.roleName, ignoreCase = true)  }) {
+            } else if (user.userRoles.any { it.role.name.equals(UserType.PM.roleName, ignoreCase = true) }) {
                 projectRepository.findByPmId(user.requiredId)
             } else {
                 emptyList()
