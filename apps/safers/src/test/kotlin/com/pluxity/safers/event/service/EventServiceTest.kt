@@ -35,13 +35,13 @@ class EventServiceTest :
                 eventRepository,
                 fileService,
                 eventPublisher,
-                llmClient,
             )
 
         val facade =
             EventFacade(
                 service,
                 eventFileDownloadService,
+                llmClient,
             )
 
         Given("이벤트 생성") {

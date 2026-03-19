@@ -237,8 +237,8 @@ class LlmClient(
                         ?.asString()
                         ?.let { LocalDateTime.parse(it, formatter) },
                 types =
-                    node.get("types")?.takeIf { !it.isNull && it.isArray }?.map {
-                        EventType.valueOf(it.asString())
+                    node.get("types")?.takeIf { !it.isNull && it.isArray }?.mapNotNull {
+                        runCatching { EventType.valueOf(it.asString()) }.getOrNull()
                     },
             )
         } catch (e: Exception) {

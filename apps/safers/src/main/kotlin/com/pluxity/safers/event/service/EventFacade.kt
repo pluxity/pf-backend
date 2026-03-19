@@ -4,6 +4,7 @@ import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.safers.event.dto.EventCreateRequest
 import com.pluxity.safers.event.dto.EventResponse
+import com.pluxity.safers.llm.LlmClient
 import com.pluxity.safers.llm.LlmProvider
 import org.springframework.stereotype.Component
 
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component
 class EventFacade(
     private val eventService: EventService,
     private val eventFileDownloadService: EventFileDownloadService,
+    private val llmClient: LlmClient,
 ) {
     fun create(request: EventCreateRequest): Long {
         val snapshotFileId = eventFileDownloadService.downloadAndInitiateUpload(request.snapshot)
@@ -31,5 +33,8 @@ class EventFacade(
         request: PageSearchRequest,
         query: String? = null,
         provider: LlmProvider = LlmProvider.OLLAMA,
-    ): PageResponse<EventResponse> = eventService.findAll(request, query, provider)
+    ): PageResponse<EventResponse> {
+        val criteria = query?.let { llmClient.parseEventFilter(it, provider) }
+        return eventService.findAll(request, criteria)
+    }
 }
