@@ -76,8 +76,7 @@ class DashboardController(
     fun getPmDashboard(
         @Parameter(description = "프로젝트 ID", example = "1")
         @PathVariable projectId: Long,
-    ): ResponseEntity<DataResponseBody<PmDashboardResponse>> =
-        ResponseEntity.ok(DataResponseBody(service.getPmDashboard(projectId)))
+    ): ResponseEntity<DataResponseBody<PmDashboardResponse>> = ResponseEntity.ok(DataResponseBody(service.getPmDashboard(projectId)))
 
     @Operation(summary = "어드민 대시보드 조회", description = "ADMIN 권한으로 전체 프로젝트/팀 대시보드를 조회합니다")
     @ApiResponses(
@@ -129,6 +128,5 @@ class DashboardController(
     fun getPersonDetail(
         @Parameter(description = "사용자 ID", example = "1")
         @PathVariable userId: Long,
-    ): ResponseEntity<DataResponseBody<PersonDetailResponse>> =
-        ResponseEntity.ok(DataResponseBody(service.getPersonDetail(userId)))
+    ): ResponseEntity<DataResponseBody<PersonDetailResponse>> = ResponseEntity.ok(DataResponseBody(service.getPersonDetail(userId)))
 }

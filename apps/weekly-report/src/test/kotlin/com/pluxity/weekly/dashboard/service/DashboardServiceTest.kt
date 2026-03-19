@@ -1,9 +1,9 @@
 package com.pluxity.weekly.dashboard.service
 
+import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.test.entity.dummyUser
 import com.pluxity.weekly.epic.entity.EpicStatus
 import com.pluxity.weekly.epic.entity.dummyEpic
-import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.project.entity.dummyProject
@@ -31,7 +31,16 @@ class DashboardServiceTest :
         val userRepository: UserRepository = mockk()
         val teamRepository: TeamRepository = mockk()
         val teamMemberRepository: TeamMemberRepository = mockk()
-        val service = DashboardService(authorizationService, projectRepository, epicRepository, taskRepository, userRepository, teamRepository, teamMemberRepository)
+        val service =
+            DashboardService(
+                authorizationService,
+                projectRepository,
+                epicRepository,
+                taskRepository,
+                userRepository,
+                teamRepository,
+                teamMemberRepository,
+            )
 
         val currentUser = dummyUser(id = 1L, name = "작업자")
         val userId = currentUser.requiredId
