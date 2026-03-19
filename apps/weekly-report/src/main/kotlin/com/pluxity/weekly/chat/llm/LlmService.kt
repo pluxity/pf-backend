@@ -4,21 +4,28 @@ import com.pluxity.common.core.config.WebClientFactory
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.chat.config.LlmProperties
 import com.pluxity.weekly.chat.dto.LlmAction
+import com.pluxity.weekly.chat.llm.dto.GeminiContent
+import com.pluxity.weekly.chat.llm.dto.GeminiGenerationConfig
+import com.pluxity.weekly.chat.llm.dto.GeminiPart
+import com.pluxity.weekly.chat.llm.dto.GeminiRequest
+import com.pluxity.weekly.chat.llm.dto.GeminiResponse
 import com.pluxity.weekly.chat.llm.dto.IntentResult
+import com.pluxity.weekly.chat.llm.dto.Message
 import com.pluxity.weekly.chat.llm.dto.OllamaChatRequest
 import com.pluxity.weekly.chat.llm.dto.OllamaChatResponse
-import com.pluxity.weekly.chat.llm.dto.OllamaMessage
 import com.pluxity.weekly.chat.llm.dto.OllamaOptions
-import com.pluxity.weekly.chat.llm.dto.OpenAiChatRequest
-import com.pluxity.weekly.chat.llm.dto.OpenAiChatResponse
-import com.pluxity.weekly.chat.llm.dto.OpenAiMessage
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.core.io.ClassPathResource
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
+import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.bodyToMono
 import tools.jackson.databind.ObjectMapper
 
 private val log = KotlinLogging.logger {}
+
+// TODO: 일일 토큰 사용량 제한 및 모니터링 추가
 
 @Service
 class LlmService(
@@ -26,10 +33,27 @@ class LlmService(
     private val objectMapper: ObjectMapper,
     webClientFactory: WebClientFactory,
 ) {
-    private val webClient =
-        webClientFactory.createClient(
-            baseUrl = properties.baseUrl,
-        )
+    private val ollamaClient: WebClient? =
+        properties.ollama.takeIf { it.isEnabled }?.let {
+            webClientFactory.createClient(
+                baseUrl = it.baseUrl,
+                responseTimeoutMs = properties.timeoutMs,
+                readTimeoutMs = properties.timeoutMs,
+            )
+        }
+
+    private val geminiClient: WebClient? =
+        properties.gemini.takeIf { it.isEnabled }?.let {
+            webClientFactory.createClient(
+                baseUrl = "https://generativelanguage.googleapis.com",
+                responseTimeoutMs = properties.timeoutMs,
+                readTimeoutMs = properties.timeoutMs,
+            )
+        }
+
+    init {
+        log.info { "LLM Ollama 활성화: ${properties.ollama.isEnabled}, Gemini 활성화: ${properties.gemini.isEnabled}" }
+    }
 
     private val systemPrompt: String by lazy {
         ClassPathResource("llm/system-prompt.txt").getContentAsString(Charsets.UTF_8)
@@ -43,7 +67,12 @@ class LlmService(
         var lastException: Exception? = null
         repeat(MAX_RETRIES) { attempt ->
             try {
-                val content = callLlm(systemPrompt, userMessage)
+                val messages =
+                    listOf(
+                        Message(role = "system", content = systemPrompt),
+                        Message(role = "user", content = userMessage),
+                    )
+                val content = callGemini(messages)
                 log.info { "llm response : $content" }
 
                 return parseActions(content)
@@ -62,7 +91,12 @@ class LlmService(
         var lastException: Exception? = null
         repeat(MAX_RETRIES) { attempt ->
             try {
-                val content = callLlm(intentPrompt, message)
+                val messages =
+                    listOf(
+                        Message(role = "system", content = intentPrompt),
+                        Message(role = "user", content = message),
+                    )
+                val content = callGemini(messages)
                 log.info { "intent response : $content" }
                 return parseIntent(content)
             } catch (e: CustomException) {
@@ -76,107 +110,80 @@ class LlmService(
         throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
     }
 
-    internal fun callLlm(
-        systemPrompt: String,
-        userMessage: String,
-    ): String =
-        when (properties.provider) {
-            "ollama" -> callOllama(systemPrompt, userMessage)
-            "openai" -> callOpenAi(systemPrompt, userMessage)
-            else -> throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
-        }
-
-    private fun callOllama(
-        systemPrompt: String,
-        userMessage: String,
-    ): String {
+    private fun callOllama(messages: List<Message>): String {
+        val props = properties.ollama
         val request =
             OllamaChatRequest(
-                model = properties.model,
-                messages =
-                    listOf(
-                        OllamaMessage(role = "system", content = systemPrompt),
-                        OllamaMessage(role = "user", content = userMessage),
-                    ),
+                model = props.model,
+                messages = messages,
+                stream = false,
                 options = OllamaOptions(temperature = properties.temperature),
             )
 
+        val client =
+            ollamaClient
+                ?: throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
+
         val response =
-            webClient
+            client
                 .post()
                 .uri("/api/chat")
+                .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()
-                .bodyToMono(OllamaChatResponse::class.java)
+                .bodyToMono<OllamaChatResponse>()
                 .block()
                 ?: throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
-
-        logOllamaMetrics(response)
 
         return response.message?.content
             ?: throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
     }
 
-    private fun callOpenAi(
-        systemPrompt: String,
-        userMessage: String,
-    ): String {
+    private fun callGemini(messages: List<Message>): String {
+        val props = properties.gemini
+        val systemMessage = messages.firstOrNull { it.role == "system" }
+        val userMessages = messages.filter { it.role != "system" }
+
         val request =
-            OpenAiChatRequest(
-                model = properties.model,
-                messages =
-                    listOf(
-                        OpenAiMessage(role = "system", content = systemPrompt),
-                        OpenAiMessage(role = "user", content = userMessage),
-                    ),
-                temperature = properties.temperature,
+            GeminiRequest(
+                systemInstruction =
+                    systemMessage?.let {
+                        GeminiContent(parts = listOf(GeminiPart(text = it.content)))
+                    },
+                contents =
+                    userMessages.map {
+                        GeminiContent(
+                            role = "user",
+                            parts = listOf(GeminiPart(text = it.content)),
+                        )
+                    },
+                generationConfig = GeminiGenerationConfig(temperature = properties.temperature),
             )
 
+        val client =
+            geminiClient
+                ?: throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
+
         val response =
-            webClient
+            client
                 .post()
-                .uri("/v1/chat/completions")
-                .headers { headers ->
-                    if (properties.apiKey.isNotBlank()) {
-                        headers.setBearerAuth(properties.apiKey)
-                    }
-                }.bodyValue(request)
+                .uri("/v1beta/models/${props.model}:generateContent")
+                .header("x-goog-api-key", props.apiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
                 .retrieve()
-                .bodyToMono(OpenAiChatResponse::class.java)
+                .bodyToMono<GeminiResponse>()
                 .block()
                 ?: throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
 
-        logOpenAiUsage(response)
-
-        return response.choices
-            .firstOrNull()
-            ?.message
+        return response
+            .candidates
+            ?.firstOrNull()
             ?.content
+            ?.parts
+            ?.firstOrNull()
+            ?.text
             ?: throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
-    }
-
-    private fun logOpenAiUsage(response: OpenAiChatResponse) {
-        val usage = response.usage ?: return
-        log.info {
-            "[LLM 사용량] 모델: ${response.model} | " +
-                "프롬프트: ${usage.promptTokens} tokens | " +
-                "생성: ${usage.completionTokens} tokens | " +
-                "총: ${usage.totalTokens} tokens"
-        }
-    }
-
-    private fun logOllamaMetrics(response: OllamaChatResponse) {
-        val promptMs = response.promptEvalDuration / 1_000_000
-        val genMs = response.evalDuration / 1_000_000
-        val totalMs = response.totalDuration / 1_000_000
-        val loadMs = response.loadDuration / 1_000_000
-        val tokPerSec = if (genMs > 0) response.evalCount * 1000.0 / genMs else 0.0
-
-        log.info {
-            "[LLM 메트릭] 프롬프트: ${response.promptEvalCount} tokens (${promptMs}ms) | " +
-                "생성: ${response.evalCount} tokens (${genMs}ms, ${"%.1f".format(tokPerSec)} tok/s) | " +
-                "총: ${totalMs}ms | 로드: ${loadMs}ms"
-        }
     }
 
     private fun parseActions(raw: String): List<LlmAction> {

@@ -13,9 +13,9 @@ spring:
     driver-class-name: org.postgresql.Driver
 
 llm:
-  provider: ollama
-  base-url:  http://192.168.10.183:11434
-  model: qwen3:14b
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: gemini-2.5-flash
   temperature: 0.1
   timeout-ms: 60000
 

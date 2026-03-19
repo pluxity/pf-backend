@@ -4,10 +4,24 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties(prefix = "llm")
 data class LlmProperties(
-    val provider: String = "openai",
-    val baseUrl: String = "https://api.groq.com/openai",
-    val model: String = "openai/gpt-oss-20b",
-    val apiKey: String = "",
+    val ollama: OllamaProperties = OllamaProperties(),
+    val gemini: GeminiProperties = GeminiProperties(),
     val temperature: Double = 0.1,
     val timeoutMs: Int = 60000,
 )
+
+data class OllamaProperties(
+    val baseUrl: String = "",
+    val model: String = "",
+) {
+    val isEnabled: Boolean
+        get() = baseUrl.isNotBlank() && model.isNotBlank()
+}
+
+data class GeminiProperties(
+    val apiKey: String = "",
+    val model: String = "",
+) {
+    val isEnabled: Boolean
+        get() = apiKey.isNotBlank() && model.isNotBlank()
+}
