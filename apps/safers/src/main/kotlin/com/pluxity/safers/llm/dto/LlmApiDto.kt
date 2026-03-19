@@ -5,6 +5,11 @@ data class Message(
     val content: String,
 )
 
+data class ResponseMessage(
+    val content: String? = null,
+    val role: String? = null,
+)
+
 // Ollama
 data class OllamaChatRequest(
     val model: String,
@@ -18,12 +23,7 @@ data class OllamaOptions(
 )
 
 data class OllamaChatResponse(
-    val message: OllamaMessage? = null,
-)
-
-data class OllamaMessage(
-    val content: String? = null,
-    val role: String? = null,
+    val message: ResponseMessage? = null,
 )
 
 // OpenRouter (OpenAI 호환)
@@ -38,5 +38,5 @@ data class OpenRouterChatResponse(
 )
 
 data class OpenRouterChoice(
-    val message: OllamaMessage? = null,
+    val message: ResponseMessage? = null,
 )
