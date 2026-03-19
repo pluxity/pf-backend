@@ -2,8 +2,15 @@ package com.pluxity.safers.llm
 
 import com.pluxity.common.core.config.WebClientFactory
 import com.pluxity.safers.event.entity.EventType
+import com.pluxity.safers.llm.dto.ChatCompletionRequest
+import com.pluxity.safers.llm.dto.ChatCompletionResponse
 import com.pluxity.safers.llm.dto.EventFilterCriteria
+import com.pluxity.safers.llm.dto.Message
+import com.pluxity.safers.llm.dto.OllamaChatRequest
+import com.pluxity.safers.llm.dto.OllamaChatResponse
+import com.pluxity.safers.llm.dto.OllamaOptions
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.core.io.ClassPathResource
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
@@ -48,83 +55,19 @@ class LlmClient(
         log.info { "LLM 사용 가능한 provider: ${llmProperties.availableProviders}" }
     }
 
+    private val promptTemplate: String by lazy {
+        ClassPathResource("prompts/event-filter-system.txt").getContentAsString(Charsets.UTF_8)
+    }
+
     companion object {
         private val EVENT_TYPES_DESC =
             EventType.entries.joinToString("\n") { "- ${it.name}: ${it.displayName}" }
-
-        private fun buildSystemPrompt(now: LocalDateTime): String =
-            """
-            |당신은 이벤트 검색 필터를 생성하는 AI입니다.
-            |사용자의 자연어 입력을 분석하여 아래 JSON 형식으로만 응답하세요.
-            |반드시 JSON만 출력하고, 다른 텍스트는 절대 포함하지 마세요.
-            |
-            |현재 날짜/시각: $now
-            |
-            |## 출력 형식
-            |```json
-            |{
-            |  "startDate": "yyyy-MM-dd'T'HH:mm:ss",
-            |  "endDate": "yyyy-MM-dd'T'HH:mm:ss",
-            |  "types": ["EVENT_TYPE"]
-            |}
-            |```
-            |
-            |## 규칙
-            |- 언급되지 않은 필드는 null로 설정
-            |- 날짜만 언급된 경우: startDate는 해당일 00:00:00, endDate는 해당일 23:59:59
-            |
-            |## 날짜 표현
-            |- "오늘" = 오늘
-            |- "어제" = 오늘 - 1일
-            |- "그저께", "엊그제" = 오늘 - 2일
-            |- "이번 주" = 이번 주 월요일 ~ 오늘
-            |- "지난주" = 지난 주 월요일 ~ 지난 주 일요일
-            |- "이번 달" = 이번 달 1일 ~ 오늘
-            |- "지난달" = 지난 달 1일 ~ 지난 달 마지막 날
-            |- "최근 N일" = 오늘 - N일 ~ 오늘
-            |- "N월 N일", "3월 15일" 등 = 해당 날짜 (연도 생략 시 올해)
-            |- "주말" = 가장 최근 토요일 ~ 일요일
-            |- "지난주 화요일" 등 요일 지정 = 해당 요일
-            |
-            |## 시간대 표현
-            |- "새벽" = 00:00:00 ~ 05:59:59
-            |- "아침" = 06:00:00 ~ 08:59:59
-            |- "오전" = 00:00:00 ~ 11:59:59
-            |- "낮" = 12:00:00 ~ 17:59:59
-            |- "오후" = 12:00:00 ~ 23:59:59
-            |- "점심", "점심시간" = 11:00:00 ~ 13:59:59
-            |- "저녁" = 18:00:00 ~ 20:59:59
-            |- "밤" = 21:00:00 ~ 23:59:59
-            |- "한밤중", "자정" = 23:00:00 ~ 다음날 01:00:00
-            |- "출근 시간", "출근 무렵" = 06:00:00 ~ 10:00:00
-            |- "퇴근 시간", "퇴근 무렵" = 16:00:00 ~ 20:00:00
-            |- "N시간 전" = 현재 시각 - N시간 ~ 현재 시각
-            |- "방금", "조금 전" = 현재 시각 - 1시간 ~ 현재 시각
-            |
-            |## 구간/근사 표현
-            |- "N시부터 N시" = 명시된 시간 구간 (예: "2시부터 5시" = 14:00:00 ~ 17:00:00)
-            |- "N시쯤", "N시경" = 해당 시각 ±30분 (예: "오후 3시쯤" = 14:30:00 ~ 15:30:00)
-            |- "점심시간 이후", "오후부터" 등 열린 끝 표현 = 해당 시작 시각 ~ 현재 시각
-            |
-            |## 복합 표현
-            |- 날짜 + 시간대를 조합하여 처리 (예: "어제 오후" = 어제 12:00:00 ~ 어제 23:59:59)
-            |- "오늘 새벽" = 오늘 00:00:00 ~ 오늘 05:59:59
-            |- "어젯밤" = 어제 21:00:00 ~ 어제 23:59:59
-            |- "오늘 밤" = 오늘 21:00:00 ~ 오늘 23:59:59
-            |- "어제 새벽" = 어제 00:00:00 ~ 어제 05:59:59
-            |
-            |## 이벤트 타입 목록
-            |$EVENT_TYPES_DESC
-            |
-            |## 매핑 규칙
-            |- "헬멧 미착용", "안전모 미착용" → NO_HELMET
-            |- "헬멧 착용", "안전모 착용" → HELMET
-            |- "쓰러진 사람", "넘어진 사람", "쓰러짐" → FALLEN_PERSON
-            |- "침입", "영역 침입", "무단 침입" → INTRUSION
-            |- "이탈", "영역 이탈" → EXIT
-            |- "경계선 통과", "라인 크로싱" → LINE_CROSSING
-            """.trimMargin()
     }
+
+    private fun buildSystemPrompt(now: LocalDateTime): String =
+        promptTemplate
+            .replace("{{now}}", now.toString())
+            .replace("{{eventTypes}}", EVENT_TYPES_DESC)
 
     fun parseEventFilter(
         query: String,
@@ -213,11 +156,7 @@ class LlmClient(
     }
 
     private fun parseJsonResponse(content: String): EventFilterCriteria? {
-        val json =
-            content
-                .replace("```json", "")
-                .replace("```", "")
-                .trim()
+        val json = extractJson(content)
 
         return try {
             val node = objectMapper.readTree(json)
@@ -246,45 +185,14 @@ class LlmClient(
             null
         }
     }
+
+    private fun extractJson(content: String): String {
+        val start = content.indexOf('{')
+        val end = content.lastIndexOf('}')
+        return if (start != -1 && end != -1 && start < end) {
+            content.substring(start, end + 1)
+        } else {
+            content.trim()
+        }
+    }
 }
-
-// OpenRouter (OpenAI 호환)
-data class Message(
-    val role: String,
-    val content: String,
-)
-
-data class ChatCompletionRequest(
-    val model: String,
-    val messages: List<Message>,
-    val temperature: Double,
-)
-
-data class ChatCompletionResponse(
-    val choices: List<Choice>? = null,
-)
-
-data class Choice(
-    val message: ChoiceMessage? = null,
-)
-
-data class ChoiceMessage(
-    val content: String? = null,
-    val role: String? = null,
-)
-
-// Ollama
-data class OllamaChatRequest(
-    val model: String,
-    val messages: List<Message>,
-    val stream: Boolean,
-    val options: OllamaOptions,
-)
-
-data class OllamaOptions(
-    val temperature: Double,
-)
-
-data class OllamaChatResponse(
-    val message: ChoiceMessage? = null,
-)
