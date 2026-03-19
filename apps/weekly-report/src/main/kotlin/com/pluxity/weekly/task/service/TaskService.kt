@@ -8,6 +8,7 @@ import com.pluxity.weekly.chat.dto.TaskSearchFilter
 import com.pluxity.weekly.epic.entity.Epic
 import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.global.auth.AuthorizationService
+import com.pluxity.weekly.global.constant.UserType
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.entity.Project
 import com.pluxity.weekly.project.repository.ProjectRepository
@@ -33,8 +34,8 @@ class TaskService(
     fun findAll(): List<TaskResponse> {
         val user = authorizationService.currentUser()
         if (user.isAdmin()) return taskRepository.findAll().map { it.toResponse() }
-        val pmProjects = projectRepository.findByPmId(user.requiredId)
-        if (pmProjects.isNotEmpty()) {
+        if (user.userRoles.any { it.role.name.equals(UserType.PM.roleName, ignoreCase = true) }) {
+            val pmProjects = projectRepository.findByPmId(user.requiredId)
             val epics = epicRepository.findByProjectIdIn(pmProjects.map { it.requiredId })
             return taskRepository.findByEpicIn(epics).map { it.toResponse() }
         }
