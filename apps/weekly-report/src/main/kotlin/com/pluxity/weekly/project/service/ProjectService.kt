@@ -1,6 +1,8 @@
 package com.pluxity.weekly.project.service
 
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.core.utils.findAllNotNull
+import com.pluxity.weekly.chat.dto.ProjectSearchFilter
 import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.UserType
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
@@ -40,6 +42,17 @@ class ProjectService(
                 .groupBy { it.projectId }
         return projects.map { it.toResponse(memberMap[it.requiredId].orEmpty()) }
     }
+
+    fun search(filter: ProjectSearchFilter): List<ProjectResponse> =
+        projectRepository
+            .findAllNotNull {
+                select(entity(Project::class))
+                    .from(entity(Project::class))
+                    .whereAnd(
+                        filter.status?.let { path(Project::status).eq(it) },
+                        filter.name?.let { path(Project::name).like("%$it%") },
+                    )
+            }.map { it.toResponse() }
 
     fun findById(id: Long): ProjectResponse {
         val project = getById(id)
