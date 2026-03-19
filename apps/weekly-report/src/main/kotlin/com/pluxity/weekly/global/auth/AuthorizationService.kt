@@ -69,14 +69,14 @@ class AuthorizationService(
         throw CustomException(WeeklyReportErrorCode.PERMISSION_DENIED)
     }
 
-    /** ADMIN, 해당 프로젝트 PM, 또는 에픽에 배정된 TEAM_LEADER 허용 — 에픽 배정/해제 */
+    /** ADMIN, 해당 프로젝트 PM,TEAM_LEADER 허용 — 에픽 배정/해제 */
     fun requireEpicAssign(
         user: User,
         epicId: Long,
     ) {
         if (user.hasRole(UserType.ADMIN)) return
         if (user.hasRole(UserType.PM) && projectRepository.existsByEpicIdAndPmId(epicId, user.requiredId)) return
-        if (user.hasRole(UserType.TEAM_LEADER) && epicRepository.existsByAssignmentsUserIdAndId(user.requiredId, epicId)) return
+        if (user.hasRole(UserType.TEAM_LEADER)) return
         throw CustomException(WeeklyReportErrorCode.PERMISSION_DENIED)
     }
 
