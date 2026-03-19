@@ -23,7 +23,6 @@ import tools.jackson.databind.json.JsonMapper
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 private val log = KotlinLogging.logger {}
@@ -51,8 +50,12 @@ class LlmClient(
             )
         }
 
-    private val geminiDailyCount = AtomicInteger(0)
-    private val geminiCountDate = AtomicReference(LocalDate.now())
+    private data class DailyCounter(
+        val date: LocalDate,
+        val count: Int,
+    )
+
+    private val geminiCounter = AtomicReference(DailyCounter(LocalDate.now(), 0))
 
     private val objectMapper =
         JsonMapper
@@ -79,7 +82,8 @@ class LlmClient(
             .replace("{{eventTypes}}", EVENT_TYPES_DESC)
 
     fun parseEventFilter(query: String): EventFilterCriteria? {
-        val provider = selectProvider()
+        val useGemini = tryUseGemini()
+        val provider = if (useGemini) LlmProvider.GEMINI else LlmProvider.OLLAMA
         val now = LocalDateTime.now()
         val messages =
             listOf(
@@ -91,10 +95,7 @@ class LlmClient(
             val content =
                 when (provider) {
                     LlmProvider.OLLAMA -> callOllama(messages)
-                    LlmProvider.GEMINI -> {
-                        incrementGeminiCount()
-                        callGemini(messages)
-                    }
+                    LlmProvider.GEMINI -> callGemini(messages)
                 }
 
             content?.let { parseJsonResponse(it) }?.also {
@@ -106,34 +107,22 @@ class LlmClient(
         }
     }
 
-    private fun selectProvider(): LlmProvider {
-        val available = llmProperties.availableProviders
+    private fun tryUseGemini(): Boolean {
+        if (LlmProvider.GEMINI !in llmProperties.availableProviders) return false
 
-        if (LlmProvider.GEMINI in available && getGeminiDailyCount() < llmProperties.gemini.dailyLimit) {
-            return LlmProvider.GEMINI
-        }
-
-        return LlmProvider.OLLAMA
-    }
-
-    private fun getGeminiDailyCount(): Int {
-        val today = LocalDate.now()
-        if (geminiCountDate.get() != today) {
-            geminiCountDate.set(today)
-            geminiDailyCount.set(0)
-        }
-        return geminiDailyCount.get()
-    }
-
-    private fun incrementGeminiCount() {
-        val today = LocalDate.now()
-        if (geminiCountDate.get() != today) {
-            geminiCountDate.set(today)
-            geminiDailyCount.set(0)
-        }
-        val count = geminiDailyCount.incrementAndGet()
-        if (count == llmProperties.gemini.dailyLimit) {
-            log.warn { "Gemini 일일 호출 한도 도달 (${llmProperties.gemini.dailyLimit}회), Ollama로 전환됩니다." }
+        val limit = llmProperties.gemini.dailyLimit
+        while (true) {
+            val current = geminiCounter.get()
+            val today = LocalDate.now()
+            val effective = if (current.date == today) current else DailyCounter(today, 0)
+            if (effective.count >= limit) return false
+            val next = effective.copy(count = effective.count + 1)
+            if (geminiCounter.compareAndSet(current, next)) {
+                if (next.count == limit) {
+                    log.warn { "Gemini 일일 호출 한도 도달 (${limit}회), Ollama로 전환됩니다." }
+                }
+                return true
+            }
         }
     }
 
@@ -188,7 +177,8 @@ class LlmClient(
         val response =
             client
                 .post()
-                .uri("/v1beta/models/${props.model}:generateContent?key=${props.apiKey}")
+                .uri("/v1beta/models/${props.model}:generateContent")
+                .header("x-goog-api-key", props.apiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()
