@@ -4,7 +4,6 @@ import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.weekly.epic.dto.EpicResponse
 import com.pluxity.weekly.epic.service.EpicService
 import com.pluxity.weekly.global.auth.AuthorizationService
-import com.pluxity.weekly.project.dto.ProjectResponse
 import com.pluxity.weekly.project.service.ProjectService
 import com.pluxity.weekly.task.dto.TaskResponse
 import com.pluxity.weekly.task.service.TaskService
@@ -27,7 +26,7 @@ import java.time.LocalDate
  * team    create/update → teams + users(전체)
  * team    delete        → teams
  *
- * TODO: 권한별 조회 — findAll() + 필터 대신 사용자 권한 기반 조회 메서드로 교체
+ * 에픽 기준 바텀업으로 프로젝트 hierarchy 구성 (권한 필터링된 에픽에서 프로젝트 역그루핑)
  */
 @Component
 @Transactional(readOnly = true)
@@ -72,7 +71,10 @@ class ContextBuilder(
         hasMutation: Boolean,
     ) {
         val projects = projectService.findAll()
-        context["projects"] = projects.map { projectMapSimple(it) }
+        context["projects"] =
+            projects.map {
+                mapOf("id" to it.id, "name" to it.name, "status" to it.status.name)
+            }
         if (hasMutation) {
             context["users"] = findUsersByRole("PM")
         }
@@ -82,13 +84,8 @@ class ContextBuilder(
         context: MutableMap<String, Any?>,
         hasMutation: Boolean,
     ) {
-        val projects = projectService.findAll()
         val epics = epicService.findAll()
-        val epicsByProject = epics.groupBy { it.projectId }
-        context["projects"] =
-            projects.map { project ->
-                projectMapWithEpics(project, epicsByProject[project.id] ?: emptyList())
-            }
+        context["projects"] = groupByProject(epics)
         if (hasMutation) {
             context["users"] = findAllUsers()
         }
@@ -98,24 +95,14 @@ class ContextBuilder(
         context: MutableMap<String, Any?>,
         createOnly: Boolean,
     ) {
-        val projects = projectService.findAll()
         val epics = epicService.findAll()
-        val epicsByProject = epics.groupBy { it.projectId }
 
         if (createOnly) {
-            // create: 에픽까지만 (태스크 불필요)
-            context["projects"] =
-                projects.map { project ->
-                    projectMapWithEpics(project, epicsByProject[project.id] ?: emptyList())
-                }
+            context["projects"] = groupByProject(epics)
         } else {
-            // update/delete/read: full hierarchy
             val tasks = taskService.findAll()
             val tasksByEpicId = tasks.groupBy { it.epicId }
-            context["projects"] =
-                projects.map { project ->
-                    projectMapFull(project, epicsByProject[project.id] ?: emptyList(), tasksByEpicId)
-                }
+            context["projects"] = groupByProjectFull(epics, tasksByEpicId)
         }
     }
 
@@ -129,6 +116,46 @@ class ContextBuilder(
         }
     }
 
+    private fun groupByProject(epics: List<EpicResponse>): List<Map<String, Any?>> =
+        epics
+            .groupBy { it.projectId to it.projectName }
+            .map { (key, epics) ->
+                mapOf(
+                    "id" to key.first,
+                    "name" to key.second,
+                    "epics" to epics.map { mapOf("id" to it.id, "name" to it.name) },
+                )
+            }
+
+    private fun groupByProjectFull(
+        epics: List<EpicResponse>,
+        tasksByEpicId: Map<Long, List<TaskResponse>>,
+    ): List<Map<String, Any?>> =
+        epics
+            .groupBy { it.projectId to it.projectName }
+            .map { (key, epics) ->
+                mapOf(
+                    "id" to key.first,
+                    "name" to key.second,
+                    "epics" to
+                        epics.map { epic ->
+                            mapOf(
+                                "id" to epic.id,
+                                "name" to epic.name,
+                                "tasks" to
+                                    (tasksByEpicId[epic.id] ?: emptyList()).map { task ->
+                                        mapOf(
+                                            "id" to task.id,
+                                            "name" to task.name,
+                                            "status" to task.status,
+                                            "progress" to task.progress,
+                                        )
+                                    },
+                            )
+                        },
+                )
+            }
+
     private fun findUsersByRole(roleName: String): List<Map<String, Any?>> =
         userRepository
             .findAllBy(Sort.by("name"))
@@ -139,50 +166,4 @@ class ContextBuilder(
         userRepository
             .findAllBy(Sort.by("name"))
             .map { mapOf("id" to it.requiredId, "name" to it.name) }
-
-    private fun projectMapSimple(project: ProjectResponse): Map<String, Any?> =
-        mapOf(
-            "id" to project.id,
-            "name" to project.name,
-            "status" to project.status.name,
-        )
-
-    private fun projectMapWithEpics(
-        project: ProjectResponse,
-        epics: List<EpicResponse>,
-    ): Map<String, Any?> =
-        mapOf(
-            "id" to project.id,
-            "name" to project.name,
-            "epics" to
-                epics.map { epic ->
-                    mapOf("id" to epic.id, "name" to epic.name)
-                },
-        )
-
-    private fun projectMapFull(
-        project: ProjectResponse,
-        epics: List<EpicResponse>,
-        tasksByEpicId: Map<Long, List<TaskResponse>>,
-    ): Map<String, Any?> =
-        mapOf(
-            "id" to project.id,
-            "name" to project.name,
-            "epics" to
-                epics.map { epic ->
-                    mapOf(
-                        "id" to epic.id,
-                        "name" to epic.name,
-                        "tasks" to
-                            (tasksByEpicId[epic.id] ?: emptyList()).map { task ->
-                                mapOf(
-                                    "id" to task.id,
-                                    "name" to task.name,
-                                    "status" to task.status,
-                                    "progress" to task.progress,
-                                )
-                            },
-                    )
-                },
-        )
 }

@@ -14,6 +14,8 @@ data class EpicResponse(
     val id: Long,
     @field:Schema(description = "프로젝트 ID", example = "1")
     val projectId: Long,
+    @field:Schema(description = "프로젝트명", example = "Safers")
+    val projectName: String,
     @field:Schema(description = "에픽명", example = "사용자 인증 모듈")
     val name: String,
     @field:Schema(description = "설명", example = "에픽 설명입니다")
@@ -32,6 +34,7 @@ fun Epic.toResponse(): EpicResponse =
     EpicResponse(
         id = this.requiredId,
         projectId = this.project.requiredId,
+        projectName = this.project.name,
         name = this.name,
         description = this.description,
         status = this.status,

@@ -11,6 +11,7 @@ import com.pluxity.weekly.epic.dto.EpicResponse
 import com.pluxity.weekly.epic.dto.EpicUpdateRequest
 import com.pluxity.weekly.epic.dto.toResponse
 import com.pluxity.weekly.epic.entity.Epic
+import com.pluxity.weekly.epic.entity.EpicAssignment
 import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.UserType
@@ -43,21 +44,20 @@ class EpicService(
         return epicRepository.findByAssignmentsUserId(user.requiredId).map { it.toResponse() }
     }
 
-    fun search(filter: EpicSearchFilter): List<EpicResponse> {
-        if (filter.assigneeId != null) {
-            return epicRepository.findByAssignmentsUserId(filter.assigneeId).map { it.toResponse() }
-        }
-        return epicRepository
+    fun search(filter: EpicSearchFilter): List<EpicResponse> =
+        epicRepository
             .findAllNotNull {
-                select(entity(Epic::class))
-                    .from(entity(Epic::class))
-                    .whereAnd(
+                selectDistinct(entity(Epic::class))
+                    .from(
+                        entity(Epic::class),
+                        leftJoin(Epic::assignments),
+                    ).whereAnd(
                         filter.status?.let { path(Epic::status).eq(it) },
                         filter.name?.let { path(Epic::name).like("%$it%") },
                         filter.projectId?.let { path(Epic::project)(Project::id).eq(it) },
+                        filter.assigneeId?.let { path(EpicAssignment::user)(User::id).eq(it) },
                     )
             }.map { it.toResponse() }
-    }
 
     fun findById(id: Long): EpicResponse = getEpicById(id).toResponse()
 
