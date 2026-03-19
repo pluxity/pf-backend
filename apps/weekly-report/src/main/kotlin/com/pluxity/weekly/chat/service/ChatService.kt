@@ -51,11 +51,12 @@ class ChatService(
             val target = action.target ?: "task"
             when {
                 // read → 서버 조회
-                action.action == "read" -> ChatActionResponse(
-                    action = action.action,
-                    target = target,
-                    readResult = chatReadHandler.handle(action),
-                )
+                action.action == "read" ->
+                    ChatActionResponse(
+                        action = action.action,
+                        target = target,
+                        readResult = chatReadHandler.handle(action),
+                    )
                 // clarify → 예외
                 action.action == "clarify" -> throw CustomException(
                     WeeklyReportErrorCode.LLM_AMBIGUOUS_REQUEST,
