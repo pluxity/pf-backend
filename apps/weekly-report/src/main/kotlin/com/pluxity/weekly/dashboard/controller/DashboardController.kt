@@ -3,6 +3,7 @@ package com.pluxity.weekly.dashboard.controller
 import com.pluxity.common.core.response.DataResponseBody
 import com.pluxity.common.core.response.ErrorResponseBody
 import com.pluxity.weekly.dashboard.dto.AdminDashboardResponse
+import com.pluxity.weekly.dashboard.dto.PersonDetailResponse
 import com.pluxity.weekly.dashboard.dto.PmDashboardResponse
 import com.pluxity.weekly.dashboard.dto.WorkerDashboardResponse
 import com.pluxity.weekly.dashboard.service.DashboardService
@@ -97,4 +98,37 @@ class DashboardController(
     @GetMapping("/admin")
     fun getAdminDashboard(): ResponseEntity<DataResponseBody<AdminDashboardResponse>> =
         ResponseEntity.ok(DataResponseBody(service.getAdminDashboard()))
+
+    @Operation(summary = "개인 상세 대시보드 조회", description = "ADMIN 권한으로 특정 사용자의 KPI 및 태스크 현황을 조회합니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "조회 성공"),
+            ApiResponse(
+                responseCode = "403",
+                description = "권한 없음",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "사용자 없음",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+        ],
+    )
+    @GetMapping("/person/{userId}")
+    fun getPersonDetail(
+        @Parameter(description = "사용자 ID", example = "1")
+        @PathVariable userId: Long,
+    ): ResponseEntity<DataResponseBody<PersonDetailResponse>> =
+        ResponseEntity.ok(DataResponseBody(service.getPersonDetail(userId)))
 }

@@ -5,6 +5,10 @@ import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.dashboard.dto.AdminDashboardResponse
 import com.pluxity.weekly.dashboard.dto.AdminProjectCard
 import com.pluxity.weekly.dashboard.dto.EpicTaskGroup
+import com.pluxity.weekly.dashboard.dto.PersonDetailResponse
+import com.pluxity.weekly.dashboard.dto.PersonKpi
+import com.pluxity.weekly.dashboard.dto.ProjectParticipation
+import com.pluxity.weekly.dashboard.dto.RecentTaskItem
 import com.pluxity.weekly.dashboard.dto.EpicTaskRow
 import com.pluxity.weekly.dashboard.dto.PmDashboardResponse
 import com.pluxity.weekly.dashboard.dto.PmProjectSummary
@@ -200,6 +204,90 @@ class DashboardService(
         )
     }
 
+    fun getPersonDetail(userId: Long): PersonDetailResponse {
+        val currentUser = authorizationService.currentUser()
+        authorizationService.requireAdmin(currentUser)
+
+        val targetUser =
+            userRepository.findByIdOrNull(userId)
+                ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_USER, userId)
+
+        val teamMemberships = teamMemberRepository.findByUserId(userId)
+        val department = teamMemberships.firstOrNull()?.team?.name
+
+        val tasks = taskRepository.findByAssigneeId(userId)
+        val doneTasks = tasks.filter { it.status == TaskStatus.DONE }
+
+        // KPI
+        val completionRate = if (tasks.isEmpty()) 0 else (doneTasks.size * 100 / tasks.size)
+        val onTimeTasks =
+            doneTasks.filter { task ->
+                task.dueDate != null && !task.updatedAt.toLocalDate().isAfter(task.dueDate)
+            }
+        val onTimeRate = if (doneTasks.isEmpty()) 0 else (onTimeTasks.size * 100 / doneTasks.size)
+        val delayedDoneTasks =
+            doneTasks.filter { task ->
+                task.dueDate != null && task.updatedAt.toLocalDate().isAfter(task.dueDate)
+            }
+        val averageDelayDays =
+            if (delayedDoneTasks.isEmpty()) {
+                0.0
+            } else {
+                kotlin.math.round(
+                    delayedDoneTasks
+                        .map { ChronoUnit.DAYS.between(it.dueDate, it.updatedAt.toLocalDate()).toDouble() }
+                        .average() * 100,
+                ) / 100.0
+            }
+
+        // 최근 수정 태스크 10건
+        val recentTasks =
+            tasks
+                .sortedByDescending { it.updatedAt }
+                .take(RECENT_TASK_LIMIT)
+                .map { task ->
+                    RecentTaskItem(
+                        taskId = task.requiredId,
+                        taskName = task.name,
+                        epicName = task.epic.name,
+                        projectName = task.epic.project.name,
+                        status = task.status,
+                        progress = task.progress,
+                        updatedAt = task.updatedAt,
+                    )
+                }
+
+        // 프로젝트 참여 현황 (에픽 단위)
+        val projectParticipations =
+            tasks
+                .groupBy { it.epic.requiredId }
+                .map { (_, epicTasks) ->
+                    val epic = epicTasks.first().epic
+                    ProjectParticipation(
+                        projectId = epic.project.requiredId,
+                        projectName = epic.project.name,
+                        epicName = epic.name,
+                        taskCount = epicTasks.size,
+                        completedCount = epicTasks.count { it.status == TaskStatus.DONE },
+                    )
+                }
+
+        return PersonDetailResponse(
+            userId = targetUser.requiredId,
+            userName = targetUser.name,
+            department = department,
+            kpi =
+                PersonKpi(
+                    completionRate = completionRate,
+                    onTimeRate = onTimeRate,
+                    averageDelayDays = averageDelayDays,
+                    activeTaskCount = tasks.count { it.status != TaskStatus.DONE },
+                ),
+            recentTasks = recentTasks,
+            projectParticipations = projectParticipations,
+        )
+    }
+
     private fun buildSummary(
         tasks: List<Task>,
         now: LocalDate,
@@ -249,6 +337,11 @@ class DashboardService(
             dueDate = this.dueDate,
             daysDelta = calculateDaysDelta(now),
         )
+
+
+    companion object {
+        private const val RECENT_TASK_LIMIT = 10
+    }
 
     /**
      * daysDelta 계산:
