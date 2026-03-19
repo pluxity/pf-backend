@@ -50,11 +50,12 @@ fun Epic.toResponse(): EpicResponse =
         status = this.status,
         startDate = this.startDate,
         dueDate = this.dueDate,
-        members = this.assignments.map {
-            EpicMemberResponse(
-                userId = it.user.requiredId,
-                userName = it.user.name,
-            )
-        },
+        members =
+            this.assignments.map {
+                EpicMemberResponse(
+                    userId = it.user.requiredId,
+                    userName = it.user.name,
+                )
+            },
         baseResponse = this.toBaseResponse(),
     )
