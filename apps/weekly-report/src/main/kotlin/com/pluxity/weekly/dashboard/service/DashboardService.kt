@@ -1,14 +1,25 @@
 package com.pluxity.weekly.dashboard.service
 
+import com.pluxity.common.auth.user.repository.UserRepository
+import com.pluxity.common.core.exception.CustomException
+import com.pluxity.weekly.dashboard.dto.EpicTaskGroup
+import com.pluxity.weekly.dashboard.dto.EpicTaskRow
+import com.pluxity.weekly.dashboard.dto.PmDashboardResponse
+import com.pluxity.weekly.dashboard.dto.PmProjectSummary
+import com.pluxity.weekly.dashboard.dto.RoadmapItem
+import com.pluxity.weekly.dashboard.dto.RoadmapTaskBar
 import com.pluxity.weekly.dashboard.dto.WorkerDashboardResponse
 import com.pluxity.weekly.dashboard.dto.WorkerEpicItem
 import com.pluxity.weekly.dashboard.dto.WorkerSummary
 import com.pluxity.weekly.dashboard.dto.WorkerTaskItem
 import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.global.auth.AuthorizationService
+import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
+import com.pluxity.weekly.project.repository.ProjectRepository
 import com.pluxity.weekly.task.entity.Task
 import com.pluxity.weekly.task.entity.TaskStatus
 import com.pluxity.weekly.task.repository.TaskRepository
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -18,8 +29,10 @@ import java.time.temporal.ChronoUnit
 @Transactional(readOnly = true)
 class DashboardService(
     private val authorizationService: AuthorizationService,
+    private val projectRepository: ProjectRepository,
     private val epicRepository: EpicRepository,
     private val taskRepository: TaskRepository,
+    private val userRepository: UserRepository,
 ) {
     fun getWorkerDashboard(): WorkerDashboardResponse {
         val user = authorizationService.currentUser()
@@ -51,6 +64,64 @@ class DashboardService(
         )
     }
 
+    fun getPmDashboard(projectId: Long): PmDashboardResponse {
+        val user = authorizationService.currentUser()
+        authorizationService.requireProjectManager(user, projectId)
+
+        val project =
+            projectRepository.findByIdOrNull(projectId)
+                ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_PROJECT, projectId)
+
+        val pmName =
+            project.pmId?.let { userRepository.findByIdOrNull(it)?.name } ?: ""
+
+        val epics = epicRepository.findByProjectId(projectId)
+        val tasks = taskRepository.findByEpicIn(epics)
+        val tasksByEpicId = tasks.groupBy { it.epic.requiredId }
+        val now = LocalDate.now()
+
+        val memberCount = tasks.mapNotNull { it.assignee?.requiredId }.distinct().size
+
+        return PmDashboardResponse(
+            project =
+                PmProjectSummary(
+                    projectId = project.requiredId,
+                    projectName = project.name,
+                    pmName = pmName,
+                    status = project.status,
+                    progress = if (tasks.isEmpty()) 0 else tasks.map { it.progress }.average().toInt(),
+                    startDate = project.startDate,
+                    dueDate = project.dueDate,
+                    epicCount = epics.size,
+                    taskCount = tasks.size,
+                    memberCount = memberCount,
+                ),
+            roadmapItems =
+                epics.map { epic ->
+                    val epicTasks = tasksByEpicId[epic.requiredId] ?: emptyList()
+                    RoadmapItem(
+                        epicId = epic.requiredId,
+                        epicName = epic.name,
+                        startDate = epic.startDate,
+                        dueDate = epic.dueDate,
+                        status = epic.status,
+                        progress = if (epicTasks.isEmpty()) 0 else epicTasks.map { it.progress }.average().toInt(),
+                        tasks = epicTasks.map { it.toRoadmapTaskBar(now) },
+                    )
+                },
+            epicTaskGroups =
+                epics.map { epic ->
+                    val epicTasks = tasksByEpicId[epic.requiredId] ?: emptyList()
+                    EpicTaskGroup(
+                        epicId = epic.requiredId,
+                        epicName = epic.name,
+                        status = epic.status,
+                        tasks = epicTasks.map { it.toEpicTaskRow(now) },
+                    )
+                },
+        )
+    }
+
     private fun buildSummary(
         tasks: List<Task>,
         now: LocalDate,
@@ -76,4 +147,45 @@ class DashboardService(
             dueDate = this.dueDate,
             daysUntilDue = this.dueDate?.let { ChronoUnit.DAYS.between(now, it).toInt() },
         )
+
+    private fun Task.toRoadmapTaskBar(now: LocalDate): RoadmapTaskBar =
+        RoadmapTaskBar(
+            taskId = this.requiredId,
+            taskName = this.name,
+            assigneeName = this.assignee?.name,
+            startDate = this.startDate,
+            dueDate = this.dueDate,
+            status = this.status,
+            progress = this.progress,
+            daysDelta = calculateDaysDelta(now),
+        )
+
+    private fun Task.toEpicTaskRow(now: LocalDate): EpicTaskRow =
+        EpicTaskRow(
+            taskId = this.requiredId,
+            taskName = this.name,
+            status = this.status,
+            progress = this.progress,
+            assigneeName = this.assignee?.name,
+            startDate = this.startDate,
+            dueDate = this.dueDate,
+            daysDelta = calculateDaysDelta(now),
+        )
+
+    /**
+     * daysDelta 계산:
+     * - DONE: updatedAt(완료일) - dueDate (음수=조기완료, 양수=지연완료)
+     * - 미완료 + 마감초과: now - dueDate (양수=지연중)
+     * - 그 외: null
+     */
+    private fun Task.calculateDaysDelta(now: LocalDate): Int? {
+        val due = this.dueDate ?: return null
+        return when {
+            this.status == TaskStatus.DONE ->
+                ChronoUnit.DAYS.between(due, this.updatedAt.toLocalDate()).toInt()
+            now.isAfter(due) ->
+                ChronoUnit.DAYS.between(due, now).toInt()
+            else -> null
+        }
+    }
 }
