@@ -1,5 +1,6 @@
 package com.pluxity.weekly.project.service
 
+import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.utils.findAllNotNull
 import com.pluxity.weekly.chat.dto.ProjectSearchFilter
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class ProjectService(
     private val projectRepository: ProjectRepository,
+    private val userRepository: UserRepository,
     private val authorizationService: AuthorizationService,
 ) {
     fun findAll(): List<ProjectResponse> {
@@ -40,7 +42,8 @@ class ProjectService(
             projectRepository
                 .findMembersByProjectIds(projects.map { it.requiredId })
                 .groupBy { it.projectId }
-        return projects.map { it.toResponse(memberMap[it.requiredId].orEmpty()) }
+        val pmNameMap = resolvePmNames(projects.mapNotNull { it.pmId })
+        return projects.map { it.toResponse(memberMap[it.requiredId].orEmpty(), pmNameMap[it.pmId]) }
     }
 
     // TODO: "내 프로젝트" 필터 — PM은 pmId, 일반 사용자는 Project > Epic > EpicAssignment 2단계 조인 필요
@@ -53,11 +56,19 @@ class ProjectService(
                         filter.status?.let { path(Project::status).eq(it) },
                         filter.name?.let { path(Project::name).like("%$it%") },
                     )
-            }.map { it.toResponse() }
+            }.let { projects ->
+                if (projects.isEmpty()) return emptyList()
+                val memberMap = projectRepository
+                    .findMembersByProjectIds(projects.map { it.requiredId })
+                    .groupBy { it.projectId }
+                val pmNameMap = resolvePmNames(projects.mapNotNull { it.pmId })
+                projects.map { it.toResponse(memberMap[it.requiredId].orEmpty(), pmNameMap[it.pmId]) }
+            }
 
     fun findById(id: Long): ProjectResponse {
         val project = getById(id)
-        return project.toResponse(projectRepository.findMembersByProjectId(project.requiredId))
+        val pmName = project.pmId?.let { userRepository.findByIdOrNull(it)?.name }
+        return project.toResponse(projectRepository.findMembersByProjectId(project.requiredId), pmName)
     }
 
     @Transactional
@@ -104,4 +115,11 @@ class ProjectService(
     private fun getById(id: Long): Project =
         projectRepository.findByIdOrNull(id)
             ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_PROJECT, id)
+
+    private fun resolvePmNames(pmIds: List<Long>): Map<Long, String> =
+        if (pmIds.isEmpty()) {
+            emptyMap()
+        } else {
+            userRepository.findAllById(pmIds.distinct()).associate { it.requiredId to it.name }
+        }
 }

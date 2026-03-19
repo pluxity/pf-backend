@@ -1,6 +1,7 @@
 package com.pluxity.weekly.project.service
 
 import com.pluxity.common.auth.user.entity.RoleType
+import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.test.entity.dummyRole
 import com.pluxity.common.test.entity.dummyUser
@@ -27,8 +28,9 @@ class ProjectServiceTest :
     BehaviorSpec({
 
         val projectRepository: ProjectRepository = mockk()
+        val userRepository: UserRepository = mockk()
         val authorizationService: AuthorizationService = mockk()
-        val service = ProjectService(projectRepository, authorizationService)
+        val service = ProjectService(projectRepository, userRepository, authorizationService)
 
         val adminUser =
             dummyUser(id = 1L, name = "관리자").apply {
@@ -52,6 +54,7 @@ class ProjectServiceTest :
 
                 every { projectRepository.findAll() } returns entities
                 every { projectRepository.findMembersByProjectIds(any()) } returns emptyList()
+                every { userRepository.findAllById(any<List<Long>>()) } returns emptyList()
 
                 val result = service.findAll()
 
@@ -77,6 +80,7 @@ class ProjectServiceTest :
 
                 every { projectRepository.findByIdOrNull(1L) } returns entity
                 every { projectRepository.findMembersByProjectId(1L) } returns emptyList()
+                every { userRepository.findByIdOrNull(10L) } returns dummyUser(id = 10L, name = "PM유저")
 
                 val result = service.findById(1L)
 

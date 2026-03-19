@@ -26,8 +26,18 @@ data class EpicResponse(
     val startDate: LocalDate?,
     @field:Schema(description = "마감일", example = "2026-03-31")
     val dueDate: LocalDate?,
+    @field:Schema(description = "배정된 사용자 목록")
+    val members: List<EpicMemberResponse>,
     @field:JsonUnwrapped
     val baseResponse: BaseResponse,
+)
+
+@Schema(description = "에픽 배정 사용자 정보")
+data class EpicMemberResponse(
+    @field:Schema(description = "사용자 ID", example = "1")
+    val userId: Long,
+    @field:Schema(description = "사용자명", example = "홍길동")
+    val userName: String,
 )
 
 fun Epic.toResponse(): EpicResponse =
@@ -40,5 +50,11 @@ fun Epic.toResponse(): EpicResponse =
         status = this.status,
         startDate = this.startDate,
         dueDate = this.dueDate,
+        members = this.assignments.map {
+            EpicMemberResponse(
+                userId = it.user.requiredId,
+                userName = it.user.name,
+            )
+        },
         baseResponse = this.toBaseResponse(),
     )

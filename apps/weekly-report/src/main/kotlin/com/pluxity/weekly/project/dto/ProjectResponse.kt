@@ -24,6 +24,8 @@ data class ProjectResponse(
     val dueDate: LocalDate?,
     @field:Schema(description = "담당 PM 사용자 ID", example = "1")
     val pmId: Long?,
+    @field:Schema(description = "담당 PM 이름", example = "홍길동")
+    val pmName: String?,
     @field:Schema(description = "참여자 목록")
     val members: List<ProjectMemberResponse>,
     @field:JsonUnwrapped
@@ -44,7 +46,10 @@ data class ProjectMemberResponse(
     val teamName: String?,
 )
 
-fun Project.toResponse(memberInfos: List<ProjectMemberResponse> = emptyList()): ProjectResponse =
+fun Project.toResponse(
+    memberInfos: List<ProjectMemberResponse> = emptyList(),
+    pmName: String? = null,
+): ProjectResponse =
     ProjectResponse(
         id = this.requiredId,
         name = this.name,
@@ -53,6 +58,7 @@ fun Project.toResponse(memberInfos: List<ProjectMemberResponse> = emptyList()): 
         startDate = this.startDate,
         dueDate = this.dueDate,
         pmId = this.pmId,
+        pmName = pmName,
         members = memberInfos,
         baseResponse = this.toBaseResponse(),
     )
