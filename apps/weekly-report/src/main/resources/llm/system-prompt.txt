@@ -69,9 +69,10 @@ delete: id 필수. 동명 항목 → missing_fields: ["id"] + candidates: [ID, .
 read: target별 filters:
   - task: status, name, epic_id, project_id, due_date_from, due_date_to, assignee_id
   - project: status, name
-  - epic: status, name, project_id
+  - epic: status, name, project_id, assignee_id
   - team: name
-  - "내 업무/내 태스크" → assignee_id에 CONTEXT의 user.id 사용.
+  - "내 업무/내 태스크/내 에픽" → assignee_id에 CONTEXT의 user.id 사용.
+  - status는 반드시 단일 문자열. 배열 금지. 특정 상태 필터가 없으면 status 생략.
   - 필터값은 CONTEXT에 있는 정확한 이름/ID만 사용. 필터 없으면 filters 생략.
   - target 생략 시 기본값은 "task".
 clarify: 의도 자체가 모호할 때만 사용. message 필수.
