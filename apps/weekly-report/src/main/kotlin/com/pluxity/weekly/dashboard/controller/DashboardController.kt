@@ -2,6 +2,7 @@ package com.pluxity.weekly.dashboard.controller
 
 import com.pluxity.common.core.response.DataResponseBody
 import com.pluxity.common.core.response.ErrorResponseBody
+import com.pluxity.weekly.dashboard.dto.AdminDashboardResponse
 import com.pluxity.weekly.dashboard.dto.PmDashboardResponse
 import com.pluxity.weekly.dashboard.dto.WorkerDashboardResponse
 import com.pluxity.weekly.dashboard.service.DashboardService
@@ -76,4 +77,24 @@ class DashboardController(
         @PathVariable projectId: Long,
     ): ResponseEntity<DataResponseBody<PmDashboardResponse>> =
         ResponseEntity.ok(DataResponseBody(service.getPmDashboard(projectId)))
+
+    @Operation(summary = "어드민 대시보드 조회", description = "ADMIN 권한으로 전체 프로젝트/팀 대시보드를 조회합니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "조회 성공"),
+            ApiResponse(
+                responseCode = "403",
+                description = "권한 없음",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+        ],
+    )
+    @GetMapping("/admin")
+    fun getAdminDashboard(): ResponseEntity<DataResponseBody<AdminDashboardResponse>> =
+        ResponseEntity.ok(DataResponseBody(service.getAdminDashboard()))
 }

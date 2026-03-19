@@ -2,12 +2,15 @@ package com.pluxity.weekly.dashboard.service
 
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.weekly.dashboard.dto.AdminDashboardResponse
+import com.pluxity.weekly.dashboard.dto.AdminProjectCard
 import com.pluxity.weekly.dashboard.dto.EpicTaskGroup
 import com.pluxity.weekly.dashboard.dto.EpicTaskRow
 import com.pluxity.weekly.dashboard.dto.PmDashboardResponse
 import com.pluxity.weekly.dashboard.dto.PmProjectSummary
 import com.pluxity.weekly.dashboard.dto.RoadmapItem
 import com.pluxity.weekly.dashboard.dto.RoadmapTaskBar
+import com.pluxity.weekly.dashboard.dto.TeamSummaryItem
 import com.pluxity.weekly.dashboard.dto.WorkerDashboardResponse
 import com.pluxity.weekly.dashboard.dto.WorkerEpicItem
 import com.pluxity.weekly.dashboard.dto.WorkerSummary
@@ -19,6 +22,8 @@ import com.pluxity.weekly.project.repository.ProjectRepository
 import com.pluxity.weekly.task.entity.Task
 import com.pluxity.weekly.task.entity.TaskStatus
 import com.pluxity.weekly.task.repository.TaskRepository
+import com.pluxity.weekly.team.repository.TeamMemberRepository
+import com.pluxity.weekly.team.repository.TeamRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -33,6 +38,8 @@ class DashboardService(
     private val epicRepository: EpicRepository,
     private val taskRepository: TaskRepository,
     private val userRepository: UserRepository,
+    private val teamRepository: TeamRepository,
+    private val teamMemberRepository: TeamMemberRepository,
 ) {
     fun getWorkerDashboard(): WorkerDashboardResponse {
         val user = authorizationService.currentUser()
@@ -119,6 +126,77 @@ class DashboardService(
                         tasks = epicTasks.map { it.toEpicTaskRow(now) },
                     )
                 },
+        )
+    }
+
+    fun getAdminDashboard(): AdminDashboardResponse {
+        val user = authorizationService.currentUser()
+        authorizationService.requireAdmin(user)
+
+        val now = LocalDate.now()
+
+        // 프로젝트 카드
+        val projects = projectRepository.findAll()
+        val allEpics = epicRepository.findByProjectIdIn(projects.map { it.requiredId })
+        val allTasks = taskRepository.findByEpicIn(allEpics)
+        val epicsByProjectId = allEpics.groupBy { it.project.requiredId }
+        val tasksByEpicId = allTasks.groupBy { it.epic.requiredId }
+
+        val pmIds = projects.mapNotNull { it.pmId }.distinct()
+        val pmNameById =
+            if (pmIds.isEmpty()) {
+                emptyMap()
+            } else {
+                userRepository.findAllById(pmIds).associate { it.requiredId to it.name }
+            }
+
+        val projectCards =
+            projects.map { project ->
+                val projectEpics = epicsByProjectId[project.requiredId] ?: emptyList()
+                val projectTasks = projectEpics.flatMap { tasksByEpicId[it.requiredId] ?: emptyList() }
+                AdminProjectCard(
+                    projectId = project.requiredId,
+                    projectName = project.name,
+                    pmName = project.pmId?.let { pmNameById[it] },
+                    status = project.status,
+                    progress = if (projectTasks.isEmpty()) 0 else projectTasks.map { it.progress }.average().toInt(),
+                    epicCount = projectEpics.size,
+                    memberCount = projectTasks.mapNotNull { it.assignee?.requiredId }.distinct().size,
+                    delayedTaskCount =
+                        projectTasks.count { task ->
+                            task.dueDate != null &&
+                                task.status != TaskStatus.DONE &&
+                                now.isAfter(task.dueDate)
+                        },
+                    startDate = project.startDate,
+                    dueDate = project.dueDate,
+                )
+            }
+
+        // 팀 요약
+        val teams = teamRepository.findAll()
+        val tasksByAssigneeId = allTasks.groupBy { it.assignee?.requiredId }
+
+        val teamSummaries =
+            teams.map { team ->
+                val members = teamMemberRepository.findByTeam(team)
+                val memberUserIds = members.map { it.user.requiredId }.toSet()
+                val memberTasks = memberUserIds.flatMap { tasksByAssigneeId[it] ?: emptyList() }
+                val doneCount = memberTasks.count { it.status == TaskStatus.DONE }
+
+                TeamSummaryItem(
+                    teamId = team.requiredId,
+                    teamName = team.name,
+                    leaderName = team.leaderId?.let { pmNameById[it] ?: userRepository.findByIdOrNull(it)?.name },
+                    memberCount = members.size,
+                    activeTaskCount = memberTasks.count { it.status != TaskStatus.DONE },
+                    completionRate = if (memberTasks.isEmpty()) 0 else (doneCount * 100 / memberTasks.size),
+                )
+            }
+
+        return AdminDashboardResponse(
+            projects = projectCards,
+            teamSummaries = teamSummaries,
         )
     }
 
