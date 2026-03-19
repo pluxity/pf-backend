@@ -3,15 +3,12 @@ package com.pluxity.safers.llm
 import com.pluxity.common.core.config.WebClientFactory
 import com.pluxity.safers.event.entity.EventType
 import com.pluxity.safers.llm.dto.EventFilterCriteria
-import com.pluxity.safers.llm.dto.GeminiContent
-import com.pluxity.safers.llm.dto.GeminiGenerationConfig
-import com.pluxity.safers.llm.dto.GeminiPart
-import com.pluxity.safers.llm.dto.GeminiRequest
-import com.pluxity.safers.llm.dto.GeminiResponse
 import com.pluxity.safers.llm.dto.Message
 import com.pluxity.safers.llm.dto.OllamaChatRequest
 import com.pluxity.safers.llm.dto.OllamaChatResponse
 import com.pluxity.safers.llm.dto.OllamaOptions
+import com.pluxity.safers.llm.dto.OpenRouterChatRequest
+import com.pluxity.safers.llm.dto.OpenRouterChatResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.core.io.ClassPathResource
 import org.springframework.http.MediaType
@@ -41,10 +38,10 @@ class LlmClient(
             )
         }
 
-    private val geminiClient: WebClient? =
-        llmProperties.gemini.takeIf { it.isEnabled }?.let {
+    private val openRouterClient: WebClient? =
+        llmProperties.openrouter.takeIf { it.isEnabled }?.let {
             webClientFactory.createClient(
-                baseUrl = "https://generativelanguage.googleapis.com",
+                baseUrl = "https://openrouter.ai",
                 responseTimeoutMs = llmProperties.timeoutMs,
                 readTimeoutMs = llmProperties.timeoutMs,
             )
@@ -55,7 +52,7 @@ class LlmClient(
         val count: Int,
     )
 
-    private val geminiCounter = AtomicReference(DailyCounter(LocalDate.now(), 0))
+    private val openRouterCounter = AtomicReference(DailyCounter(LocalDate.now(), 0))
 
     private val objectMapper =
         JsonMapper
@@ -82,8 +79,8 @@ class LlmClient(
             .replace("{{eventTypes}}", EVENT_TYPES_DESC)
 
     fun parseEventFilter(query: String): EventFilterCriteria? {
-        val useGemini = tryUseGemini()
-        val provider = if (useGemini) LlmProvider.GEMINI else LlmProvider.OLLAMA
+        val useOpenRouter = tryUseOpenRouter()
+        val provider = if (useOpenRouter) LlmProvider.OPENROUTER else LlmProvider.OLLAMA
         val now = LocalDateTime.now()
         val messages =
             listOf(
@@ -95,7 +92,7 @@ class LlmClient(
             val content =
                 when (provider) {
                     LlmProvider.OLLAMA -> callOllama(messages)
-                    LlmProvider.GEMINI -> callGemini(messages)
+                    LlmProvider.OPENROUTER -> callOpenRouter(messages)
                 }
 
             content?.let { parseJsonResponse(it) }?.also {
@@ -107,19 +104,19 @@ class LlmClient(
         }
     }
 
-    private fun tryUseGemini(): Boolean {
-        if (LlmProvider.GEMINI !in llmProperties.availableProviders) return false
+    private fun tryUseOpenRouter(): Boolean {
+        if (LlmProvider.OPENROUTER !in llmProperties.availableProviders) return false
 
-        val limit = llmProperties.gemini.dailyLimit
+        val limit = llmProperties.openrouter.dailyLimit
         while (true) {
-            val current = geminiCounter.get()
+            val current = openRouterCounter.get()
             val today = LocalDate.now()
             val effective = if (current.date == today) current else DailyCounter(today, 0)
             if (effective.count >= limit) return false
             val next = effective.copy(count = effective.count + 1)
-            if (geminiCounter.compareAndSet(current, next)) {
+            if (openRouterCounter.compareAndSet(current, next)) {
                 if (next.count == limit) {
-                    log.warn { "Gemini 일일 호출 한도 도달 (${limit}회), Ollama로 전환됩니다." }
+                    log.warn { "OpenRouter 일일 호출 한도 도달 (${limit}회), Ollama로 전환됩니다." }
                 }
                 return true
             }
@@ -151,47 +148,37 @@ class LlmClient(
         return response?.message?.content
     }
 
-    private fun callGemini(messages: List<Message>): String? {
-        val props = llmProperties.gemini
-        val systemMessage = messages.firstOrNull { it.role == "system" }
-        val userMessages = messages.filter { it.role != "system" }
-
+    private fun callOpenRouter(messages: List<Message>): String? {
+        val props = llmProperties.openrouter
         val request =
-            GeminiRequest(
-                systemInstruction =
-                    systemMessage?.let {
-                        GeminiContent(parts = listOf(GeminiPart(text = it.content)))
-                    },
-                contents =
-                    userMessages.map {
-                        GeminiContent(
-                            role = "user",
-                            parts = listOf(GeminiPart(text = it.content)),
-                        )
-                    },
-                generationConfig = GeminiGenerationConfig(temperature = llmProperties.temperature),
+            OpenRouterChatRequest(
+                model = props.model,
+                messages = messages,
+                temperature = llmProperties.temperature,
             )
 
-        val client = geminiClient ?: return null
+        val client = openRouterClient ?: return null
 
         val response =
             client
                 .post()
-                .uri("/v1beta/models/${props.model}:generateContent")
-                .header("x-goog-api-key", props.apiKey)
+                .uri("/api/v1/chat/completions")
+                .header("Authorization", "Bearer ${props.apiKey}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()
-                .bodyToMono<GeminiResponse>()
+                .onStatus({ it.isError }) { resp ->
+                    resp.bodyToMono<String>().map { body ->
+                        RuntimeException("OpenRouter API 오류 (${resp.statusCode()}): $body")
+                    }
+                }.bodyToMono<OpenRouterChatResponse>()
                 .block()
 
         return response
-            ?.candidates
+            ?.choices
             ?.firstOrNull()
+            ?.message
             ?.content
-            ?.parts
-            ?.firstOrNull()
-            ?.text
     }
 
     private fun parseJsonResponse(content: String): EventFilterCriteria? {

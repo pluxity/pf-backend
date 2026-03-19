@@ -26,30 +26,17 @@ data class OllamaMessage(
     val role: String? = null,
 )
 
-// Gemini
-data class GeminiRequest(
-    val contents: List<GeminiContent>,
-    val systemInstruction: GeminiContent? = null,
-    val generationConfig: GeminiGenerationConfig? = null,
-)
-
-data class GeminiContent(
-    val role: String? = null,
-    val parts: List<GeminiPart>,
-)
-
-data class GeminiPart(
-    val text: String,
-)
-
-data class GeminiGenerationConfig(
+// OpenRouter (OpenAI 호환)
+data class OpenRouterChatRequest(
+    val model: String,
+    val messages: List<Message>,
     val temperature: Double,
 )
 
-data class GeminiResponse(
-    val candidates: List<GeminiCandidate>? = null,
+data class OpenRouterChatResponse(
+    val choices: List<OpenRouterChoice>? = null,
 )
 
-data class GeminiCandidate(
-    val content: GeminiContent? = null,
+data class OpenRouterChoice(
+    val message: OllamaMessage? = null,
 )
