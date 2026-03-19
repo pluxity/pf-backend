@@ -5,7 +5,6 @@ import com.pluxity.common.core.response.PageResponse
 import com.pluxity.safers.event.dto.EventCreateRequest
 import com.pluxity.safers.event.dto.EventResponse
 import com.pluxity.safers.llm.LlmClient
-import com.pluxity.safers.llm.LlmProvider
 import org.springframework.stereotype.Component
 
 @Component
@@ -32,9 +31,8 @@ class EventFacade(
     fun findAll(
         request: PageSearchRequest,
         query: String? = null,
-        provider: LlmProvider = LlmProvider.OLLAMA,
     ): PageResponse<EventResponse> {
-        val criteria = query?.let { llmClient.parseEventFilter(it, provider) }
+        val criteria = query?.let { llmClient.parseEventFilter(it) }
         return eventService.findAll(request, criteria)
     }
 }

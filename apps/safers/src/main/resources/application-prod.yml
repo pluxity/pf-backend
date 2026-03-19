@@ -52,10 +52,9 @@ springwolf: # socket documentation ui
         app: /app
 
 llm:
+  gemini:
+    api-key: ${LLM_GEMINI_API_KEY:}
+    model: ${LLM_GEMINI_MODEL:gemini-2.5-flash}
   ollama:
     base-url: http://192.168.10.183:11434
     model: qwen3:14b
-  openrouter:
-    base-url: https://openrouter.ai
-    model: ${LLM_OPENROUTER_MODEL:openrouter/free}
-    api-key: ${LLM_OPENROUTER_API_KEY:}
