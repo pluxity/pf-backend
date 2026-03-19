@@ -3,6 +3,8 @@ package com.pluxity.weekly.epic.service
 import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.core.utils.findAllNotNull
+import com.pluxity.weekly.chat.dto.EpicSearchFilter
 import com.pluxity.weekly.epic.dto.EpicAssignmentResponse
 import com.pluxity.weekly.epic.dto.EpicRequest
 import com.pluxity.weekly.epic.dto.EpicResponse
@@ -39,6 +41,22 @@ class EpicService(
                 ).map { it.toResponse() }
         }
         return epicRepository.findByAssignmentsUserId(user.requiredId).map { it.toResponse() }
+    }
+
+    fun search(filter: EpicSearchFilter): List<EpicResponse> {
+        if (filter.assigneeId != null) {
+            return epicRepository.findByAssignmentsUserId(filter.assigneeId).map { it.toResponse() }
+        }
+        return epicRepository
+            .findAllNotNull {
+                select(entity(Epic::class))
+                    .from(entity(Epic::class))
+                    .whereAnd(
+                        filter.status?.let { path(Epic::status).eq(it) },
+                        filter.name?.let { path(Epic::name).like("%$it%") },
+                        filter.projectId?.let { path(Epic::project)(Project::id).eq(it) },
+                    )
+            }.map { it.toResponse() }
     }
 
     fun findById(id: Long): EpicResponse = getEpicById(id).toResponse()

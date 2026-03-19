@@ -1,9 +1,14 @@
 package com.pluxity.weekly.chat.service
 
 import com.pluxity.weekly.chat.dto.ChatReadResponse
+import com.pluxity.weekly.chat.dto.EpicSearchFilter
 import com.pluxity.weekly.chat.dto.LlmAction
+import com.pluxity.weekly.chat.dto.ProjectSearchFilter
 import com.pluxity.weekly.chat.dto.TaskSearchFilter
+import com.pluxity.weekly.chat.dto.TeamSearchFilter
+import com.pluxity.weekly.epic.entity.EpicStatus
 import com.pluxity.weekly.epic.service.EpicService
+import com.pluxity.weekly.project.entity.ProjectStatus
 import com.pluxity.weekly.project.service.ProjectService
 import com.pluxity.weekly.task.entity.TaskStatus
 import com.pluxity.weekly.task.service.TaskService
@@ -29,15 +34,15 @@ class ChatReadHandler(
                 )
             "project" ->
                 ChatReadResponse(
-                    projects = projectService.findAll(),
+                    projects = projectService.search(buildProjectFilter(filters)),
                 )
             "epic" ->
                 ChatReadResponse(
-                    epics = epicService.findAll(),
+                    epics = epicService.search(buildEpicFilter(filters)),
                 )
             "team" ->
                 ChatReadResponse(
-                    teams = teamService.findAll(),
+                    teams = teamService.search(buildTeamFilter(filters)),
                 )
             else ->
                 ChatReadResponse(
@@ -55,5 +60,24 @@ class ChatReadHandler(
             name = filters["name"] as? String,
             dueDateFrom = (filters["due_date_from"] as? String)?.let { LocalDate.parse(it) },
             dueDateTo = (filters["due_date_to"] as? String)?.let { LocalDate.parse(it) },
+        )
+
+    private fun buildProjectFilter(filters: Map<String, Any?>): ProjectSearchFilter =
+        ProjectSearchFilter(
+            status = (filters["status"] as? String)?.let { ProjectStatus.valueOf(it) },
+            name = filters["name"] as? String,
+        )
+
+    private fun buildEpicFilter(filters: Map<String, Any?>): EpicSearchFilter =
+        EpicSearchFilter(
+            status = (filters["status"] as? String)?.let { EpicStatus.valueOf(it) },
+            name = filters["name"] as? String,
+            projectId = (filters["project_id"] as? Number)?.toLong(),
+            assigneeId = (filters["assignee_id"] as? Number)?.toLong(),
+        )
+
+    private fun buildTeamFilter(filters: Map<String, Any?>): TeamSearchFilter =
+        TeamSearchFilter(
+            name = filters["name"] as? String,
         )
 }
