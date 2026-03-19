@@ -28,16 +28,13 @@ class ChatService(
      * CUD + missingFields → 예외 (LLM message)
      * 나머지 CUD (확정)  → 서버 실행 → id 반환
      */
-    fun chat(
-        message: String,
-        userId: Long,
-    ): List<ChatActionResponse> {
+    fun chat(message: String): List<ChatActionResponse> {
         // 1차: 의도 추출
         val intent = llmService.extractIntent(message)
         log.info { "1차 의도 추출 - action: ${intent.actions}, target: ${intent.target}" }
 
         // target별+action별+권한별 context 조회
-        val context = contextBuilder.build(userId, intent.target, intent.actions)
+        val context = contextBuilder.build(intent.target, intent.actions)
         log.info { "context:\n${objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMapper.readTree(context))}" }
 
         // 2차: LlmAction 생성
