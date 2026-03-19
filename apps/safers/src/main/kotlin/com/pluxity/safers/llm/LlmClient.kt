@@ -2,9 +2,12 @@ package com.pluxity.safers.llm
 
 import com.pluxity.common.core.config.WebClientFactory
 import com.pluxity.safers.event.entity.EventType
-import com.pluxity.safers.llm.dto.ChatCompletionRequest
-import com.pluxity.safers.llm.dto.ChatCompletionResponse
 import com.pluxity.safers.llm.dto.EventFilterCriteria
+import com.pluxity.safers.llm.dto.GeminiContent
+import com.pluxity.safers.llm.dto.GeminiGenerationConfig
+import com.pluxity.safers.llm.dto.GeminiPart
+import com.pluxity.safers.llm.dto.GeminiRequest
+import com.pluxity.safers.llm.dto.GeminiResponse
 import com.pluxity.safers.llm.dto.Message
 import com.pluxity.safers.llm.dto.OllamaChatRequest
 import com.pluxity.safers.llm.dto.OllamaChatResponse
@@ -17,8 +20,11 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import tools.jackson.databind.DeserializationFeature
 import tools.jackson.databind.json.JsonMapper
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 private val log = KotlinLogging.logger {}
 
@@ -36,14 +42,17 @@ class LlmClient(
             )
         }
 
-    private val openRouterClient: WebClient? =
-        llmProperties.openrouter.takeIf { it.isEnabled }?.let {
+    private val geminiClient: WebClient? =
+        llmProperties.gemini.takeIf { it.isEnabled }?.let {
             webClientFactory.createClient(
-                baseUrl = it.baseUrl,
+                baseUrl = "https://generativelanguage.googleapis.com",
                 responseTimeoutMs = llmProperties.timeoutMs,
                 readTimeoutMs = llmProperties.timeoutMs,
             )
         }
+
+    private val geminiDailyCount = AtomicInteger(0)
+    private val geminiCountDate = AtomicReference(LocalDate.now())
 
     private val objectMapper =
         JsonMapper
@@ -69,15 +78,8 @@ class LlmClient(
             .replace("{{now}}", now.toString())
             .replace("{{eventTypes}}", EVENT_TYPES_DESC)
 
-    fun parseEventFilter(
-        query: String,
-        provider: LlmProvider,
-    ): EventFilterCriteria? {
-        if (provider !in llmProperties.availableProviders) {
-            log.warn { "LLM provider '$provider'가 설정되지 않았습니다. 사용 가능: ${llmProperties.availableProviders}" }
-            return null
-        }
-
+    fun parseEventFilter(query: String): EventFilterCriteria? {
+        val provider = selectProvider()
         val now = LocalDateTime.now()
         val messages =
             listOf(
@@ -88,8 +90,11 @@ class LlmClient(
         return try {
             val content =
                 when (provider) {
-                    LlmProvider.OPENROUTER -> callOpenRouter(messages)
                     LlmProvider.OLLAMA -> callOllama(messages)
+                    LlmProvider.GEMINI -> {
+                        incrementGeminiCount()
+                        callGemini(messages)
+                    }
                 }
 
             content?.let { parseJsonResponse(it) }?.also {
@@ -101,33 +106,35 @@ class LlmClient(
         }
     }
 
-    private fun callOpenRouter(messages: List<Message>): String? {
-        val props = llmProperties.openrouter
-        val request =
-            ChatCompletionRequest(
-                model = props.model,
-                temperature = llmProperties.temperature,
-                messages = messages,
-            )
+    private fun selectProvider(): LlmProvider {
+        val available = llmProperties.availableProviders
 
-        val client = openRouterClient ?: return null
+        if (LlmProvider.GEMINI in available && getGeminiDailyCount() < llmProperties.gemini.dailyLimit) {
+            return LlmProvider.GEMINI
+        }
 
-        val response =
-            client
-                .post()
-                .uri("/api/v1/chat/completions")
-                .header("Authorization", "Bearer ${props.apiKey}")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
-                .retrieve()
-                .bodyToMono<ChatCompletionResponse>()
-                .block()
+        return LlmProvider.OLLAMA
+    }
 
-        return response
-            ?.choices
-            ?.firstOrNull()
-            ?.message
-            ?.content
+    private fun getGeminiDailyCount(): Int {
+        val today = LocalDate.now()
+        if (geminiCountDate.get() != today) {
+            geminiCountDate.set(today)
+            geminiDailyCount.set(0)
+        }
+        return geminiDailyCount.get()
+    }
+
+    private fun incrementGeminiCount() {
+        val today = LocalDate.now()
+        if (geminiCountDate.get() != today) {
+            geminiCountDate.set(today)
+            geminiDailyCount.set(0)
+        }
+        val count = geminiDailyCount.incrementAndGet()
+        if (count == llmProperties.gemini.dailyLimit) {
+            log.warn { "Gemini 일일 호출 한도 도달 (${llmProperties.gemini.dailyLimit}회), Ollama로 전환됩니다." }
+        }
     }
 
     private fun callOllama(messages: List<Message>): String? {
@@ -153,6 +160,48 @@ class LlmClient(
                 .block()
 
         return response?.message?.content
+    }
+
+    private fun callGemini(messages: List<Message>): String? {
+        val props = llmProperties.gemini
+        val systemMessage = messages.firstOrNull { it.role == "system" }
+        val userMessages = messages.filter { it.role != "system" }
+
+        val request =
+            GeminiRequest(
+                systemInstruction =
+                    systemMessage?.let {
+                        GeminiContent(parts = listOf(GeminiPart(text = it.content)))
+                    },
+                contents =
+                    userMessages.map {
+                        GeminiContent(
+                            role = "user",
+                            parts = listOf(GeminiPart(text = it.content)),
+                        )
+                    },
+                generationConfig = GeminiGenerationConfig(temperature = llmProperties.temperature),
+            )
+
+        val client = geminiClient ?: return null
+
+        val response =
+            client
+                .post()
+                .uri("/v1beta/models/${props.model}:generateContent?key=${props.apiKey}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono<GeminiResponse>()
+                .block()
+
+        return response
+            ?.candidates
+            ?.firstOrNull()
+            ?.content
+            ?.parts
+            ?.firstOrNull()
+            ?.text
     }
 
     private fun parseJsonResponse(content: String): EventFilterCriteria? {

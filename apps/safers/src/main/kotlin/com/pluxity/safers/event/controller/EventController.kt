@@ -9,7 +9,6 @@ import com.pluxity.safers.event.dto.EventResponse
 import com.pluxity.safers.event.dto.toResponse
 import com.pluxity.safers.event.entity.EventCategory
 import com.pluxity.safers.event.service.EventFacade
-import com.pluxity.safers.llm.LlmProvider
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
@@ -60,11 +59,8 @@ class EventController(
         @Parameter(description = "검색어", example = "어제 발생한 헬멧 미착용")
         @RequestParam(required = false)
         query: String? = null,
-        @Parameter(description = "LLM 제공자 (OLLAMA, OPENROUTER)", example = "OLLAMA")
-        @RequestParam(required = false)
-        provider: LlmProvider = LlmProvider.OLLAMA,
     ): ResponseEntity<DataResponseBody<PageResponse<EventResponse>>> =
-        ResponseEntity.ok(DataResponseBody(eventFacade.findAll(PageSearchRequest(page, size), query, provider)))
+        ResponseEntity.ok(DataResponseBody(eventFacade.findAll(PageSearchRequest(page, size), query)))
 
     @Operation(summary = "이벤트 상세 조회", description = "ID로 특정 이벤트의 상세 정보를 조회합니다")
     @ApiResponses(

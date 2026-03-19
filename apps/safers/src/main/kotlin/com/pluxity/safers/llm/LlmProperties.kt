@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 @ConfigurationProperties(prefix = "llm")
 data class LlmProperties(
     val ollama: OllamaProperties = OllamaProperties(),
-    val openrouter: OpenRouterProperties = OpenRouterProperties(),
+    val gemini: GeminiProperties = GeminiProperties(),
     val temperature: Double = 0.1,
     val timeoutMs: Int = 60000,
 ) {
@@ -13,7 +13,7 @@ data class LlmProperties(
         get() =
             buildList {
                 if (ollama.isEnabled) add(LlmProvider.OLLAMA)
-                if (openrouter.isEnabled) add(LlmProvider.OPENROUTER)
+                if (gemini.isEnabled) add(LlmProvider.GEMINI)
             }
 }
 
@@ -25,16 +25,16 @@ data class OllamaProperties(
         get() = baseUrl.isNotBlank() && model.isNotBlank()
 }
 
-data class OpenRouterProperties(
-    val baseUrl: String = "",
-    val model: String = "",
+data class GeminiProperties(
     val apiKey: String = "",
+    val model: String = "",
+    val dailyLimit: Int = 9500,
 ) {
     val isEnabled: Boolean
-        get() = baseUrl.isNotBlank() && model.isNotBlank() && apiKey.isNotBlank()
+        get() = apiKey.isNotBlank() && model.isNotBlank()
 }
 
 enum class LlmProvider {
     OLLAMA,
-    OPENROUTER,
+    GEMINI,
 }
