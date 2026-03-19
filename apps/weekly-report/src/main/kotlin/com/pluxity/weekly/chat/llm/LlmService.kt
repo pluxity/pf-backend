@@ -72,7 +72,7 @@ class LlmService(
                         Message(role = "system", content = systemPrompt),
                         Message(role = "user", content = userMessage),
                     )
-                val content = callGemini(messages)
+                val content = callOllama(messages)
                 log.info { "llm response : $content" }
 
                 return parseActions(content)
@@ -96,7 +96,7 @@ class LlmService(
                         Message(role = "system", content = intentPrompt),
                         Message(role = "user", content = message),
                     )
-                val content = callGemini(messages)
+                val content = callOllama(messages)
                 log.info { "intent response : $content" }
                 return parseIntent(content)
             } catch (e: CustomException) {

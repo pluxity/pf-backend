@@ -15,17 +15,23 @@ data class TeamResponse(
     val name: String,
     @field:Schema(description = "팀장 사용자 ID", example = "1")
     val leaderId: Long?,
+    @field:Schema(description = "팀장 이름", example = "나동규")
+    val leaderName: String? = null,
     @field:Schema(description = "팀 멤버 목록")
     val members: List<UserResponse> = emptyList(),
     @field:JsonUnwrapped
     val baseResponse: BaseResponse,
 )
 
-fun Team.toResponse(members: List<UserResponse> = emptyList()): TeamResponse =
+fun Team.toResponse(
+    leaderName: String? = null,
+    members: List<UserResponse> = emptyList(),
+): TeamResponse =
     TeamResponse(
         id = this.requiredId,
         name = this.name,
         leaderId = this.leaderId,
+        leaderName = leaderName,
         members = members,
         baseResponse = this.toBaseResponse(),
     )

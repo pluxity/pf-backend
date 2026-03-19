@@ -15,7 +15,10 @@ spring:
 llm:
   gemini:
     api-key: ${GEMINI_API_KEY:}
-    model: gemini-2.5-flash
+    model:
+  ollama:
+    base-url: ${OLLAMA_URL}
+    model: ${OLLAMA_MODEL}
   temperature: 0.1
   timeout-ms: 60000
 

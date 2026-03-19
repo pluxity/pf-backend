@@ -32,7 +32,8 @@ class TeamService(
     fun findAll(): List<TeamResponse> =
         teamRepository.findAll().map { team ->
             val members = memberRepository.findByTeam(team).map { it.user.toResponse() }
-            team.toResponse(members = members)
+            val leaderName = team.leaderId?.let { getUserById(it).name }
+            team.toResponse(leaderName = leaderName, members = members)
         }
 
     fun search(filter: TeamSearchFilter): List<TeamResponse> =
@@ -43,7 +44,11 @@ class TeamService(
                     .whereAnd(
                         filter.name?.let { path(Team::name).like("%$it%") },
                     )
-            }.map { it.toResponse() }
+            }.map { team ->
+                val members = memberRepository.findByTeam(team).map { it.user.toResponse() }
+                val leaderName = team.leaderId?.let { getUserById(it).name }
+                team.toResponse(leaderName = leaderName, members = members)
+            }
 
     fun findById(id: Long): TeamResponse = getTeamById(id).toResponse()
 
