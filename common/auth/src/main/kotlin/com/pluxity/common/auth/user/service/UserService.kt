@@ -18,6 +18,8 @@ import com.pluxity.common.auth.user.repository.UserRoleRepository
 import com.pluxity.common.core.constant.ErrorCode
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.utils.SortUtils
+import com.pluxity.common.file.extensions.getFileMapById
+import com.pluxity.common.file.service.FileService
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -32,12 +34,27 @@ class UserService(
     private val refreshTokenRepository: RefreshTokenRepository,
     private val userRoleRepository: UserRoleRepository,
     private val userProperties: UserProperties,
+    private val fileService: FileService,
 ) {
-    fun findById(id: Long): UserResponse = findUserById(id).toResponse()
+    companion object {
+        private const val USER_PROFILE_PATH = "users/"
+    }
 
-    fun findAll(): List<UserResponse> = userRepository.findAllBy(SortUtils.orderByCreatedAtDesc).map { it.toResponse() }
+    fun findById(id: Long): UserResponse {
+        val user = findUserById(id)
+        return user.toResponse(fileService.getFileResponse(user.profileImageId))
+    }
 
-    fun findByUsername(username: String): UserResponse = findUserByUsername(username).toResponse()
+    fun findAll(): List<UserResponse> {
+        val users = userRepository.findAllBy(SortUtils.orderByCreatedAtDesc)
+        val fileMap = fileService.getFileMapById(users) { it.profileImageId }
+        return users.map { it.toResponse(fileMap[it.profileImageId]) }
+    }
+
+    fun findByUsername(username: String): UserResponse {
+        val user = findUserByUsername(username)
+        return user.toResponse(fileService.getFileResponse(user.profileImageId))
+    }
 
     @Transactional
     fun save(request: UserCreateRequest): UserResponse {
@@ -56,7 +73,14 @@ class UserService(
             user.addRoles(roles)
         }
 
-        return userRepository.save(user).toResponse()
+        val savedUser = userRepository.save(user)
+
+        request.profileImageId?.let {
+            fileService.finalizeUpload(it, "$USER_PROFILE_PATH${savedUser.requiredId}/")
+            user.changeProfileImageId(request.profileImageId)
+        }
+
+        return savedUser.toResponse(fileService.getFileResponse(savedUser.profileImageId))
     }
 
     @Transactional
@@ -65,9 +89,15 @@ class UserService(
         request: UserUpdateRequest,
     ): UserResponse {
         val user = findUserById(id)
+        val oldProfileImageId = user.profileImageId
         updateUserFields(user, request)
         changeRole(request.roleIds, user)
-        return user.toResponse()
+
+        if (request.profileImageId != null && request.profileImageId != oldProfileImageId) {
+            fileService.finalizeUpload(request.profileImageId, "$USER_PROFILE_PATH${user.requiredId}/")
+        }
+
+        return user.toResponse(fileService.getFileResponse(user.profileImageId))
     }
 
     private fun changeRole(
@@ -165,6 +195,9 @@ class UserService(
         }
         if (request.department != null) {
             user.changeDepartment(request.department)
+        }
+        if (request.profileImageId != null) {
+            user.changeProfileImageId(request.profileImageId)
         }
     }
 

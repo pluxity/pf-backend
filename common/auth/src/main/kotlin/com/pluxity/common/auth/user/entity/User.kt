@@ -25,6 +25,9 @@ class User(
     var phoneNumber: String? = null,
     var department: String? = null,
 ) : IdentityIdEntity() {
+    @Column(name = "profile_image_id")
+    var profileImageId: Long? = null
+
     var lastPasswordChangeDate: LocalDateTime = LocalDateTime.now()
 
     @OneToMany(mappedBy = "user", cascade = [CascadeType.PERSIST, CascadeType.MERGE])
@@ -91,6 +94,10 @@ class User(
 
     fun changeDepartment(department: String) {
         this.department = department
+    }
+
+    fun changeProfileImageId(profileImageId: Long?) {
+        this.profileImageId = profileImageId
     }
 
     fun canAccess(
