@@ -68,6 +68,8 @@ class UserService(
                 department = request.department,
             )
 
+        user.changeProfileImageId(request.profileImageId)
+
         if (request.roleIds.isNotEmpty()) {
             val roles = request.roleIds.map { findRoleById(it) }
             user.addRoles(roles)
@@ -77,7 +79,6 @@ class UserService(
 
         request.profileImageId?.let {
             fileService.finalizeUpload(it, "$USER_PROFILE_PATH${savedUser.requiredId}/")
-            user.changeProfileImageId(request.profileImageId)
         }
 
         return savedUser.requiredId
