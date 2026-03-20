@@ -16,8 +16,10 @@ class CctvCustomRepositoryImpl(
                     entity(Cctv::class),
                     fetchJoin(Cctv::site),
                 ).whereAnd(
-                    criteria?.name?.let { upper(path(Cctv::name)).like("%${it.uppercase()}%") },
+                    criteria?.name?.let { upper(path(Cctv::name)).like("%${escapeLike(it.uppercase())}%") },
                     criteria?.siteIds?.takeIf { it.isNotEmpty() }?.let { path(Cctv::site)(Site::id).`in`(it) },
                 ).orderBy(path(Cctv::name).asc())
         }
+
+    private fun escapeLike(value: String): String = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 }

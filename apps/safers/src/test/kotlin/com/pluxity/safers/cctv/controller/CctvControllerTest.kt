@@ -92,6 +92,26 @@ class CctvControllerTest(
                 }
             }
 
+            When("GET $baseUrl - query로 자연어 검색") {
+                val responses = listOf(dummyCctvResponse())
+
+                every { cctvFacade.findAll(siteId = null, query = "로비 카메라") } returns responses
+
+                val result =
+                    mockMvc.get(baseUrl) {
+                        param("query", "로비 카메라")
+                        with(user("tester"))
+                    }
+
+                Then("200 OK와 검색 결과가 반환된다") {
+                    result.andExpect {
+                        status { isOk() }
+                        jsonPath("$.data") { isArray() }
+                        jsonPath("$.data.length()") { value(1) }
+                    }
+                }
+            }
+
             When("GET $baseUrl - CCTV가 없는 경우") {
                 every { cctvFacade.findAll(siteId = null, query = null) } returns emptyList()
 
