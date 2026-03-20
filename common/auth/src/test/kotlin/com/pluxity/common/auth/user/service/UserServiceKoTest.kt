@@ -44,6 +44,7 @@ class UserServiceKoTest :
                 refreshTokenRepository,
                 userRoleRepository,
                 userProperties,
+                fileService = mockk(relaxed = true),
             )
 
         Given("사용자 상세 조회를 진행할 때") {

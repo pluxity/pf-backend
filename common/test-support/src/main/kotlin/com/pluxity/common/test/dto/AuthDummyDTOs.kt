@@ -21,16 +21,18 @@ fun dummyUserCreateRequest(
     code: String = "code",
     phoneNumber: String? = null,
     department: String? = null,
+    profileImageId: Long? = null,
     roleIds: List<Long> = listOf(),
 ): UserCreateRequest =
     UserCreateRequest(
-        username,
-        password,
-        name,
-        code,
-        phoneNumber,
-        department,
-        roleIds,
+        username = username,
+        password = password,
+        name = name,
+        code = code,
+        phoneNumber = phoneNumber,
+        department = department,
+        profileImageId = profileImageId,
+        roleIds = roleIds,
     )
 
 fun dummyUserUpdateRequest(
@@ -38,8 +40,17 @@ fun dummyUserUpdateRequest(
     code: String = "code",
     phoneNumber: String? = null,
     department: String? = null,
+    profileImageId: Long? = null,
     roleIds: List<Long>? = null,
-): UserUpdateRequest = UserUpdateRequest(name, code, phoneNumber, department, roleIds)
+): UserUpdateRequest =
+    UserUpdateRequest(
+        name = name,
+        code = code,
+        phoneNumber = phoneNumber,
+        department = department,
+        profileImageId = profileImageId,
+        roleIds = roleIds,
+    )
 
 fun dummyUserRoleAssignRequest(roleIds: List<Long> = listOf()): UserRoleUpdateRequest = UserRoleUpdateRequest(roleIds)
 
