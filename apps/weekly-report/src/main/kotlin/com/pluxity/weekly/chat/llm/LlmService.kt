@@ -14,6 +14,8 @@ import com.pluxity.weekly.chat.llm.dto.Message
 import com.pluxity.weekly.chat.llm.dto.OllamaChatRequest
 import com.pluxity.weekly.chat.llm.dto.OllamaChatResponse
 import com.pluxity.weekly.chat.llm.dto.OllamaOptions
+import com.pluxity.weekly.chat.llm.dto.OpenAiChatRequest
+import com.pluxity.weekly.chat.llm.dto.OpenAiChatResponse
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.core.io.ClassPathResource
@@ -51,8 +53,20 @@ class LlmService(
             )
         }
 
+    private val openRouterClient: WebClient? =
+        properties.openrouter.takeIf { it.isEnabled }?.let {
+            webClientFactory.createClient(
+                baseUrl = it.baseUrl,
+                responseTimeoutMs = properties.timeoutMs,
+                readTimeoutMs = properties.timeoutMs,
+            )
+        }
+
     init {
-        log.info { "LLM Ollama 활성화: ${properties.ollama.isEnabled}, Gemini 활성화: ${properties.gemini.isEnabled}" }
+        log.info {
+            "LLM Ollama: ${properties.ollama.isEnabled}, Gemini: ${properties.gemini.isEnabled}, " +
+                "Groq: ${properties.groq.isEnabled}, OpenRouter: ${properties.openrouter.isEnabled}"
+        }
     }
 
     private val systemPrompt: String by lazy {
@@ -72,7 +86,7 @@ class LlmService(
                         Message(role = "system", content = systemPrompt),
                         Message(role = "user", content = userMessage),
                     )
-                val content = callOllama(messages)
+                val content = callLlm(messages)
                 log.info { "llm response : $content" }
 
                 return parseActions(content)
@@ -96,7 +110,7 @@ class LlmService(
                         Message(role = "system", content = intentPrompt),
                         Message(role = "user", content = message),
                     )
-                val content = callOllama(messages)
+                val content = callLlm(messages)
                 log.info { "intent response : $content" }
                 return parseIntent(content)
             } catch (e: CustomException) {
@@ -108,6 +122,46 @@ class LlmService(
         }
         log.error(lastException) { "Intent 추출 $MAX_RETRIES 회 재시도 실패" }
         throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
+    }
+
+    private fun callLlm(messages: List<Message>): String =
+        when {
+            properties.openrouter.isEnabled -> callOpenRouter(messages)
+            properties.gemini.isEnabled -> callGemini(messages)
+            properties.ollama.isEnabled -> callOllama(messages)
+            else -> throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
+        }
+
+    private fun callOpenRouter(messages: List<Message>): String {
+        val props = properties.openrouter
+        val request =
+            OpenAiChatRequest(
+                model = props.model,
+                messages = messages,
+                temperature = properties.temperature,
+            )
+
+        val client =
+            openRouterClient
+                ?: throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
+
+        val response =
+            client
+                .post()
+                .uri("/v1/chat/completions")
+                .header("Authorization", "Bearer ${props.apiKey}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono<OpenAiChatResponse>()
+                .block()
+                ?: throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
+
+        return response.choices
+            ?.firstOrNull()
+            ?.message
+            ?.content
+            ?: throw CustomException(WeeklyReportErrorCode.LLM_INVALID_RESPONSE)
     }
 
     private fun callOllama(messages: List<Message>): String {

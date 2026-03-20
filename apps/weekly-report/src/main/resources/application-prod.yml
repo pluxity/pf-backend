@@ -15,13 +15,17 @@ spring:
     username: ${DB_USERNAME:pluxity}
     password: ${DB_PASSWORD:pluxity0304}
 
+
 llm:
   gemini:
     api-key: ${GEMINI_API_KEY:}
-    model: ${LLM_GEMINI_MODEL:gemini-2.5-flash}
+    model: ${GEMINI_MODEL:}
   ollama:
-    base-url: ${OLLAMA_URL}
-    model: ${OLLAMA_MODEL}
+    base-url: ${OLLAMA_URL:}
+    model: ${OLLAMA_MODEL:}
+  openrouter:
+    api-key: ${OPENROUTER_API_KEY:}
+    model: ${OPENROUTER_MODEL:}
   temperature: 0.1
   timeout-ms: 60000
 

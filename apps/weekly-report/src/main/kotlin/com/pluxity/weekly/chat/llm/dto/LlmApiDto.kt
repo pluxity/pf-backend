@@ -26,6 +26,26 @@ data class OllamaMessage(
     val role: String? = null,
 )
 
+// OpenAI 호환
+data class OpenAiChatRequest(
+    val model: String,
+    val messages: List<Message>,
+    val temperature: Double,
+)
+
+data class OpenAiChatResponse(
+    val choices: List<OpenAiChoice>? = null,
+)
+
+data class OpenAiChoice(
+    val message: OpenAiMessage? = null,
+)
+
+data class OpenAiMessage(
+    val content: String? = null,
+    val role: String? = null,
+)
+
 // Gemini
 data class GeminiRequest(
     val contents: List<GeminiContent>,
