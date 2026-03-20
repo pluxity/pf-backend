@@ -56,5 +56,5 @@ llm:
     api-key: ${LLM_OPENROUTER_API_KEY:}
     model: ${LLM_OPENROUTER_MODEL:stepfun/step-3.5-flash:free}
   ollama:
-    base-url: http://192.168.10.183:11434
+    base-url: http://192.168.10.182:11434
     model: qwen3:14b

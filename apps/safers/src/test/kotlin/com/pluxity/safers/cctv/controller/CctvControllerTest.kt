@@ -73,7 +73,7 @@ class CctvControllerTest(
             When("GET $baseUrl - siteId로 조회") {
                 val responses = listOf(dummyCctvResponse())
 
-                every { cctvFacade.findAll(1L) } returns responses
+                every { cctvFacade.findAll(siteId = 1L, query = null) } returns responses
 
                 val result =
                     mockMvc.get(baseUrl) {
@@ -92,8 +92,28 @@ class CctvControllerTest(
                 }
             }
 
+            When("GET $baseUrl - query로 자연어 검색") {
+                val responses = listOf(dummyCctvResponse())
+
+                every { cctvFacade.findAll(siteId = null, query = "로비 카메라") } returns responses
+
+                val result =
+                    mockMvc.get(baseUrl) {
+                        param("query", "로비 카메라")
+                        with(user("tester"))
+                    }
+
+                Then("200 OK와 검색 결과가 반환된다") {
+                    result.andExpect {
+                        status { isOk() }
+                        jsonPath("$.data") { isArray() }
+                        jsonPath("$.data.length()") { value(1) }
+                    }
+                }
+            }
+
             When("GET $baseUrl - CCTV가 없는 경우") {
-                every { cctvFacade.findAll(null) } returns emptyList()
+                every { cctvFacade.findAll(siteId = null, query = null) } returns emptyList()
 
                 val result =
                     mockMvc.get(baseUrl) {

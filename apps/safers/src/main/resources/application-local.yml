@@ -55,5 +55,5 @@ logging:
 
 llm:
   ollama:
-    base-url: http://192.168.10.183:11434
+    base-url: http://192.168.10.182:11434
     model: qwen3:14b

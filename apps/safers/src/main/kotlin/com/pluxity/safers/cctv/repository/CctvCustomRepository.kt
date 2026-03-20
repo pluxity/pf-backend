@@ -1,7 +1,8 @@
 package com.pluxity.safers.cctv.repository
 
 import com.pluxity.safers.cctv.entity.Cctv
+import com.pluxity.safers.llm.dto.CctvFilterCriteria
 
 interface CctvCustomRepository {
-    fun findAllWithSite(siteId: Long? = null): List<Cctv>
+    fun findAllWithSite(criteria: CctvFilterCriteria? = null): List<Cctv>
 }

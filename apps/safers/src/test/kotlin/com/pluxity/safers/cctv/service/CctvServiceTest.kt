@@ -9,6 +9,8 @@ import com.pluxity.safers.cctv.entity.Cctv
 import com.pluxity.safers.cctv.entity.dummyCctv
 import com.pluxity.safers.cctv.repository.CctvRepository
 import com.pluxity.safers.global.constant.SafersErrorCode
+import com.pluxity.safers.llm.LlmClient
+import com.pluxity.safers.llm.dto.CctvFilterCriteria
 import com.pluxity.safers.site.entity.dummySite
 import com.pluxity.safers.site.repository.SiteRepository
 import io.kotest.assertions.throwables.shouldThrow
@@ -27,8 +29,9 @@ class CctvServiceTest :
         val siteRepository: SiteRepository = mockk(relaxed = true)
         val fileService: FileService = mockk(relaxed = true)
         val apiClient: CctvApiClient = mockk()
+        val llmClient: LlmClient = mockk(relaxed = true)
         val service = CctvService(repository, fileService)
-        val facade = CctvFacade(service, siteRepository, apiClient)
+        val facade = CctvFacade(service, siteRepository, apiClient, llmClient)
 
         val site = dummySite(id = 1L, baseUrl = "http://media-server:9997")
 
@@ -127,9 +130,9 @@ class CctvServiceTest :
                         dummyCctv(id = 1L, site = site, streamName = "cam2", name = "B 카메라"),
                     )
 
-                every { repository.findAllWithSite(1L) } returns entities
+                every { repository.findAllWithSite(CctvFilterCriteria(siteIds = listOf(1L))) } returns entities
 
-                val result = service.findAll(siteId = 1L)
+                val result = service.findAll(CctvFilterCriteria(siteIds = listOf(1L)))
 
                 Then("CCTV 목록이 반환된다") {
                     result.size shouldBe 2
@@ -139,12 +142,67 @@ class CctvServiceTest :
             }
 
             When("CCTV가 없으면") {
-                every { repository.findAllWithSite(1L) } returns emptyList()
+                every { repository.findAllWithSite(CctvFilterCriteria(siteIds = listOf(1L))) } returns emptyList()
 
-                val result = service.findAll(siteId = 1L)
+                val result = service.findAll(CctvFilterCriteria(siteIds = listOf(1L)))
 
                 Then("빈 목록이 반환된다") {
                     result.size shouldBe 0
+                }
+            }
+        }
+
+        Given("CCTV 자연어 검색") {
+
+            When("query로 검색하면 LLM이 파싱한 조건으로 조회된다") {
+                val entities =
+                    listOf(
+                        dummyCctv(id = 1L, site = site, streamName = "cam1", name = "로비 카메라"),
+                    )
+                every { siteRepository.findAll() } returns listOf(site)
+                every { llmClient.parseCctvFilter(any(), any()) } returns
+                    CctvFilterCriteria(name = "로비", siteIds = listOf(1L))
+                every { repository.findAllWithSite(CctvFilterCriteria(name = "로비", siteIds = listOf(1L))) } returns entities
+
+                val result = facade.findAll(query = "로비 카메라 보여줘")
+
+                Then("LLM이 파싱한 조건으로 CCTV가 반환된다") {
+                    result.size shouldBe 1
+                    result[0].name shouldBe "로비 카메라"
+                }
+            }
+
+            When("query와 siteId를 함께 지정하면 siteIds가 합쳐진다") {
+                every { siteRepository.findAll() } returns listOf(site)
+                every { llmClient.parseCctvFilter(any(), any()) } returns
+                    CctvFilterCriteria(name = "출입구", siteIds = listOf(2L))
+                every {
+                    repository.findAllWithSite(CctvFilterCriteria(name = "출입구", siteIds = listOf(1L, 2L)))
+                } returns emptyList()
+
+                val result = facade.findAll(siteId = 1L, query = "출입구 카메라")
+
+                Then("siteId와 LLM siteIds가 합쳐져서 조회된다") {
+                    result.size shouldBe 0
+                    verify {
+                        repository.findAllWithSite(CctvFilterCriteria(name = "출입구", siteIds = listOf(1L, 2L)))
+                    }
+                }
+            }
+
+            When("LLM 파싱이 실패하면 siteId만으로 조회된다") {
+                every { siteRepository.findAll() } returns listOf(site)
+                every { llmClient.parseCctvFilter(any(), any()) } returns null
+                every {
+                    repository.findAllWithSite(CctvFilterCriteria(name = null, siteIds = listOf(1L)))
+                } returns emptyList()
+
+                val result = facade.findAll(siteId = 1L, query = "알 수 없는 질문")
+
+                Then("siteId만으로 조회된다") {
+                    verify {
+                        repository.findAllWithSite(CctvFilterCriteria(name = null, siteIds = listOf(1L)))
+                    }
                 }
             }
         }
