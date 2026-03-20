@@ -110,10 +110,12 @@ class LlmClient(
             )
 
         return try {
+            val start = System.currentTimeMillis()
             val content = callLlm(provider, messages)
+            val elapsed = System.currentTimeMillis() - start
 
             content?.let { parser(it) }?.also {
-                log.info { "LLM $label 파싱 완료 - provider: $provider, query: $query, criteria: $it" }
+                log.info { "LLM $label 파싱 완료 - provider: $provider, ${elapsed}ms, query: $query, criteria: $it" }
             }
         } catch (e: Exception) {
             log.error(e) { "LLM $label 파싱 실패 - provider: $provider, query: $query" }
