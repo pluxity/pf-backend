@@ -10,6 +10,7 @@ import com.pluxity.safers.cctv.entity.Cctv
 import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.llm.LlmClient
 import com.pluxity.safers.llm.dto.CctvFilterCriteria
+import com.pluxity.safers.llm.dto.SiteInfo
 import com.pluxity.safers.site.repository.SiteRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
@@ -79,7 +80,7 @@ class CctvFacade(
         val sites = siteRepository.findAll()
         val siteInfos =
             sites.map {
-                LlmClient.SiteInfo(id = it.requiredId, name = it.name, address = it.address, description = it.description)
+                SiteInfo(id = it.requiredId, name = it.name, address = it.address, description = it.description)
             }
         val llmCriteria = llmClient.parseCctvFilter(query, siteInfos)
 

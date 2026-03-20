@@ -10,6 +10,7 @@ import com.pluxity.safers.llm.dto.OllamaChatResponse
 import com.pluxity.safers.llm.dto.OllamaOptions
 import com.pluxity.safers.llm.dto.OpenRouterChatRequest
 import com.pluxity.safers.llm.dto.OpenRouterChatResponse
+import com.pluxity.safers.llm.dto.SiteInfo
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.core.io.ClassPathResource
 import org.springframework.http.MediaType
@@ -83,13 +84,6 @@ class LlmClient(
             .replace("{{now}}", now.toString())
             .replace("{{eventTypes}}", EVENT_TYPES_DESC)
 
-    data class SiteInfo(
-        val id: Long,
-        val name: String,
-        val address: String?,
-        val description: String?,
-    )
-
     private fun buildCctvSystemPrompt(sites: List<SiteInfo>): String =
         cctvPromptTemplate
             .replace(
@@ -101,31 +95,48 @@ class LlmClient(
                 },
             )
 
-    fun parseEventFilter(query: String): EventFilterCriteria? {
+    private fun <T> parseFilter(
+        query: String,
+        systemPrompt: String,
+        label: String,
+        parser: (String) -> T?,
+    ): T? {
         val useOpenRouter = tryUseOpenRouter()
         val provider = if (useOpenRouter) LlmProvider.OPENROUTER else LlmProvider.OLLAMA
-        val now = LocalDateTime.now()
         val messages =
             listOf(
-                Message(role = "system", content = buildEventSystemPrompt(now)),
+                Message(role = "system", content = systemPrompt),
                 Message(role = "user", content = query),
             )
 
         return try {
-            val content =
-                when (provider) {
-                    LlmProvider.OLLAMA -> callOllama(messages)
-                    LlmProvider.OPENROUTER -> callOpenRouter(messages)
-                }
+            val content = callLlm(provider, messages)
 
-            content?.let { parseJsonResponse(it) }?.also {
-                log.info { "LLM 필터 파싱 완료 - provider: $provider, query: $query, criteria: $it" }
+            content?.let { parser(it) }?.also {
+                log.info { "LLM $label 파싱 완료 - provider: $provider, query: $query, criteria: $it" }
             }
         } catch (e: Exception) {
-            log.error(e) { "LLM 이벤트 필터 파싱 실패 - provider: $provider, query: $query" }
+            log.error(e) { "LLM $label 파싱 실패 - provider: $provider, query: $query" }
             null
         }
     }
+
+    private fun callLlm(
+        provider: LlmProvider,
+        messages: List<Message>,
+    ): String? =
+        when (provider) {
+            LlmProvider.OLLAMA -> callOllama(messages)
+            LlmProvider.OPENROUTER -> callOpenRouter(messages)
+        }
+
+    fun parseEventFilter(query: String): EventFilterCriteria? =
+        parseFilter(
+            query = query,
+            systemPrompt = buildEventSystemPrompt(LocalDateTime.now()),
+            label = "이벤트 필터",
+            parser = ::parseEventJsonResponse,
+        )
 
     private fun tryUseOpenRouter(): Boolean {
         if (LlmProvider.OPENROUTER !in llmProperties.availableProviders) return false
@@ -209,30 +220,13 @@ class LlmClient(
     fun parseCctvFilter(
         query: String,
         sites: List<SiteInfo>,
-    ): CctvFilterCriteria? {
-        val useOpenRouter = tryUseOpenRouter()
-        val provider = if (useOpenRouter) LlmProvider.OPENROUTER else LlmProvider.OLLAMA
-        val messages =
-            listOf(
-                Message(role = "system", content = buildCctvSystemPrompt(sites)),
-                Message(role = "user", content = query),
-            )
-
-        return try {
-            val content =
-                when (provider) {
-                    LlmProvider.OLLAMA -> callOllama(messages)
-                    LlmProvider.OPENROUTER -> callOpenRouter(messages)
-                }
-
-            content?.let { parseCctvJsonResponse(it) }?.also {
-                log.info { "LLM CCTV 필터 파싱 완료 - provider: $provider, query: $query, criteria: $it" }
-            }
-        } catch (e: Exception) {
-            log.error(e) { "LLM CCTV 필터 파싱 실패 - provider: $provider, query: $query" }
-            null
-        }
-    }
+    ): CctvFilterCriteria? =
+        parseFilter(
+            query = query,
+            systemPrompt = buildCctvSystemPrompt(sites),
+            label = "CCTV 필터",
+            parser = ::parseCctvJsonResponse,
+        )
 
     private fun parseCctvJsonResponse(content: String): CctvFilterCriteria? {
         val json = extractJson(content)
@@ -253,7 +247,7 @@ class LlmClient(
         }
     }
 
-    private fun parseJsonResponse(content: String): EventFilterCriteria? {
+    private fun parseEventJsonResponse(content: String): EventFilterCriteria? {
         val json = extractJson(content)
 
         return try {
