@@ -106,7 +106,7 @@ class ChatExecutor(
                         pmId = action.pmId,
                     ),
                 )
-            "epic" ->
+            "epic" -> {
                 epicService.update(
                     id,
                     EpicUpdateRequest(
@@ -119,6 +119,10 @@ class ChatExecutor(
                         userIds = action.userIds,
                     ),
                 )
+                action.removeUserIds?.forEach { userId ->
+                    epicService.unassign(id, userId)
+                }
+            }
             "task" ->
                 taskService.update(
                     id,

@@ -13,6 +13,7 @@ target: project, epic, task, team
 - "프로젝트" 키워드 → target:"project"
 - "에픽" 키워드 → target:"epic"
 - "할당", "배정", "추가해줘" + 사람 이름 + 에픽 → actions:["update"], target:"epic"
+- "빼줘", "해제", "제거", "제외" + 사람 이름 + 에픽 → actions:["update"], target:"epic"
 - "팀" 키워드 → target:"team"
 - 그 외(태스크, 업무, 진행률, 완료 등) → target:"task"
 - 모호하면 actions:["clarify"], target은 가장 가능성 높은 값
@@ -39,5 +40,7 @@ create 힌트 규칙:
 "진행중" → {"actions":["clarify"],"target":"task"}
 "OO 에픽에 OO 할당해줘" → {"actions":["update"],"target":"epic"}
 "OO 에픽에 OO, OO 배정해줘" → {"actions":["update"],"target":"epic"}
+"OO 에픽에서 OO 빼줘" → {"actions":["update"],"target":"epic"}
+"OO 에픽에서 OO, OO 제거해줘" → {"actions":["update"],"target":"epic"}
 
 출력: {"actions":["..",.."],"target":".."}
