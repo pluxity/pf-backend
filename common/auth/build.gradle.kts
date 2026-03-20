@@ -2,6 +2,7 @@
 
 dependencies {
     api(project(":common:core"))
+    implementation(project(":common:file"))
 
     api(rootProject.libs.spring.boot.starter.security)
     implementation(rootProject.libs.spring.boot.starter.data.redis)

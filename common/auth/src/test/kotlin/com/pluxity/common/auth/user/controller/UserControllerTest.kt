@@ -3,6 +3,7 @@ package com.pluxity.common.auth.user.controller
 import com.ninjasquad.springmockk.MockkBean
 import com.pluxity.common.auth.user.dto.UserResponse
 import com.pluxity.common.auth.user.service.UserService
+import com.pluxity.common.file.dto.FileResponse
 import com.pluxity.common.test.dto.dummyUserPasswordUpdateRequest
 import com.pluxity.common.test.dto.dummyUserUpdateRequest
 import io.kotest.core.spec.style.BehaviorSpec
@@ -35,6 +36,7 @@ class UserControllerTest(
                 code = "CODE01",
                 phoneNumber = null,
                 department = null,
+                profileImage = FileResponse(),
                 shouldChangePassword = false,
                 roles = emptyList(),
             )

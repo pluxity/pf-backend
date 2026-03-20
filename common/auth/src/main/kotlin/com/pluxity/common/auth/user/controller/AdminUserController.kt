@@ -149,7 +149,7 @@ class AdminUserController(
     @ResponseCreated(path = "/admin/users/{id}")
     fun saveUser(
         @Parameter(description = "사용자 생성 정보", required = true) @RequestBody @Valid request: UserCreateRequest,
-    ): ResponseEntity<Long> = ResponseEntity.ok(service.save(request).id)
+    ): ResponseEntity<Long> = ResponseEntity.ok(service.save(request))
 
     @Operation(summary = "사용자 정보 수정", description = "기존 사용자의 정보를 수정합니다")
     @ApiResponses(
@@ -376,6 +376,25 @@ class AdminUserController(
         @PathVariable @Parameter(description = "사용자 ID", required = true) id: Long,
     ): ResponseEntity<Void> {
         service.initPassword(id)
+        return ResponseEntity.noContent().build()
+    }
+
+    @Operation(summary = "프로필 이미지 삭제", description = "사용자의 프로필 이미지를 삭제합니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "204", description = "프로필 이미지 삭제 성공"),
+            ApiResponse(
+                responseCode = "404",
+                description = "사용자를 찾을 수 없음",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponseBody::class))],
+            ),
+        ],
+    )
+    @DeleteMapping("/{id}/profile-image")
+    fun removeProfileImage(
+        @PathVariable @Parameter(description = "사용자 ID", required = true) id: Long,
+    ): ResponseEntity<Void> {
+        service.removeProfileImage(id)
         return ResponseEntity.noContent().build()
     }
 }

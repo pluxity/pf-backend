@@ -4,6 +4,7 @@ import com.ninjasquad.springmockk.MockkBean
 import com.pluxity.common.auth.user.dto.UserLoggedInResponse
 import com.pluxity.common.auth.user.dto.UserResponse
 import com.pluxity.common.auth.user.service.UserService
+import com.pluxity.common.file.dto.FileResponse
 import com.pluxity.common.test.dto.dummyUserCreateRequest
 import com.pluxity.common.test.dto.dummyUserPasswordUpdateRequest
 import com.pluxity.common.test.dto.dummyUserRoleAssignRequest
@@ -41,6 +42,7 @@ class AdminUserControllerTest(
                 code = "CODE01",
                 phoneNumber = null,
                 department = null,
+                profileImage = FileResponse(),
                 shouldChangePassword = false,
                 roles = emptyList(),
             )
@@ -160,7 +162,7 @@ class AdminUserControllerTest(
             When("POST $baseUrl - 유효한 요청") {
                 val request = dummyUserCreateRequest()
 
-                every { service.save(any()) } returns userResponse
+                every { service.save(any()) } returns 1L
 
                 val result =
                     mockMvc.post(baseUrl) {
