@@ -3,6 +3,7 @@ package com.pluxity.weekly.dashboard.controller
 import com.pluxity.common.core.response.DataResponseBody
 import com.pluxity.common.core.response.ErrorResponseBody
 import com.pluxity.weekly.dashboard.dto.AdminDashboardResponse
+import com.pluxity.weekly.dashboard.dto.MemberTaskSummary
 import com.pluxity.weekly.dashboard.dto.PersonDetailResponse
 import com.pluxity.weekly.dashboard.dto.PmDashboardResponse
 import com.pluxity.weekly.dashboard.dto.WorkerDashboardResponse
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.coyote.Response
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -129,4 +131,27 @@ class DashboardController(
         @Parameter(description = "사용자 ID", example = "1")
         @PathVariable userId: Long,
     ): ResponseEntity<DataResponseBody<PersonDetailResponse>> = ResponseEntity.ok(DataResponseBody(service.getPersonDetail(userId)))
+
+
+    @Operation(summary = "팀원 태스크 현황 조회", description = "팀 ID로 팀원별 태스크 현황을 조회합니다")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "조회 성공"),
+            ApiResponse(
+                responseCode = "404",
+                description = "팀 없음",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ErrorResponseBody::class),
+                    ),
+                ],
+            ),
+        ],
+    )
+    @GetMapping("/team/{teamId}/members")
+    fun getTeamMemberTasks(
+        @Parameter(description = "팀 ID", example = "1")
+        @PathVariable teamId: Long,
+    ): ResponseEntity<DataResponseBody<List<MemberTaskSummary>>> = ResponseEntity.ok(DataResponseBody(service.getTeamMemberTasks(teamId)))
 }

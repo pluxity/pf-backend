@@ -20,5 +20,7 @@ interface TaskRepository :
 
     fun findByAssigneeId(assigneeId: Long): List<Task>
 
+    fun findByAssigneeIdIn(assigneeIds: List<Long>): List<Task>
+
     fun findByEpicIn(epics: List<Epic>): List<Task>
 }

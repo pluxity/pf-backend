@@ -5,7 +5,9 @@ import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.dashboard.dto.AdminDashboardResponse
 import com.pluxity.weekly.dashboard.dto.AdminProjectCard
 import com.pluxity.weekly.dashboard.dto.EpicTaskGroup
+import com.pluxity.weekly.dashboard.dto.MemberTaskBar
 import com.pluxity.weekly.dashboard.dto.EpicTaskRow
+import com.pluxity.weekly.dashboard.dto.MemberTaskSummary
 import com.pluxity.weekly.dashboard.dto.PersonDetailResponse
 import com.pluxity.weekly.dashboard.dto.PersonKpi
 import com.pluxity.weekly.dashboard.dto.PmDashboardResponse
@@ -286,6 +288,43 @@ class DashboardService(
             recentTasks = recentTasks,
             projectParticipations = projectParticipations,
         )
+    }
+
+    fun getTeamMemberTasks(teamId: Long): List<MemberTaskSummary> {
+        val currentUser = authorizationService.currentUser()
+        authorizationService.requireAdmin(currentUser)
+
+        val team =
+            teamRepository.findByIdOrNull(teamId)
+                ?: throw CustomException(WeeklyReportErrorCode.NOT_FOUND_TEAM, teamId)
+        val teamMembers = teamMemberRepository.findByTeam(team)
+        val memberUserIds = teamMembers.map { it.user.requiredId }
+        val tasksByUserId = taskRepository.findByAssigneeIdIn(memberUserIds).groupBy { it.assignee!!.requiredId }
+        val now = LocalDate.now()
+
+        return teamMembers.map { member ->
+            val user = member.user
+            val tasks = (tasksByUserId[user.requiredId] ?: emptyList()).filter { it.status != TaskStatus.DONE }
+            MemberTaskSummary(
+                userId = user.requiredId,
+                userName = user.name,
+                departments = team.name,
+                activeTasks =
+                    tasks.map { task ->
+                        MemberTaskBar(
+                            taskId = task.requiredId,
+                            taskName = task.name,
+                            epicName = task.epic.name,
+                            projectName = task.epic.project.name,
+                            startDate = task.startDate,
+                            dueDate = task.dueDate,
+                            status = task.status,
+                            progress = task.progress,
+                            daysDelta = task.calculateDaysDelta(now),
+                        )
+                    },
+            )
+        }
     }
 
     private fun buildSummary(
