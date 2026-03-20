@@ -85,6 +85,7 @@ class AuthorizationService(
         user: User,
         task: Task,
     ) {
+        if (user.hasRole(UserType.ADMIN)) return
         if (task.assignee?.requiredId != user.requiredId) {
             throw CustomException(WeeklyReportErrorCode.PERMISSION_DENIED)
         }

@@ -65,7 +65,7 @@ class LlmService(
     init {
         log.info {
             "LLM Ollama: ${properties.ollama.isEnabled}, Gemini: ${properties.gemini.isEnabled}, " +
-                "Groq: ${properties.groq.isEnabled}, OpenRouter: ${properties.openrouter.isEnabled}"
+                "OpenRouter: ${properties.openrouter.isEnabled}"
         }
     }
 

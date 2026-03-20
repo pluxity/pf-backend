@@ -71,7 +71,7 @@ class DashboardService(
                         progress = if (epicTasks.isEmpty()) 0 else epicTasks.map { it.progress }.average().toInt(),
                         startDate = epic.startDate,
                         dueDate = epic.dueDate,
-                        tasks = epicTasks.map { it.toWorkerTaskItem(now) },
+                        tasks = epicTasks.map { it.toWorkerTaskItem(epic.dueDate ?: LocalDate.now()) },
                     )
                 },
         )
@@ -343,14 +343,14 @@ class DashboardService(
             total = tasks.size,
         )
 
-    private fun Task.toWorkerTaskItem(now: LocalDate): WorkerTaskItem =
+    private fun Task.toWorkerTaskItem(epicDueDate: LocalDate): WorkerTaskItem =
         WorkerTaskItem(
             taskId = this.requiredId,
             taskName = this.name,
             status = this.status,
             progress = this.progress,
             dueDate = this.dueDate,
-            daysUntilDue = this.dueDate?.let { ChronoUnit.DAYS.between(now, it).toInt() },
+            daysUntilDue = this.dueDate?.let { ChronoUnit.DAYS.between(epicDueDate, it).toInt() },
         )
 
     private fun Task.toRoadmapTaskBar(now: LocalDate): RoadmapTaskBar =
