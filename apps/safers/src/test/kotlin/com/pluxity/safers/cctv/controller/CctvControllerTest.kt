@@ -73,7 +73,7 @@ class CctvControllerTest(
             When("GET $baseUrl - siteId로 조회") {
                 val responses = listOf(dummyCctvResponse())
 
-                every { cctvFacade.findAll(1L) } returns responses
+                every { cctvFacade.findAll(siteId = 1L, query = null) } returns responses
 
                 val result =
                     mockMvc.get(baseUrl) {
@@ -93,7 +93,7 @@ class CctvControllerTest(
             }
 
             When("GET $baseUrl - CCTV가 없는 경우") {
-                every { cctvFacade.findAll(null) } returns emptyList()
+                every { cctvFacade.findAll(siteId = null, query = null) } returns emptyList()
 
                 val result =
                     mockMvc.get(baseUrl) {

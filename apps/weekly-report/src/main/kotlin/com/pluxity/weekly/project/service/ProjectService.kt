@@ -58,9 +58,10 @@ class ProjectService(
                     )
             }.let { projects ->
                 if (projects.isEmpty()) return emptyList()
-                val memberMap = projectRepository
-                    .findMembersByProjectIds(projects.map { it.requiredId })
-                    .groupBy { it.projectId }
+                val memberMap =
+                    projectRepository
+                        .findMembersByProjectIds(projects.map { it.requiredId })
+                        .groupBy { it.projectId }
                 val pmNameMap = resolvePmNames(projects.mapNotNull { it.pmId })
                 projects.map { it.toResponse(memberMap[it.requiredId].orEmpty(), pmNameMap[it.pmId]) }
             }

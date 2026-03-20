@@ -55,7 +55,7 @@ class CctvController(
         return ResponseEntity.noContent().build()
     }
 
-    @Operation(summary = "CCTV 목록 조회", description = "CCTV 목록을 조회합니다 (이름순 정렬)")
+    @Operation(summary = "CCTV 목록 조회", description = "CCTV 목록을 조회합니다. query 파라미터로 자연어 검색이 가능합니다 (이름순 정렬)")
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -74,7 +74,8 @@ class CctvController(
     @GetMapping
     fun findAll(
         @RequestParam(required = false) siteId: Long?,
-    ): ResponseEntity<DataResponseBody<List<CctvResponse>>> = ResponseEntity.ok(DataResponseBody(service.findAll(siteId)))
+        @RequestParam(required = false) query: String?,
+    ): ResponseEntity<DataResponseBody<List<CctvResponse>>> = ResponseEntity.ok(DataResponseBody(service.findAll(siteId, query)))
 
     @Operation(summary = "CCTV 수정", description = "CCTV의 이름, 경도, 위도를 수정합니다")
     @ApiResponses(

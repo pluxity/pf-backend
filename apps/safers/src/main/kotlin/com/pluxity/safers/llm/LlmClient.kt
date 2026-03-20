@@ -2,6 +2,7 @@ package com.pluxity.safers.llm
 
 import com.pluxity.common.core.config.WebClientFactory
 import com.pluxity.safers.event.entity.EventType
+import com.pluxity.safers.llm.dto.CctvFilterCriteria
 import com.pluxity.safers.llm.dto.EventFilterCriteria
 import com.pluxity.safers.llm.dto.Message
 import com.pluxity.safers.llm.dto.OllamaChatRequest
@@ -64,8 +65,12 @@ class LlmClient(
         log.info { "LLM 사용 가능한 provider: ${llmProperties.availableProviders}" }
     }
 
-    private val promptTemplate: String by lazy {
+    private val eventPromptTemplate: String by lazy {
         ClassPathResource("prompts/event-filter-system.txt").getContentAsString(Charsets.UTF_8)
+    }
+
+    private val cctvPromptTemplate: String by lazy {
+        ClassPathResource("prompts/cctv-filter-system.txt").getContentAsString(Charsets.UTF_8)
     }
 
     companion object {
@@ -73,10 +78,28 @@ class LlmClient(
             EventType.entries.joinToString("\n") { "- ${it.name}: ${it.displayName}" }
     }
 
-    private fun buildSystemPrompt(now: LocalDateTime): String =
-        promptTemplate
+    private fun buildEventSystemPrompt(now: LocalDateTime): String =
+        eventPromptTemplate
             .replace("{{now}}", now.toString())
             .replace("{{eventTypes}}", EVENT_TYPES_DESC)
+
+    data class SiteInfo(
+        val id: Long,
+        val name: String,
+        val address: String?,
+        val description: String?,
+    )
+
+    private fun buildCctvSystemPrompt(sites: List<SiteInfo>): String =
+        cctvPromptTemplate
+            .replace(
+                "{{sites}}",
+                sites.joinToString("\n") { site ->
+                    val addr = site.address?.let { "($it)" } ?: ""
+                    val desc = site.description?.let { " - $it" } ?: ""
+                    "- ${site.id}: ${site.name}$addr$desc"
+                },
+            )
 
     fun parseEventFilter(query: String): EventFilterCriteria? {
         val useOpenRouter = tryUseOpenRouter()
@@ -84,7 +107,7 @@ class LlmClient(
         val now = LocalDateTime.now()
         val messages =
             listOf(
-                Message(role = "system", content = buildSystemPrompt(now)),
+                Message(role = "system", content = buildEventSystemPrompt(now)),
                 Message(role = "user", content = query),
             )
 
@@ -164,6 +187,8 @@ class LlmClient(
                 .post()
                 .uri("/api/v1/chat/completions")
                 .header("Authorization", "Bearer ${props.apiKey}")
+                .header("HTTP-Referer", "https://safers.pluxity.com")
+                .header("X-Title", "SAFERS")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()
@@ -179,6 +204,53 @@ class LlmClient(
             ?.firstOrNull()
             ?.message
             ?.content
+    }
+
+    fun parseCctvFilter(
+        query: String,
+        sites: List<SiteInfo>,
+    ): CctvFilterCriteria? {
+        val useOpenRouter = tryUseOpenRouter()
+        val provider = if (useOpenRouter) LlmProvider.OPENROUTER else LlmProvider.OLLAMA
+        val messages =
+            listOf(
+                Message(role = "system", content = buildCctvSystemPrompt(sites)),
+                Message(role = "user", content = query),
+            )
+
+        return try {
+            val content =
+                when (provider) {
+                    LlmProvider.OLLAMA -> callOllama(messages)
+                    LlmProvider.OPENROUTER -> callOpenRouter(messages)
+                }
+
+            content?.let { parseCctvJsonResponse(it) }?.also {
+                log.info { "LLM CCTV 필터 파싱 완료 - provider: $provider, query: $query, criteria: $it" }
+            }
+        } catch (e: Exception) {
+            log.error(e) { "LLM CCTV 필터 파싱 실패 - provider: $provider, query: $query" }
+            null
+        }
+    }
+
+    private fun parseCctvJsonResponse(content: String): CctvFilterCriteria? {
+        val json = extractJson(content)
+
+        return try {
+            val node = objectMapper.readTree(json)
+
+            CctvFilterCriteria(
+                name = node.get("name")?.takeIf { !it.isNull }?.asString(),
+                siteIds =
+                    node.get("siteIds")?.takeIf { !it.isNull && it.isArray }?.mapNotNull {
+                        it.asLong()
+                    },
+            )
+        } catch (e: Exception) {
+            log.error(e) { "LLM CCTV 응답 JSON 파싱 실패 - content: $json" }
+            null
+        }
     }
 
     private fun parseJsonResponse(content: String): EventFilterCriteria? {

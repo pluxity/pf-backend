@@ -8,6 +8,8 @@ import com.pluxity.safers.cctv.dto.CctvResponse
 import com.pluxity.safers.cctv.dto.CctvUpdateRequest
 import com.pluxity.safers.cctv.entity.Cctv
 import com.pluxity.safers.global.constant.SafersErrorCode
+import com.pluxity.safers.llm.LlmClient
+import com.pluxity.safers.llm.dto.CctvFilterCriteria
 import com.pluxity.safers.site.repository.SiteRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +29,7 @@ class CctvFacade(
     private val cctvService: CctvService,
     private val siteRepository: SiteRepository,
     private val apiClient: CctvApiClient,
+    private val llmClient: LlmClient,
 ) {
     companion object {
         private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
@@ -63,7 +66,30 @@ class CctvFacade(
         cctvService.syncAll(sitePathsMap)
     }
 
-    fun findAll(siteId: Long? = null): List<CctvResponse> = cctvService.findAll(siteId)
+    fun findAll(
+        siteId: Long? = null,
+        query: String? = null,
+    ): List<CctvResponse> {
+        if (query.isNullOrBlank()) {
+            return cctvService.findAll(
+                siteId?.let { CctvFilterCriteria(siteIds = listOf(it)) },
+            )
+        }
+
+        val sites = siteRepository.findAll()
+        val siteInfos =
+            sites.map {
+                LlmClient.SiteInfo(id = it.requiredId, name = it.name, address = it.address, description = it.description)
+            }
+        val llmCriteria = llmClient.parseCctvFilter(query, siteInfos)
+
+        val mergedSiteIds =
+            (listOfNotNull(siteId) + llmCriteria?.siteIds.orEmpty()).distinct().ifEmpty { null }
+
+        return cctvService.findAll(
+            CctvFilterCriteria(name = llmCriteria?.name, siteIds = mergedSiteIds),
+        )
+    }
 
     fun update(
         id: Long,

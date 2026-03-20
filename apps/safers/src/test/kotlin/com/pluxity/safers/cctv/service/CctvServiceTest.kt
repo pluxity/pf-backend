@@ -9,6 +9,8 @@ import com.pluxity.safers.cctv.entity.Cctv
 import com.pluxity.safers.cctv.entity.dummyCctv
 import com.pluxity.safers.cctv.repository.CctvRepository
 import com.pluxity.safers.global.constant.SafersErrorCode
+import com.pluxity.safers.llm.LlmClient
+import com.pluxity.safers.llm.dto.CctvFilterCriteria
 import com.pluxity.safers.site.entity.dummySite
 import com.pluxity.safers.site.repository.SiteRepository
 import io.kotest.assertions.throwables.shouldThrow
@@ -27,8 +29,9 @@ class CctvServiceTest :
         val siteRepository: SiteRepository = mockk(relaxed = true)
         val fileService: FileService = mockk(relaxed = true)
         val apiClient: CctvApiClient = mockk()
+        val llmClient: LlmClient = mockk(relaxed = true)
         val service = CctvService(repository, fileService)
-        val facade = CctvFacade(service, siteRepository, apiClient)
+        val facade = CctvFacade(service, siteRepository, apiClient, llmClient)
 
         val site = dummySite(id = 1L, baseUrl = "http://media-server:9997")
 
@@ -127,9 +130,9 @@ class CctvServiceTest :
                         dummyCctv(id = 1L, site = site, streamName = "cam2", name = "B 카메라"),
                     )
 
-                every { repository.findAllWithSite(1L) } returns entities
+                every { repository.findAllWithSite(CctvFilterCriteria(siteIds = listOf(1L))) } returns entities
 
-                val result = service.findAll(siteId = 1L)
+                val result = service.findAll(CctvFilterCriteria(siteIds = listOf(1L)))
 
                 Then("CCTV 목록이 반환된다") {
                     result.size shouldBe 2
@@ -139,9 +142,9 @@ class CctvServiceTest :
             }
 
             When("CCTV가 없으면") {
-                every { repository.findAllWithSite(1L) } returns emptyList()
+                every { repository.findAllWithSite(CctvFilterCriteria(siteIds = listOf(1L))) } returns emptyList()
 
-                val result = service.findAll(siteId = 1L)
+                val result = service.findAll(CctvFilterCriteria(siteIds = listOf(1L)))
 
                 Then("빈 목록이 반환된다") {
                     result.size shouldBe 0
