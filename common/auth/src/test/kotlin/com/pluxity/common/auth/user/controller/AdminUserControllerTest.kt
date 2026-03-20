@@ -162,7 +162,7 @@ class AdminUserControllerTest(
             When("POST $baseUrl - 유효한 요청") {
                 val request = dummyUserCreateRequest()
 
-                every { service.save(any()) } returns userResponse
+                every { service.save(any()) } returns 1L
 
                 val result =
                     mockMvc.post(baseUrl) {

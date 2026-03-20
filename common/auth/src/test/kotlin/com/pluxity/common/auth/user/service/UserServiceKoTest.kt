@@ -7,6 +7,7 @@ import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.auth.user.repository.UserRoleRepository
 import com.pluxity.common.core.constant.ErrorCode
 import com.pluxity.common.core.exception.CustomException
+import com.pluxity.common.file.service.FileService
 import com.pluxity.common.test.dto.dummyUserCreateRequest
 import com.pluxity.common.test.dto.dummyUserPasswordUpdateRequest
 import com.pluxity.common.test.dto.dummyUserRoleAssignRequest
@@ -36,6 +37,7 @@ class UserServiceKoTest :
         val refreshTokenRepository: RefreshTokenRepository = mockk()
         val userRoleRepository: UserRoleRepository = mockk()
         val userProperties: UserProperties = mockk(relaxed = true)
+        val fileService: FileService = mockk(relaxed = true)
         val userService =
             UserService(
                 userRepository,
@@ -44,7 +46,7 @@ class UserServiceKoTest :
                 refreshTokenRepository,
                 userRoleRepository,
                 userProperties,
-                fileService = mockk(relaxed = true),
+                fileService,
             )
 
         Given("사용자 상세 조회를 진행할 때") {
@@ -122,7 +124,7 @@ class UserServiceKoTest :
 
                 Then("성공") {
                     val res = userService.save(createRequest)
-                    res.id shouldBe user.id
+                    res shouldBe user.id
                 }
             }
 
@@ -152,9 +154,65 @@ class UserServiceKoTest :
 
                 Then("성공") {
                     val res = userService.save(createRequest)
-                    res.id shouldBe user.id
-                    res.roles.size shouldBe 1
-                    res.roles.first().name shouldBe role.name
+                    res shouldBe user.id
+                }
+            }
+        }
+
+        Given("프로필 이미지를 설정할 때") {
+
+            When("프로필 이미지와 함께 사용자를 생성하면") {
+                val createRequest = dummyUserCreateRequest(profileImageId = 10L)
+                val user = dummyUser()
+
+                every { userRepository.save(any()) } returns user
+                every { passwordEncoder.encode(any()) } returns ""
+
+                userService.save(createRequest)
+
+                Then("파일이 finalize된다") {
+                    verify(exactly = 1) { fileService.finalizeUpload(10L, "users/${user.requiredId}/") }
+                }
+            }
+
+            When("프로필 이미지 없이 사용자를 생성하면") {
+                val createRequest = dummyUserCreateRequest()
+                val user = dummyUser()
+
+                every { userRepository.save(any()) } returns user
+                every { passwordEncoder.encode(any()) } returns ""
+
+                userService.save(createRequest)
+
+                Then("finalize가 호출되지 않는다") {
+                    verify(exactly = 0) { fileService.finalizeUpload(any(), any()) }
+                }
+            }
+
+            When("프로필 이미지를 변경하면") {
+                val user = dummyUser()
+                user.changeProfileImageId(10L)
+                val updateRequest = dummyUserUpdateRequest(profileImageId = 20L)
+
+                every { userRepository.findWithGraphById(any()) } returns user
+
+                userService.update(user.requiredId, updateRequest)
+
+                Then("새 파일이 finalize된다") {
+                    verify(exactly = 1) { fileService.finalizeUpload(20L, "users/${user.requiredId}/") }
+                }
+            }
+
+            When("프로필 이미지를 삭제하면") {
+                val user = dummyUser()
+                user.changeProfileImageId(10L)
+
+                every { userRepository.findWithGraphById(any()) } returns user
+
+                userService.removeProfileImage(user.requiredId)
+
+                Then("profileImageId가 null이 된다") {
+                    user.profileImageId shouldBe null
                 }
             }
         }

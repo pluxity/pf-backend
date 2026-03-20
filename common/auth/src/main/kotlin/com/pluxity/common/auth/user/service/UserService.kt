@@ -57,7 +57,7 @@ class UserService(
     }
 
     @Transactional
-    fun save(request: UserCreateRequest): UserResponse {
+    fun save(request: UserCreateRequest): Long {
         val user =
             User(
                 username = request.username,
@@ -80,7 +80,7 @@ class UserService(
             user.changeProfileImageId(request.profileImageId)
         }
 
-        return savedUser.toResponse(fileService.getFileResponse(savedUser.profileImageId))
+        return savedUser.requiredId
     }
 
     @Transactional
@@ -131,6 +131,18 @@ class UserService(
         val user = findUserById(id)
         userRoleRepository.deleteAllByUser(user)
         userRepository.delete(user)
+    }
+
+    @Transactional
+    fun removeProfileImage(id: Long) {
+        val user = findUserById(id)
+        user.changeProfileImageId(null)
+    }
+
+    @Transactional
+    fun removeProfileImage(username: String) {
+        val user = findUserByUsername(username)
+        user.changeProfileImageId(null)
     }
 
     @Transactional
