@@ -10,6 +10,7 @@ import com.pluxity.safers.cctv.dto.toResponse
 import com.pluxity.safers.cctv.entity.Cctv
 import com.pluxity.safers.cctv.repository.CctvRepository
 import com.pluxity.safers.global.constant.SafersErrorCode
+import com.pluxity.safers.llm.dto.CctvFilterCriteria
 import com.pluxity.safers.site.entity.Site
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.data.repository.findByIdOrNull
@@ -70,8 +71,8 @@ class CctvService(
         }
     }
 
-    fun findAll(siteId: Long? = null): List<CctvResponse> {
-        val cctvList = repository.findAllWithSite(siteId)
+    fun findAll(criteria: CctvFilterCriteria? = null): List<CctvResponse> {
+        val cctvList = repository.findAllWithSite(criteria)
 
         val thumbnailFileMap = fileService.getFileMapById(cctvList) { it.site.thumbnailImageId }
 
