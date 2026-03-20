@@ -71,7 +71,7 @@ class DashboardService(
                         progress = if (epicTasks.isEmpty()) 0 else epicTasks.map { it.progress }.average().toInt(),
                         startDate = epic.startDate,
                         dueDate = epic.dueDate,
-                        tasks = epicTasks.map { it.toWorkerTaskItem(epic.dueDate ?: LocalDate.now()) },
+                        tasks = epicTasks.map { it.toWorkerTaskItem(epic.dueDate) },
                     )
                 },
         )
@@ -304,7 +304,7 @@ class DashboardService(
 
         return teamMembers.map { member ->
             val user = member.user
-            val tasks = (tasksByUserId[user.requiredId] ?: emptyList()).filter { it.status != TaskStatus.DONE }
+            val tasks = (tasksByUserId[user.requiredId] ?: emptyList())
             MemberTaskSummary(
                 userId = user.requiredId,
                 userName = user.name,
@@ -343,14 +343,19 @@ class DashboardService(
             total = tasks.size,
         )
 
-    private fun Task.toWorkerTaskItem(epicDueDate: LocalDate): WorkerTaskItem =
+    private fun Task.toWorkerTaskItem(epicDueDate: LocalDate?): WorkerTaskItem =
         WorkerTaskItem(
             taskId = this.requiredId,
             taskName = this.name,
             status = this.status,
             progress = this.progress,
             dueDate = this.dueDate,
-            daysUntilDue = this.dueDate?.let { ChronoUnit.DAYS.between(epicDueDate, it).toInt() },
+            daysUntilDue =
+                if (epicDueDate != null && this.dueDate != null) {
+                    ChronoUnit.DAYS.between(epicDueDate, this.dueDate).toInt()
+                } else {
+                    null
+                },
         )
 
     private fun Task.toRoadmapTaskBar(now: LocalDate): RoadmapTaskBar =

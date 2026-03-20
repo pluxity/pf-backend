@@ -12,7 +12,7 @@ data class MemberTaskSummary(
     val userName: String,
     @field:Schema(description = "소속 팀명", example = "백엔드팀")
     val departments: String,
-    @field:Schema(description = "태스크 목록 (DONE 제외)")
+    @field:Schema(description = "태스크 목록")
     val activeTasks: List<MemberTaskBar>,
 )
 
