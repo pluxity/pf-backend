@@ -17,6 +17,10 @@ class EventFileDownloadService(
     fun downloadAndInitiateUpload(fileUrl: String): Long? =
         try {
             val uri = URI.create(fileUrl)
+            if (uri.scheme == null || uri.authority == null) {
+                log.warn { "유효하지 않은 파일 URL (scheme 또는 authority 누락): $fileUrl" }
+                return null
+            }
             val fileName = uri.path.substringAfterLast('/')
             val baseUrl = "${uri.scheme}://${uri.authority}"
             val fileBytes =
