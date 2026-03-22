@@ -4,7 +4,6 @@ import com.pluxity.safers.collect.dto.CctvVideoMessage
 import com.pluxity.safers.event.dto.EventCreateRequest
 import com.pluxity.safers.global.config.KafkaProperties
 import org.apache.kafka.clients.producer.ProducerConfig
-import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -30,16 +29,4 @@ class KafkaProducerConfig(
 
     @Bean
     fun videoKafkaTemplate(): KafkaTemplate<String, CctvVideoMessage> = KafkaTemplate(DefaultKafkaProducerFactory(producerProps()))
-
-    @Bean
-    fun dltKafkaTemplate(): KafkaTemplate<String, ByteArray> =
-        KafkaTemplate(
-            DefaultKafkaProducerFactory(
-                mapOf(
-                    ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to kafkaProperties.bootstrapServers,
-                    ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-                    ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to ByteArraySerializer::class.java,
-                ),
-            ),
-        )
 }

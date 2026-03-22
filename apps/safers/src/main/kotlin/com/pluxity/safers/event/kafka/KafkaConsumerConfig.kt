@@ -11,8 +11,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory
-import org.springframework.kafka.core.KafkaTemplate
-import org.springframework.kafka.listener.DeadLetterPublishingRecoverer
 import org.springframework.kafka.listener.DefaultErrorHandler
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer
 import org.springframework.util.backoff.FixedBackOff
@@ -33,14 +31,15 @@ class KafkaConsumerConfig(
         )
 
     @Bean
-    fun kafkaErrorHandler(dltKafkaTemplate: KafkaTemplate<String, ByteArray>): DefaultErrorHandler {
-        val recoverer = DeadLetterPublishingRecoverer(dltKafkaTemplate)
-        return DefaultErrorHandler(recoverer, FixedBackOff(1000L, 3L)).apply {
+    fun kafkaErrorHandler(): DefaultErrorHandler =
+        DefaultErrorHandler({ record, ex ->
+            logger.error(ex) { "Kafka 소비 최종 실패 (DLT 전송 생략): topic=${record.topic()}, key=${record.key()}" }
+        }, FixedBackOff(1000L, 3L)).apply {
+            addRetryableExceptions(RetryableException::class.java)
             setRetryListeners({ record, ex, deliveryAttempt ->
                 logger.warn(ex) { "Kafka 소비 재시도 (${deliveryAttempt}회): topic=${record.topic()}, key=${record.key()}" }
             })
         }
-    }
 
     @Bean
     fun cctvEventListenerFactory(

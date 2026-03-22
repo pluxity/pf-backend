@@ -21,9 +21,4 @@ class KafkaTopicConfig(
     @Bean
     fun plxCctvEventVideosTopic(): NewTopic = NewTopic(CctvEventCollector.TOPIC_VIDEOS, 1, 1.toShort())
 
-    @Bean
-    fun plxCctvEventsDltTopic(): NewTopic = NewTopic("${CctvEventCollector.TOPIC_EVENTS}.DLT", 1, 1.toShort())
-
-    @Bean
-    fun plxCctvEventVideosDltTopic(): NewTopic = NewTopic("${CctvEventCollector.TOPIC_VIDEOS}.DLT", 1, 1.toShort())
 }
