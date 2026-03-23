@@ -352,7 +352,7 @@ class DashboardService(
             dueDate = this.dueDate,
             daysUntilDue =
                 if (epicDueDate != null && this.dueDate != null) {
-                    ChronoUnit.DAYS.between(epicDueDate, this.dueDate).toInt()
+                    ChronoUnit.DAYS.between(this.dueDate, epicDueDate).toInt()
                 } else {
                     null
                 },

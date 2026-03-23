@@ -380,7 +380,8 @@ class DashboardServiceTest :
 
         Given("toWorkerTaskItem — daysUntilDue 계산") {
             val project = dummyProject(id = 1L)
-            val epic = dummyEpic(id = 10L, project = project)
+            val epicDueDate = LocalDate.now().plusDays(7)
+            val epic = dummyEpic(id = 10L, project = project, dueDate = epicDueDate)
 
             When("dueDate가 있는 경우") {
                 val futureDate = LocalDate.now().plusDays(3)
@@ -393,7 +394,7 @@ class DashboardServiceTest :
 
                 Then("daysUntilDue가 계산되어 반환된다") {
                     val taskItem = result.epics[0].tasks[0]
-                    taskItem.daysUntilDue shouldBe 3
+                    taskItem.daysUntilDue shouldBe 4
                 }
             }
 
