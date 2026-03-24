@@ -48,11 +48,7 @@ class WebClientFactory {
             .filter { request, next ->
                 next
                     .exchange(request)
-                    .doOnError { error ->
-                        log.error(error) {
-                            "WebClient 요청 실패 - URL: ${request.url()}, Method: ${request.method()}, Headers: ${request.headers()}"
-                        }
-                    }.onErrorMap { error ->
+                    .onErrorMap { error ->
                         when (error) {
                             is WebClientResponseException -> {
                                 log.error {
@@ -62,8 +58,9 @@ class WebClientFactory {
                             }
 
                             is WebClientRequestException -> {
+                                val cause = error.cause?.let { "${it::class.simpleName}: ${it.message ?: ""}" } ?: error.message
                                 log.error(error) {
-                                    "WebClient 요청 실패 - URL: ${request.url()}, 원인: ${error.message}"
+                                    "WebClient 요청 실패 - URL: ${request.url()}, 원인: $cause"
                                 }
                                 error
                             }

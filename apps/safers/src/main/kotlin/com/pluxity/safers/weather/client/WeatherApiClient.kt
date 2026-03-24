@@ -17,7 +17,12 @@ class WeatherApiClient(
     webClientFactory: WebClientFactory,
     private val configurationRepository: ConfigurationRepository,
 ) {
-    private val webClient = webClientFactory.createClient("https://apihub.kma.go.kr")
+    private val webClient =
+        webClientFactory.createClient(
+            baseUrl = "https://apihub.kma.go.kr",
+            responseTimeoutMs = 60000,
+            readTimeoutMs = 60000,
+        )
 
     companion object {
         private const val WEATHER_API_KEY = "WEATHER_API"
