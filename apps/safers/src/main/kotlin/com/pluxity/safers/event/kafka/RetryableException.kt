@@ -1,3 +1,5 @@
 package com.pluxity.safers.event.kafka
 
-class RetryableException(message: String) : RuntimeException(message)
+class RetryableException(
+    message: String,
+) : RuntimeException(message)

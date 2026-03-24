@@ -20,5 +20,4 @@ class KafkaTopicConfig(
 
     @Bean
     fun plxCctvEventVideosTopic(): NewTopic = NewTopic(CctvEventCollector.TOPIC_VIDEOS, 1, 1.toShort())
-
 }
