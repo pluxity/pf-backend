@@ -21,7 +21,10 @@ class TeamsBotReplyClient(
 ) {
     private val webClient = webClientBuilder.build()
 
-    fun reply(activity: Activity, responseBody: Map<String, Any>) {
+    fun reply(
+        activity: Activity,
+        responseBody: Map<String, Any>,
+    ) {
         val serviceUrl = activity.serviceUrl?.trimEnd('/')
         val conversationId = activity.conversation?.id
 
@@ -38,14 +41,15 @@ class TeamsBotReplyClient(
         log.info { "Reply body → $replyActivity" }
 
         try {
-            val result = webClient
-                .post()
-                .uri(uri)
-                .header("Content-Type", "application/json")
-                .bodyValue(replyActivity)
-                .retrieve()
-                .toBodilessEntity()
-                .block()
+            val result =
+                webClient
+                    .post()
+                    .uri(uri)
+                    .header("Content-Type", "application/json")
+                    .bodyValue(replyActivity)
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block()
             log.info { "Reply 전송 성공: ${result?.statusCode}" }
         } catch (e: WebClientResponseException) {
             log.error { "Reply 전송 실패 (${e.statusCode}): ${e.responseBodyAsString}" }
@@ -61,14 +65,20 @@ class TeamsBotReplyClient(
     ): Map<String, Any> =
         responseBody.toMutableMap().apply {
             put("replyToId", activity.id ?: "")
-            put("from", mapOf(
-                "id" to (activity.recipient?.id ?: "bot"),
-                "name" to (activity.recipient?.name ?: "Bot"),
-            ))
-            put("recipient", mapOf(
-                "id" to (activity.from?.id ?: ""),
-                "name" to (activity.from?.name ?: ""),
-            ))
+            put(
+                "from",
+                mapOf(
+                    "id" to (activity.recipient?.id ?: "bot"),
+                    "name" to (activity.recipient?.name ?: "Bot"),
+                ),
+            )
+            put(
+                "recipient",
+                mapOf(
+                    "id" to (activity.from?.id ?: ""),
+                    "name" to (activity.from?.name ?: ""),
+                ),
+            )
             put("conversation", mapOf("id" to conversationId))
         }
 }

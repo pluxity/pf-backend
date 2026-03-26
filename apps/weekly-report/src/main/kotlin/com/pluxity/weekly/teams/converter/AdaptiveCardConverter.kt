@@ -44,49 +44,56 @@ class AdaptiveCardConverter {
     fun adaptiveCard(card: Map<String, Any>): Map<String, Any> =
         mapOf(
             "type" to "message",
-            "attachments" to listOf(
-                mapOf(
-                    "contentType" to "application/vnd.microsoft.card.adaptive",
-                    "content" to card,
+            "attachments" to
+                listOf(
+                    mapOf(
+                        "contentType" to "application/vnd.microsoft.card.adaptive",
+                        "content" to card,
+                    ),
                 ),
-            ),
         )
 
     private fun formatExecutionResult(response: ChatActionResponse): String {
-        val actionLabel = when (response.action) {
-            "create" -> "생성"
-            "update" -> "수정"
-            "delete" -> "삭제"
-            else -> response.action
-        }
+        val actionLabel =
+            when (response.action) {
+                "create" -> "생성"
+                "update" -> "수정"
+                "delete" -> "삭제"
+                else -> response.action
+            }
         val targetLabel = targetLabel(response.target)
         return "$targetLabel ${actionLabel}이 완료되었습니다. (ID: ${response.id})"
     }
 
-    private fun buildReadCard(readResult: ChatReadResponse, target: String): Map<String, Any> {
-        val facts = when {
-            !readResult.tasks.isNullOrEmpty() -> readResult.tasks.map { it.toFact() }
-            !readResult.projects.isNullOrEmpty() -> readResult.projects.map { it.toFact() }
-            !readResult.epics.isNullOrEmpty() -> readResult.epics.map { it.toFact() }
-            !readResult.teams.isNullOrEmpty() -> readResult.teams.map { it.toFact() }
-            else -> return emptyCard("조회 결과가 없습니다.")
-        }
+    private fun buildReadCard(
+        readResult: ChatReadResponse,
+        target: String,
+    ): Map<String, Any> {
+        val facts =
+            when {
+                !readResult.tasks.isNullOrEmpty() -> readResult.tasks.map { it.toFact() }
+                !readResult.projects.isNullOrEmpty() -> readResult.projects.map { it.toFact() }
+                !readResult.epics.isNullOrEmpty() -> readResult.epics.map { it.toFact() }
+                !readResult.teams.isNullOrEmpty() -> readResult.teams.map { it.toFact() }
+                else -> return emptyCard("조회 결과가 없습니다.")
+            }
 
         return mapOf(
             "type" to "AdaptiveCard",
-                        "version" to "1.2",
-            "body" to listOf(
-                mapOf(
-                    "type" to "TextBlock",
-                    "text" to "${targetLabel(target)} 조회 결과",
-                    "weight" to "bolder",
-                    "size" to "medium",
+            "version" to "1.2",
+            "body" to
+                listOf(
+                    mapOf(
+                        "type" to "TextBlock",
+                        "text" to "${targetLabel(target)} 조회 결과",
+                        "weight" to "bolder",
+                        "size" to "medium",
+                    ),
+                    mapOf(
+                        "type" to "FactSet",
+                        "facts" to facts,
+                    ),
                 ),
-                mapOf(
-                    "type" to "FactSet",
-                    "facts" to facts,
-                ),
-            ),
         )
     }
 
@@ -97,7 +104,7 @@ class AdaptiveCardConverter {
 
         return mapOf(
             "type" to "AdaptiveCard",
-                        "version" to "1.2",
+            "version" to "1.2",
             "body" to listOf(
                 mapOf(
                     "type" to "TextBlock",
@@ -106,20 +113,25 @@ class AdaptiveCardConverter {
                     "size" to "medium",
                 ),
             ) + inputs,
-            "actions" to listOf(
-                mapOf(
-                    "type" to "Action.Submit",
-                    "title" to actionLabel,
-                    "data" to mapOf(
-                        "action" to response.action,
-                        "target" to response.target,
+            "actions" to
+                listOf(
+                    mapOf(
+                        "type" to "Action.Submit",
+                        "title" to actionLabel,
+                        "data" to
+                            mapOf(
+                                "action" to response.action,
+                                "target" to response.target,
+                            ),
                     ),
                 ),
-            ),
         )
     }
 
-    private fun buildInputs(dto: ChatDto, selectFields: List<SelectField>): List<Map<String, Any>> {
+    private fun buildInputs(
+        dto: ChatDto,
+        selectFields: List<SelectField>,
+    ): List<Map<String, Any>> {
         val selectFieldMap = selectFields.associateBy { it.field }
         val inputs = mutableListOf<Map<String, Any>>()
 
@@ -154,12 +166,17 @@ class AdaptiveCardConverter {
         return inputs
     }
 
-    private fun textInput(id: String, label: String, value: String?): Map<String, Any> {
-        val input = mutableMapOf<String, Any>(
-            "type" to "Input.Text",
-            "id" to id,
-            "label" to label,
-        )
+    private fun textInput(
+        id: String,
+        label: String,
+        value: String?,
+    ): Map<String, Any> {
+        val input =
+            mutableMapOf<String, Any>(
+                "type" to "Input.Text",
+                "id" to id,
+                "label" to label,
+            )
         if (value != null) input["value"] = value
         return input
     }
@@ -175,9 +192,10 @@ class AdaptiveCardConverter {
                 "type" to "Input.ChoiceSet",
                 "id" to fieldId,
                 "label" to label,
-                "choices" to selectField.candidates.map { candidate ->
-                    mapOf("title" to candidate.name, "value" to candidate.id)
-                },
+                "choices" to
+                    selectField.candidates.map { candidate ->
+                        mapOf("title" to candidate.name, "value" to candidate.id)
+                    },
             )
         } else {
             textInput(fieldId, label, null)
@@ -187,10 +205,11 @@ class AdaptiveCardConverter {
     private fun emptyCard(message: String): Map<String, Any> =
         mapOf(
             "type" to "AdaptiveCard",
-                        "version" to "1.2",
-            "body" to listOf(
-                mapOf("type" to "TextBlock", "text" to message),
-            ),
+            "version" to "1.2",
+            "body" to
+                listOf(
+                    mapOf("type" to "TextBlock", "text" to message),
+                ),
         )
 
     private fun targetLabel(target: String): String =
@@ -202,15 +221,11 @@ class AdaptiveCardConverter {
             else -> target
         }
 
-    private fun TaskResponse.toFact(): Map<String, String> =
-        mapOf("title" to name, "value" to "$status (${progress}%)")
+    private fun TaskResponse.toFact(): Map<String, String> = mapOf("title" to name, "value" to "$status ($progress%)")
 
-    private fun ProjectResponse.toFact(): Map<String, String> =
-        mapOf("title" to name, "value" to "$status")
+    private fun ProjectResponse.toFact(): Map<String, String> = mapOf("title" to name, "value" to "$status")
 
-    private fun EpicResponse.toFact(): Map<String, String> =
-        mapOf("title" to name, "value" to "$status")
+    private fun EpicResponse.toFact(): Map<String, String> = mapOf("title" to name, "value" to "$status")
 
-    private fun TeamResponse.toFact(): Map<String, String> =
-        mapOf("title" to name, "value" to (leaderName ?: "-"))
+    private fun TeamResponse.toFact(): Map<String, String> = mapOf("title" to name, "value" to (leaderName ?: "-"))
 }

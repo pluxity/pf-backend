@@ -24,24 +24,27 @@ class TeamsAuthFilter(
     private val objectMapper: ObjectMapper,
     private val userRepository: UserRepository,
 ) : OncePerRequestFilter() {
-
-    override fun shouldNotFilter(request: HttpServletRequest): Boolean =
-        request.requestURI != "/api/messages"
+    override fun shouldNotFilter(request: HttpServletRequest): Boolean = request.requestURI != "/api/messages"
 
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
         filterChain: FilterChain,
     ) {
-        log.info { "TeamsAuthFilter 실행 - ${request.requestURI}, alreadyFiltered=${request.getAttribute(filterName + ALREADY_FILTERED_SUFFIX)}" }
+        log.info {
+            "TeamsAuthFilter 실행 - ${request.requestURI}, alreadyFiltered=${request.getAttribute(
+                filterName + ALREADY_FILTERED_SUFFIX,
+            )}"
+        }
         val body = request.inputStream.readAllBytes()
 
-        val name = try {
-            val node: JsonNode = objectMapper.readTree(body)
-            node.path("from").path("name").asString()
-        } catch (_: Exception) {
-            null
-        }
+        val name =
+            try {
+                val node: JsonNode = objectMapper.readTree(body)
+                node.path("from").path("name").asString()
+            } catch (_: Exception) {
+                null
+            }
 
         if (!name.isNullOrBlank()) {
             val user = userRepository.findByName(name)
@@ -58,6 +61,7 @@ class TeamsAuthFilter(
 
         filterChain.doFilter(CachedBodyRequestWrapper(request, body), response)
     }
+
     /**
      * HTTP body를 byte[]로 캐싱하여 InputStream을 재사용 가능하게 하는 래퍼.
      *
@@ -69,13 +73,15 @@ class TeamsAuthFilter(
         request: HttpServletRequest,
         private val cachedBody: ByteArray,
     ) : HttpServletRequestWrapper(request) {
-
         override fun getInputStream(): ServletInputStream {
             val byteArrayInputStream = ByteArrayInputStream(cachedBody)
             return object : ServletInputStream() {
                 override fun read(): Int = byteArrayInputStream.read()
+
                 override fun isFinished(): Boolean = byteArrayInputStream.available() == 0
+
                 override fun isReady(): Boolean = true
+
                 override fun setReadListener(listener: ReadListener?) {}
             }
         }
