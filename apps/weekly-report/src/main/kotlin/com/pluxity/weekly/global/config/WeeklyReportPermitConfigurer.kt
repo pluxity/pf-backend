@@ -1,9 +1,22 @@
 package com.pluxity.weekly.global.config
 
+import com.pluxity.common.auth.authentication.security.JwtAuthenticationFilter
+import com.pluxity.common.auth.config.SecurityFilterRegistration
 import com.pluxity.common.auth.config.SecurityPermitConfigurer
+import com.pluxity.weekly.teams.config.TeamsAuthFilter
+import org.springframework.boot.web.servlet.FilterRegistrationBean
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-class WeeklyReportPermitConfigurer : SecurityPermitConfigurer {
-    override fun permitPaths(): List<String> = listOf("/api/messages")
+class WeeklyReportPermitConfigurer(
+    private val teamsAuthFilter: TeamsAuthFilter,
+) : SecurityPermitConfigurer {
+    override fun permitPaths(): List<String> = emptyList()
+    override fun customFilters(): List<SecurityFilterRegistration> = listOf(
+        SecurityFilterRegistration(
+            filter = teamsAuthFilter,
+            beforeFilter = JwtAuthenticationFilter::class.java,
+        ),
+    )
 }
