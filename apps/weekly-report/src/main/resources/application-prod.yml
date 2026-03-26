@@ -42,6 +42,10 @@ llm:
   temperature: 0.1
   timeout-ms: 60000
 
+teams:
+  app-id: ${TEAMS_APP_ID:}
+  app-password: ${TEAMS_APP_PASSWORD:}
+
 domain:
   url: ${API_URL:}
 
