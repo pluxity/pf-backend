@@ -5,5 +5,5 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class WeeklyReportPermitConfigurer : SecurityPermitConfigurer {
-    override fun permitPaths(): List<String> = listOf()
+    override fun permitPaths(): List<String> = listOf("/api/messages")
 }
