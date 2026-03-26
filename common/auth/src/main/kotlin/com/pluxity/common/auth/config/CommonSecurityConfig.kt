@@ -56,16 +56,15 @@ class CommonSecurityConfig(
                     .anyRequest()
                     .authenticated()
             }.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter::class.java)
-
-            securityPermitConfigurer?.customFilters()?.forEach { registration ->
-                http.addFilterBefore(registration.filter, registration.beforeFilter)
-            }
-
-            http.sessionManagement { sessionManagement: SessionManagementConfigurer<HttpSecurity> ->
-                    sessionManagement.sessionCreationPolicy(
-                        SessionCreationPolicy.STATELESS,
-                    )
+            .also { http ->
+                securityPermitConfigurer?.customFilters()?.forEach { registration ->
+                    http.addFilterBefore(registration.filter, registration.beforeFilter)
                 }
+            }.sessionManagement { sessionManagement: SessionManagementConfigurer<HttpSecurity> ->
+                sessionManagement.sessionCreationPolicy(
+                    SessionCreationPolicy.STATELESS,
+                )
+            }
 
         return http.build()
     }
