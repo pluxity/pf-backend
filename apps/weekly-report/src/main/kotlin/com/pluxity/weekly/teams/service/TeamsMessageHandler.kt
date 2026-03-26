@@ -9,8 +9,6 @@ import com.pluxity.weekly.project.service.ProjectService
 import com.pluxity.weekly.teams.converter.AdaptiveCardConverter
 import com.pluxity.weekly.teams.dto.Activity
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
@@ -47,9 +45,6 @@ class TeamsMessageHandler(
             return
         }
 
-        // TODO: Phase 2에서 Teams userId → weekly-report userId 매핑으로 교체
-        setTemporarySecurityContext("admin")
-
         val response = try {
             val responses = chatService.chat(text)
             if (responses.isEmpty()) {
@@ -79,8 +74,6 @@ class TeamsMessageHandler(
         val action = formData["action"] as? String
         val target = formData["target"] as? String
         log.info { "폼 submit 수신 - action: $action, target: $target, data: $formData" }
-
-        setTemporarySecurityContext("admin")
 
         val response = try {
             when {
@@ -142,19 +135,11 @@ class TeamsMessageHandler(
     }
 
     /**
-     *  Teams 채널 생성 시 받는 메시지
+     *  Teams 채팅방 입장/나가기 시
      */
     private fun handleConversationUpdate(activity: Activity) {
         val action = activity.action ?: "unknown"
         log.info { "Conversation update - action: $action, user: ${activity.from?.name}" }
     }
 
-    /**
-     * Teams 요청은 JWT 없이 들어오므로 임시로 SecurityContext에 사용자 세팅.
-     * Phase 2에서 Teams userId → weekly-report userId 매핑으로 교체 예정.
-     */
-    private fun setTemporarySecurityContext(username: String) {
-        val auth = UsernamePasswordAuthenticationToken(username, null, emptyList())
-        SecurityContextHolder.getContext().authentication = auth
-    }
 }
