@@ -152,7 +152,10 @@ class TeamsMessageHandler(
             log.warn { "serviceUrl 또는 conversationId 누락 - conversationReference 저장 불가" }
         } else {
             val currentUser = authorizationService.currentUser()
-            if (!teamsConversationRepository.existsByUserId(currentUser.requiredId)) {
+            val existing = teamsConversationRepository.findByUserId(currentUser.requiredId)
+            if (existing != null) {
+                existing.update(serviceUrl, conversationId)
+            } else {
                 teamsConversationRepository.save(
                     TeamsConversation(
                         userId = currentUser.requiredId,
