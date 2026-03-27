@@ -101,6 +101,11 @@ class TeamsMessageHandler(
                         if (projectId == null) {
                             cardConverter.textMessage("프로젝트를 선택해주세요.")
                         } else {
+                            val userIds =
+                                (formData["userIds"] as? String)
+                                    ?.split(",")
+                                    ?.mapNotNull { it.trim().toLongOrNull() }
+                                    ?.ifEmpty { null }
                             val id =
                                 epicService.create(
                                     EpicRequest(
@@ -115,6 +120,7 @@ class TeamsMessageHandler(
                                             (formData["dueDate"] as? String)
                                                 ?.takeIf { it.isNotBlank() }
                                                 ?.let { LocalDate.parse(it) },
+                                        userIds = userIds,
                                     ),
                                 )
                             cardConverter.textMessage("에픽 생성이 완료되었습니다. (ID: $id)")
@@ -139,17 +145,22 @@ class TeamsMessageHandler(
     private fun handleInstallationUpdate(activity: Activity) {
         val action = activity.action ?: "unknown"
         log.info { "Installation update - action: $action, user: ${activity.from?.name}" }
-        // Phase 3에서 conversationReference 저장 로직 추가
 
-        val currentUser = authorizationService.currentUser()
-        if (!teamsConversationRepository.existsByUserId(currentUser.requiredId)) {
-            teamsConversationRepository.save(
-                TeamsConversation(
-                    userId = currentUser.requiredId,
-                    serviceUrl = activity.serviceUrl ?: "",
-                    conversationId = activity.conversation?.id ?: "",
-                ),
-            )
+        val serviceUrl = activity.serviceUrl
+        val conversationId = activity.conversation?.id
+        if (serviceUrl.isNullOrBlank() || conversationId.isNullOrBlank()) {
+            log.warn { "serviceUrl 또는 conversationId 누락 - conversationReference 저장 불가" }
+        } else {
+            val currentUser = authorizationService.currentUser()
+            if (!teamsConversationRepository.existsByUserId(currentUser.requiredId)) {
+                teamsConversationRepository.save(
+                    TeamsConversation(
+                        userId = currentUser.requiredId,
+                        serviceUrl = serviceUrl,
+                        conversationId = conversationId,
+                    ),
+                )
+            }
         }
 
         if (action == "add") {
