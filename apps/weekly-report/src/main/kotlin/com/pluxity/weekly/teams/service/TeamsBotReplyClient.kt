@@ -58,6 +58,43 @@ class TeamsBotReplyClient(
         }
     }
 
+    /** Proactive 알림 전송 — Activity 없이 serviceUrl + conversationId로 직접 전송 */
+    fun sendProactive(
+        serviceUrl: String,
+        conversationId: String,
+        message: String,
+    ) {
+        val encodedConvId = URLEncoder.encode(conversationId, StandardCharsets.UTF_8)
+        val uri = URI.create("${serviceUrl.trimEnd('/')}/v3/conversations/$encodedConvId/activities")
+
+        val body =
+            mapOf(
+                "type" to "message",
+                "text" to message,
+                "from" to mapOf("id" to "bot", "name" to "Bot"),
+                "conversation" to mapOf("id" to conversationId),
+            )
+
+        log.info { "Proactive POST → $uri" }
+
+        try {
+            val result =
+                webClient
+                    .post()
+                    .uri(uri)
+                    .header("Content-Type", "application/json")
+                    .bodyValue(body)
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block()
+            log.info { "Proactive 전송 성공: ${result?.statusCode}" }
+        } catch (e: WebClientResponseException) {
+            log.error { "Proactive 전송 실패 (${e.statusCode}): ${e.responseBodyAsString}" }
+        } catch (e: Exception) {
+            log.error(e) { "Proactive 전송 중 예외" }
+        }
+    }
+
     private fun buildReplyActivity(
         activity: Activity,
         conversationId: String,
