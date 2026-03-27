@@ -137,7 +137,7 @@ class AdaptiveCardConverter {
             is ProjectChatDto -> {
                 inputs += textInput("name", "프로젝트명", dto.name)
                 inputs += textInput("description", "설명", dto.description)
-                inputs += selectOrText("pmId", "PM", selectFieldMap, false, dto.pmId.toString())
+                inputs += selectOrText("pmId", "PM", selectFieldMap, false, dto.pmId?.toString())
                 inputs += dateInput("startDate", "시작일", dto.startDate)
                 inputs += dateInput("dueDate", "마감일", dto.dueDate)
             }

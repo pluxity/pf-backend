@@ -11,7 +11,12 @@ class TeamsConversation(
     @Column(name = "user_id", nullable = false)
     val userId: Long,
     @Column(name = "conversation_id", nullable = false)
-    val conversationId: String,
+    var conversationId: String,
     @Column(name = "service_url", nullable = false)
-    val serviceUrl: String,
-) : IdentityIdEntity()
+    var serviceUrl: String,
+) : IdentityIdEntity() {
+    fun update(serviceUrl: String, conversationId: String) {
+        this.serviceUrl = serviceUrl
+        this.conversationId = conversationId
+    }
+}
