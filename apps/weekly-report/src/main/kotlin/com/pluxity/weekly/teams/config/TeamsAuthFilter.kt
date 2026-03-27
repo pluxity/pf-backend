@@ -19,6 +19,10 @@ import java.io.ByteArrayInputStream
 
 private val log = KotlinLogging.logger {}
 
+/**
+ * Teams Activity body의 from.name으로 사용자를 조회하여 SecurityContext를 생성하는 필터.
+ * /api/messages 요청에만 적용된다.
+ */
 @Component
 class TeamsAuthFilter(
     private val objectMapper: ObjectMapper,
@@ -31,11 +35,11 @@ class TeamsAuthFilter(
         response: HttpServletResponse,
         filterChain: FilterChain,
     ) {
-        log.info {
-            "TeamsAuthFilter 실행 - ${request.requestURI}, alreadyFiltered=${request.getAttribute(
-                filterName + ALREADY_FILTERED_SUFFIX,
-            )}"
-        }
+        // TODO: Azure 배포 시 Microsoft JWT 검증 추가
+        //  1. Authorization 헤더에서 Bearer 토큰 추출
+        //  2. Microsoft 공개키(https://login.botframework.com/v1/.well-known/openidconfiguration)로 서명 검증
+        //  3. JWT의 aud 클레임 == TeamsProperties.appId 확인
+        //  4. 실패 시 401 응답 반환
         val body = request.inputStream.readAllBytes()
 
         val name =
