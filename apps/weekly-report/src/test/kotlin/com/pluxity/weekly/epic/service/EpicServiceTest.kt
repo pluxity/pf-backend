@@ -16,6 +16,7 @@ import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.entity.dummyProject
 import com.pluxity.weekly.project.repository.ProjectRepository
+import com.pluxity.weekly.teams.event.TeamsNotificationEvent
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -24,6 +25,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import java.time.LocalDate
 
@@ -34,7 +36,8 @@ class EpicServiceTest :
         val projectRepository: ProjectRepository = mockk()
         val userRepository: UserRepository = mockk()
         val authorizationService: AuthorizationService = mockk()
-        val service = EpicService(epicRepository, projectRepository, userRepository, authorizationService)
+        val eventPublisher: ApplicationEventPublisher = mockk()
+        val service = EpicService(epicRepository, projectRepository, userRepository, authorizationService, eventPublisher)
 
         val adminUser =
             dummyUser(id = 1L, name = "관리자").apply {
@@ -226,10 +229,12 @@ class EpicServiceTest :
             When("배정된 사용자를 해제하면") {
                 val epic = dummyEpic(id = 1L)
                 val user = dummyUser(id = 10L)
+                val event = TeamsNotificationEvent(user.requiredId, "테스트 에픽 에픽에서 해제되었습니다")
                 epic.assign(user)
 
                 every { epicRepository.findByIdOrNull(1L) } returns epic
                 every { userRepository.findByIdOrNull(10L) } returns user
+                every { eventPublisher.publishEvent(event) } just runs
 
                 service.unassign(1L, 10L)
 
