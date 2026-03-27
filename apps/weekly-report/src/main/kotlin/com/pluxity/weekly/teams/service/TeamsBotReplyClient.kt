@@ -12,8 +12,8 @@ import java.nio.charset.StandardCharsets
 private val log = KotlinLogging.logger {}
 
 /**
- * Bot Framework 프로토콜에 따라 serviceUrl로 응답을 POST.
- * 에뮬레이터/Teams 모두 이 방식으로 메시지를 수신한다.
+ * 봇 서버 → Teams 사용자에게 메시지를 전송하는 클라이언트.
+ * 전송 실패 시 예외를 던지지 않고 로그만 남긴다 (Teams 사용자에게 에러를 전달할 수단이 없으므로).
  */
 @Component
 class TeamsBotReplyClient(
@@ -34,39 +34,14 @@ class TeamsBotReplyClient(
         }
 
         val replyActivity = buildReplyActivity(activity, conversationId, responseBody)
-        val encodedConvId = URLEncoder.encode(conversationId, StandardCharsets.UTF_8)
-        val uri = URI.create("$serviceUrl/v3/conversations/$encodedConvId/activities")
-
-        log.info { "Reply POST → $uri" }
-        log.info { "Reply body → $replyActivity" }
-
-        try {
-            val result =
-                webClient
-                    .post()
-                    .uri(uri)
-                    .header("Content-Type", "application/json")
-                    .bodyValue(replyActivity)
-                    .retrieve()
-                    .toBodilessEntity()
-                    .block()
-            log.info { "Reply 전송 성공: ${result?.statusCode}" }
-        } catch (e: WebClientResponseException) {
-            log.error { "Reply 전송 실패 (${e.statusCode}): ${e.responseBodyAsString}" }
-        } catch (e: Exception) {
-            log.error(e) { "Reply 전송 중 예외" }
-        }
+        postActivity(serviceUrl, conversationId, replyActivity)
     }
 
-    /** Proactive 알림 전송 — Activity 없이 serviceUrl + conversationId로 직접 전송 */
     fun sendProactive(
         serviceUrl: String,
         conversationId: String,
         message: String,
     ) {
-        val encodedConvId = URLEncoder.encode(conversationId, StandardCharsets.UTF_8)
-        val uri = URI.create("${serviceUrl.trimEnd('/')}/v3/conversations/$encodedConvId/activities")
-
         val body =
             mapOf(
                 "type" to "message",
@@ -75,7 +50,16 @@ class TeamsBotReplyClient(
                 "conversation" to mapOf("id" to conversationId),
             )
 
-        log.info { "Proactive POST → $uri" }
+        postActivity(serviceUrl, conversationId, body)
+    }
+
+    private fun postActivity(
+        serviceUrl: String,
+        conversationId: String,
+        body: Map<String, Any>,
+    ) {
+        val encodedConvId = URLEncoder.encode(conversationId, StandardCharsets.UTF_8)
+        val uri = URI.create("${serviceUrl.trimEnd('/')}/v3/conversations/$encodedConvId/activities")
 
         try {
             val result =
@@ -87,11 +71,12 @@ class TeamsBotReplyClient(
                     .retrieve()
                     .toBodilessEntity()
                     .block()
-            log.info { "Proactive 전송 성공: ${result?.statusCode}" }
+            log.info { "전송 성공: ${result?.statusCode}" }
         } catch (e: WebClientResponseException) {
-            log.error { "Proactive 전송 실패 (${e.statusCode}): ${e.responseBodyAsString}" }
+            // customExcpetion
+            log.error { "전송 실패 (${e.statusCode}): ${e.responseBodyAsString}" }
         } catch (e: Exception) {
-            log.error(e) { "Proactive 전송 중 예외" }
+            log.error(e) { "전송 중 예외" }
         }
     }
 
