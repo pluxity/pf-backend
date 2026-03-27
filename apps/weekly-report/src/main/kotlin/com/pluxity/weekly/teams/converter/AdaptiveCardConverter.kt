@@ -6,8 +6,6 @@ import com.pluxity.weekly.chat.dto.ChatReadResponse
 import com.pluxity.weekly.chat.dto.EpicChatDto
 import com.pluxity.weekly.chat.dto.ProjectChatDto
 import com.pluxity.weekly.chat.dto.SelectField
-import com.pluxity.weekly.chat.dto.TaskChatDto
-import com.pluxity.weekly.chat.dto.TeamChatDto
 import com.pluxity.weekly.epic.dto.EpicResponse
 import com.pluxity.weekly.project.dto.ProjectResponse
 import com.pluxity.weekly.task.dto.TaskResponse
@@ -139,28 +137,19 @@ class AdaptiveCardConverter {
             is ProjectChatDto -> {
                 inputs += textInput("name", "프로젝트명", dto.name)
                 inputs += textInput("description", "설명", dto.description)
-                inputs += selectOrText("pmId", "PM", selectFieldMap)
-                inputs += textInput("startDate", "시작일", dto.startDate)
-                inputs += textInput("dueDate", "마감일", dto.dueDate)
+                inputs += selectOrText("pmId", "PM", selectFieldMap, false, dto.pmId.toString())
+                inputs += dateInput("startDate", "시작일", dto.startDate)
+                inputs += dateInput("dueDate", "마감일", dto.dueDate)
             }
             is EpicChatDto -> {
                 inputs += textInput("name", "에픽명", dto.name)
-                inputs += selectOrText("projectId", "프로젝트", selectFieldMap)
+                inputs += selectOrText("projectId", "프로젝트", selectFieldMap, false, dto.projectId.toString())
                 inputs += textInput("description", "설명", dto.description)
-                inputs += textInput("startDate", "시작일", dto.startDate)
-                inputs += textInput("dueDate", "마감일", dto.dueDate)
+                inputs += selectOrText("userIds", "담당자", selectFieldMap, isMultiSelect = true)
+                inputs += dateInput("startDate", "시작일", dto.startDate)
+                inputs += dateInput("dueDate", "마감일", dto.dueDate)
             }
-            is TaskChatDto -> {
-                inputs += textInput("name", "태스크명", dto.name)
-                inputs += selectOrText("epicId", "에픽", selectFieldMap)
-                inputs += textInput("description", "설명", dto.description)
-                inputs += textInput("startDate", "시작일", dto.startDate)
-                inputs += textInput("dueDate", "마감일", dto.dueDate)
-            }
-            is TeamChatDto -> {
-                inputs += textInput("name", "팀명", dto.name)
-                inputs += selectOrText("leaderId", "팀장", selectFieldMap)
-            }
+            else -> {}
         }
 
         return inputs
@@ -181,22 +170,43 @@ class AdaptiveCardConverter {
         return input
     }
 
+    private fun dateInput(
+        id: String,
+        label: String,
+        value: String?,
+    ): Map<String, Any> {
+        val input =
+            mutableMapOf<String, Any>(
+                "type" to "Input.Date",
+                "id" to id,
+                "label" to label,
+            )
+        if (value != null) input["value"] = value
+        return input
+    }
+
     private fun selectOrText(
         fieldId: String,
         label: String,
         selectFieldMap: Map<String, SelectField>,
+        isMultiSelect: Boolean = false,
+        defaultValue: String? = null,
     ): Map<String, Any> {
         val selectField = selectFieldMap[fieldId]
         return if (selectField != null && selectField.candidates.isNotEmpty()) {
-            mapOf(
-                "type" to "Input.ChoiceSet",
-                "id" to fieldId,
-                "label" to label,
-                "choices" to
+            buildMap {
+                put("type", "Input.ChoiceSet")
+                put("id", fieldId)
+                put("label", label)
+                put("value", defaultValue ?: selectField.candidates.first().id)
+                put(
+                    "choices",
                     selectField.candidates.map { candidate ->
                         mapOf("title" to candidate.name, "value" to candidate.id)
                     },
-            )
+                )
+                if (isMultiSelect) put("isMultiSelect", true)
+            }
         } else {
             textInput(fieldId, label, null)
         }
