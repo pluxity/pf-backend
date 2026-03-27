@@ -18,6 +18,8 @@ import com.pluxity.weekly.global.constant.UserType
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.entity.Project
 import com.pluxity.weekly.project.repository.ProjectRepository
+import com.pluxity.weekly.teams.event.TeamsNotificationEvent
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -31,6 +33,7 @@ class EpicService(
     private val projectRepository: ProjectRepository,
     private val userRepository: UserRepository,
     private val authorizationService: AuthorizationService,
+    private val eventPublisher: ApplicationEventPublisher,
 ) {
     fun findAll(): List<EpicResponse> {
         val user = authorizationService.currentUser()
@@ -103,6 +106,9 @@ class EpicService(
             val assignee = getUserById(userId)
             if (epic.assignments.none { it.user == assignee }) {
                 epic.assign(assignee)
+                eventPublisher.publishEvent(
+                    TeamsNotificationEvent(userId, "${epic.name} 에픽에 배정되었습니다"),
+                )
             }
         }
     }
@@ -132,6 +138,9 @@ class EpicService(
             throw CustomException(WeeklyReportErrorCode.DUPLICATE_EPIC_ASSIGNMENT, userId, epicId)
         }
         epic.assign(assignee)
+        eventPublisher.publishEvent(
+            TeamsNotificationEvent(userId, "${epic.name} 에픽에 배정되었습니다"),
+        )
     }
 
     @Transactional
@@ -147,6 +156,9 @@ class EpicService(
             throw CustomException(WeeklyReportErrorCode.NOT_FOUND_EPIC_ASSIGNMENT, epicId, userId)
         }
         epic.unassign(assignee)
+        eventPublisher.publishEvent(
+            TeamsNotificationEvent(userId, "${epic.name} 에픽에서 해제되었습니다"),
+        )
     }
 
     private fun getEpicById(id: Long): Epic =
