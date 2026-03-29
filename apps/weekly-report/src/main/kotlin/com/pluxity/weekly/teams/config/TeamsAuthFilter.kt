@@ -27,6 +27,7 @@ private val log = KotlinLogging.logger {}
 class TeamsAuthFilter(
     private val objectMapper: ObjectMapper,
     private val userRepository: UserRepository,
+    private val teamsTokenProvider: TeamsTokenProvider,
 ) : OncePerRequestFilter() {
     override fun shouldNotFilter(request: HttpServletRequest): Boolean = request.requestURI != "/api/messages"
 
@@ -35,11 +36,13 @@ class TeamsAuthFilter(
         response: HttpServletResponse,
         filterChain: FilterChain,
     ) {
-        // TODO: Azure 배포 시 Microsoft JWT 검증 추가
-        //  1. Authorization 헤더에서 Bearer 토큰 추출
-        //  2. Microsoft 공개키(https://login.botframework.com/v1/.well-known/openidconfiguration)로 서명 검증
-        //  3. JWT의 aud 클레임 == TeamsProperties.appId 확인
-        //  4. 실패 시 401 응답 반환
+        val authHeader = request.getHeader("Authorization")
+        if (authHeader.isNullOrBlank() || !teamsTokenProvider.verifyTeamsToken(authHeader)) {
+            log.warn { "Teams JWT 검증 실패" }
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
+            return
+        }
+
         val body = request.inputStream.readAllBytes()
 
         val name =
