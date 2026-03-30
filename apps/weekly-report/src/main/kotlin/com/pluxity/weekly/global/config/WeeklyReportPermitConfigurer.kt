@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration
 class WeeklyReportPermitConfigurer(
     private val teamsAuthFilter: TeamsAuthFilter,
 ) : SecurityPermitConfigurer {
-    override fun permitPaths(): List<String> = emptyList()
+    override fun permitPaths(): List<String> = listOf("/teams/messages")
 
     override fun customFilters(): List<SecurityFilterRegistration> =
         listOf(

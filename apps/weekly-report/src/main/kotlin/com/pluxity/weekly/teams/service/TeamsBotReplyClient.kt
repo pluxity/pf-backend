@@ -1,8 +1,10 @@
 package com.pluxity.weekly.teams.service
 
+import com.pluxity.weekly.teams.config.TeamsProperties
 import com.pluxity.weekly.teams.dto.Activity
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
+import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import java.net.URI
@@ -18,8 +20,31 @@ private val log = KotlinLogging.logger {}
 @Component
 class TeamsBotReplyClient(
     webClientBuilder: WebClient.Builder,
+    private val teamsProperties: TeamsProperties,
 ) {
     private val webClient = webClientBuilder.build()
+
+    private fun fetchAccessToken(): String {
+        val form =
+            LinkedMultiValueMap<String, String>().apply {
+                add("grant_type", "client_credentials")
+                add("client_id", teamsProperties.appId)
+                add("client_secret", teamsProperties.appPassword)
+                add("scope", "https://api.botframework.com/.default")
+            }
+
+        val body =
+            webClient
+                .post()
+                .uri("https://login.microsoftonline.com/${teamsProperties.tenantId}/oauth2/v2.0/token")
+                .bodyValue(form)
+                .retrieve()
+                .toEntity(Map::class.java)
+                .block()!!
+                .body!!
+
+        return body["access_token"] as String
+    }
 
     fun reply(
         activity: Activity,
@@ -62,11 +87,13 @@ class TeamsBotReplyClient(
         val uri = URI.create("${serviceUrl.trimEnd('/')}/v3/conversations/$encodedConvId/activities")
 
         try {
+            val token = fetchAccessToken()
             val result =
                 webClient
                     .post()
                     .uri(uri)
                     .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer $token")
                     .bodyValue(body)
                     .retrieve()
                     .toBodilessEntity()

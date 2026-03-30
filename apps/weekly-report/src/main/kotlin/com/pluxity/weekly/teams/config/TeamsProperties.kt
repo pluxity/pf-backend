@@ -6,4 +6,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class TeamsProperties(
     val appId: String = "",
     val appPassword: String = "",
+    val tenantId: String = "",
 )
