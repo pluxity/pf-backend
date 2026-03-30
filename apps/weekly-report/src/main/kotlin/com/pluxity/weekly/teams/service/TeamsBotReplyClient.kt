@@ -37,7 +37,7 @@ class TeamsBotReplyClient(
         postActivity(serviceUrl, conversationId, replyActivity)
     }
 
-    fun sendProactive(
+    fun notify(
         serviceUrl: String,
         conversationId: String,
         message: String,

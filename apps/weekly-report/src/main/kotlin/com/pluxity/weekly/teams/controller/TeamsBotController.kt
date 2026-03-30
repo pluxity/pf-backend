@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController
 private val log = KotlinLogging.logger {}
 
 @RestController
-@RequestMapping("/api/messages")
+@RequestMapping("/teams/messages")
 class TeamsBotController(
     private val messageHandler: TeamsMessageHandler,
 ) {
