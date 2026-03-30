@@ -45,6 +45,7 @@ llm:
 teams:
   app-id: ${TEAMS_APP_ID:}
   app-password: ${TEAMS_APP_PASSWORD:}
+  tenantId: ${TEAMS_TENANT_ID:}
 
 domain:
   url: ${API_URL:}

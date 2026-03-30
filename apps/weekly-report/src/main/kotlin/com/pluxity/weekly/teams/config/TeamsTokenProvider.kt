@@ -27,7 +27,7 @@ class TeamsTokenProvider(
     private val jwkCache = AtomicReference<CachedJwkSet>()
     private val tokenCache = AtomicReference<CachedToken>()
 
-    // 봇 서버 요청 검증
+    // azure -> pms 요청 검증
     fun verifyTeamsToken(authHeader: String): Boolean {
         val token = authHeader.removePrefix("Bearer ").trim()
         if (token.isBlank()) return false
