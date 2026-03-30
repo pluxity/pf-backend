@@ -7,7 +7,7 @@ import com.nimbusds.jwt.SignedJWT
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
-import java.net.URL
+import java.net.URI
 import java.util.concurrent.atomic.AtomicReference
 
 private val log = KotlinLogging.logger {}
@@ -107,7 +107,7 @@ class TeamsTokenProvider(
         if (cached != null && !cached.isExpired()) return cached.jwkSet
 
         val jwksUri = fetchJwksUri()
-        val jwkSet = JWKSet.load(URL(jwksUri))
+        val jwkSet = JWKSet.load(URI.create(jwksUri).toURL())
         jwkCache.set(CachedJwkSet(jwkSet))
         return jwkSet
     }
