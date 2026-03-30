@@ -84,8 +84,20 @@ class ContextBuilder(
         context: MutableMap<String, Any?>,
         hasMutation: Boolean,
     ) {
+        val projects = projectService.findAll()
         val epics = epicService.findAll()
-        context["projects"] = groupByProject(epics)
+        val epicsByProject = epics.groupBy { it.projectId }
+        context["projects"] =
+            projects.map { project ->
+                mapOf(
+                    "id" to project.id,
+                    "name" to project.name,
+                    "epics" to
+                        (epicsByProject[project.id] ?: emptyList()).map {
+                            mapOf("id" to it.id, "name" to it.name)
+                        },
+                )
+            }
         if (hasMutation) {
             context["users"] = findAllUsers()
         }
