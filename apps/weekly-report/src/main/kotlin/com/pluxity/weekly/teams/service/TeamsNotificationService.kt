@@ -21,6 +21,6 @@ class TeamsNotificationService(
             return
         }
 
-        replyClient.sendProactive(reference.serviceUrl, reference.conversationId, message)
+        replyClient.notify(reference.serviceUrl, reference.conversationId, message)
     }
 }

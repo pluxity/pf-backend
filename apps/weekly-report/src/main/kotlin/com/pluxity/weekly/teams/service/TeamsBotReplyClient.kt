@@ -1,5 +1,6 @@
 package com.pluxity.weekly.teams.service
 
+import com.pluxity.weekly.teams.config.TeamsTokenProvider
 import com.pluxity.weekly.teams.dto.Activity
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
@@ -17,6 +18,7 @@ private val log = KotlinLogging.logger {}
  */
 @Component
 class TeamsBotReplyClient(
+    private val tokenProvider: TeamsTokenProvider,
     webClientBuilder: WebClient.Builder,
 ) {
     private val webClient = webClientBuilder.build()
@@ -37,7 +39,7 @@ class TeamsBotReplyClient(
         postActivity(serviceUrl, conversationId, replyActivity)
     }
 
-    fun sendProactive(
+    fun notify(
         serviceUrl: String,
         conversationId: String,
         message: String,
@@ -67,6 +69,7 @@ class TeamsBotReplyClient(
                     .post()
                     .uri(uri)
                     .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer ${tokenProvider.getTeamsToken()}")
                     .bodyValue(body)
                     .retrieve()
                     .toBodilessEntity()

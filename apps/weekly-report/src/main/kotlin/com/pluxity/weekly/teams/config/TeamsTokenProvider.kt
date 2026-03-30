@@ -14,8 +14,8 @@ private val log = KotlinLogging.logger {}
 
 private const val OPENID_METADATA_URL =
     "https://login.botframework.com/v1/.well-known/openidconfiguration"
-private const val TOKEN_URL =
-    "https://login.microsoftonline.com/botframework.com/oauth2/v2.0/token"
+private const val TOKEN_URL_TEMPLATE =
+    "https://login.microsoftonline.com/%s/oauth2/v2.0/token"
 private const val JWK_CACHE_TTL_MS = 24 * 60 * 60 * 1000L
 
 @Component
@@ -27,6 +27,7 @@ class TeamsTokenProvider(
     private val jwkCache = AtomicReference<CachedJwkSet>()
     private val tokenCache = AtomicReference<CachedToken>()
 
+    // 봇 서버 요청 검증
     fun verifyTeamsToken(authHeader: String): Boolean {
         val token = authHeader.removePrefix("Bearer ").trim()
         if (token.isBlank()) return false
@@ -67,14 +68,18 @@ class TeamsTokenProvider(
         }
     }
 
+    // 봇 서버 → Teams API 호출용 토큰 발급
     fun getTeamsToken(): String {
         val cached = tokenCache.get()
         if (cached != null && !cached.isExpired()) return cached.token
 
+        val tenantId = teamsProperties.tenantId.ifBlank { "botframework.com" }
+        val tokenUrl = TOKEN_URL_TEMPLATE.format(tenantId)
+
         val response =
             webClient
                 .post()
-                .uri(TOKEN_URL)
+                .uri(tokenUrl)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .bodyValue(
                     "grant_type=client_credentials" +
@@ -126,5 +131,13 @@ class TeamsTokenProvider(
         val cachedAt: Long = System.currentTimeMillis(),
     ) {
         fun isExpired(): Boolean = System.currentTimeMillis() - cachedAt > JWK_CACHE_TTL_MS
+    }
+
+    private data class CachedToken(
+        val token: String,
+        val expiresIn: Long,
+        val cachedAt: Long = System.currentTimeMillis(),
+    ) {
+        fun isExpired(): Boolean = System.currentTimeMillis() - cachedAt > (expiresIn - 60) * 1000
     }
 }
