@@ -15,7 +15,7 @@ private val log = KotlinLogging.logger {}
 private const val OPENID_METADATA_URL = "https://login.botframework.com/v1/.well-known/openidconfiguration"
 
 @Component
-class TeamsAuthClient(
+class TeamsApiClient(
     webClientBuilder: WebClient.Builder,
     private val teamsProperties: TeamsProperties,
 ) {

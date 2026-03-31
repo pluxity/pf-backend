@@ -16,9 +16,9 @@ private val log = KotlinLogging.logger {}
  * 전송 실패 시 예외를 던지지 않고 로그만 남긴다 (Teams 사용자에게 에러를 전달할 수단이 없으므로).
  */
 @Component
-class TeamsBotReplyClient(
+class TeamsMessageSender(
     webClientBuilder: WebClient.Builder,
-    private val teamsAuthClient: TeamsAuthClient,
+    private val teamsApiClient: TeamsApiClient,
 ) {
     private val webClient = webClientBuilder.build()
 
@@ -63,7 +63,7 @@ class TeamsBotReplyClient(
         val uri = URI.create("${serviceUrl.trimEnd('/')}/v3/conversations/$encodedConvId/activities")
 
         try {
-            val token = teamsAuthClient.getBotToken()
+            val token = teamsApiClient.getBotToken()
             val result =
                 webClient
                     .post()
