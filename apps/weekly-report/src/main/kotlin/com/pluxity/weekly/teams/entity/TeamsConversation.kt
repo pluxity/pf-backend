@@ -8,6 +8,8 @@ import jakarta.persistence.Table
 @Entity
 @Table(name = "teams_conversation")
 class TeamsConversation(
+    @Column(name = "aad_object_id", nullable = false, unique = true)
+    val aadObjectId: String,
     @Column(name = "user_id", nullable = false)
     val userId: Long,
     @Column(name = "conversation_id", nullable = false)
@@ -15,7 +17,10 @@ class TeamsConversation(
     @Column(name = "service_url", nullable = false)
     var serviceUrl: String,
 ) : IdentityIdEntity() {
-    fun update(serviceUrl: String, conversationId: String) {
+    fun update(
+        serviceUrl: String,
+        conversationId: String,
+    ) {
         this.serviceUrl = serviceUrl
         this.conversationId = conversationId
     }
