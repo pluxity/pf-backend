@@ -7,6 +7,7 @@ dependencies {
     implementation(project(":common:auth"))
     implementation(rootProject.libs.logbook)
     implementation(rootProject.libs.spring.boot.starter.webflux)
+    implementation("com.nimbusds:nimbus-jose-jwt:10.3")
 
     testImplementation(project(":common:test-support"))
 }
