@@ -1,10 +1,8 @@
 package com.pluxity.weekly.teams.service
 
-import com.pluxity.weekly.teams.config.TeamsProperties
 import com.pluxity.weekly.teams.dto.Activity
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
-import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import java.net.URI
@@ -20,31 +18,9 @@ private val log = KotlinLogging.logger {}
 @Component
 class TeamsBotReplyClient(
     webClientBuilder: WebClient.Builder,
-    private val teamsProperties: TeamsProperties,
+    private val teamsAuthClient: TeamsAuthClient,
 ) {
     private val webClient = webClientBuilder.build()
-
-    private fun fetchAccessToken(): String {
-        val form =
-            LinkedMultiValueMap<String, String>().apply {
-                add("grant_type", "client_credentials")
-                add("client_id", teamsProperties.appId)
-                add("client_secret", teamsProperties.appPassword)
-                add("scope", "https://api.botframework.com/.default")
-            }
-
-        val body =
-            webClient
-                .post()
-                .uri("https://login.microsoftonline.com/${teamsProperties.tenantId}/oauth2/v2.0/token")
-                .bodyValue(form)
-                .retrieve()
-                .toEntity(Map::class.java)
-                .block()!!
-                .body!!
-
-        return body["access_token"] as String
-    }
 
     fun reply(
         activity: Activity,
@@ -87,7 +63,7 @@ class TeamsBotReplyClient(
         val uri = URI.create("${serviceUrl.trimEnd('/')}/v3/conversations/$encodedConvId/activities")
 
         try {
-            val token = fetchAccessToken()
+            val token = teamsAuthClient.getBotToken()
             val result =
                 webClient
                     .post()
@@ -100,7 +76,6 @@ class TeamsBotReplyClient(
                     .block()
             log.info { "전송 성공: ${result?.statusCode}" }
         } catch (e: WebClientResponseException) {
-            // customExcpetion
             log.error { "전송 실패 (${e.statusCode}): ${e.responseBodyAsString}" }
         } catch (e: Exception) {
             log.error(e) { "전송 중 예외" }
