@@ -21,7 +21,7 @@ private val log = KotlinLogging.logger {}
 class TeamsMessageHandler(
     private val chatService: ChatService,
     private val cardConverter: AdaptiveCardConverter,
-    private val replyClient: TeamsBotReplyClient,
+    private val messageSender: TeamsMessageSender,
     private val projectService: ProjectService,
     private val epicService: EpicService,
     private val authorizationService: AuthorizationService,
@@ -45,7 +45,7 @@ class TeamsMessageHandler(
 
         val text = activity.text?.trim()
         if (text.isNullOrBlank()) {
-            replyClient.reply(activity, cardConverter.textMessage("메시지를 입력해주세요."))
+            messageSender.reply(activity, cardConverter.textMessage("메시지를 입력해주세요."))
             return
         }
 
@@ -65,14 +65,14 @@ class TeamsMessageHandler(
                 cardConverter.textMessage("처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")
             }
 
-        replyClient.reply(activity, response)
+        messageSender.reply(activity, response)
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun handleFormSubmit(activity: Activity) {
         val formData = activity.value as? Map<String, Any>
         if (formData == null) {
-            replyClient.reply(activity, cardConverter.textMessage("폼 데이터를 읽을 수 없습니다."))
+            messageSender.reply(activity, cardConverter.textMessage("폼 데이터를 읽을 수 없습니다."))
             return
         }
 
@@ -136,7 +136,7 @@ class TeamsMessageHandler(
                 cardConverter.textMessage("처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")
             }
 
-        replyClient.reply(activity, response)
+        messageSender.reply(activity, response)
     }
 
     /**
@@ -171,7 +171,7 @@ class TeamsMessageHandler(
         }
 
         if (action == "add") {
-            replyClient.reply(
+            messageSender.reply(
                 activity,
                 cardConverter.textMessage("안녕하세요! Weekly Report 봇입니다. 자연어로 태스크를 관리해보세요."),
             )

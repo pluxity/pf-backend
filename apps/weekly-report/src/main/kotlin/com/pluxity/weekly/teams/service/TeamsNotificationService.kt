@@ -8,7 +8,7 @@ private val log = KotlinLogging.logger {}
 
 @Service
 class TeamsNotificationService(
-    private val replyClient: TeamsBotReplyClient,
+    private val messageSender: TeamsMessageSender,
     private val referenceRepository: TeamsAccountRepository,
 ) {
     fun sendDm(
@@ -21,6 +21,6 @@ class TeamsNotificationService(
             return
         }
 
-        replyClient.notify(reference.serviceUrl, reference.conversationId, message)
+        messageSender.notify(reference.serviceUrl, reference.conversationId, message)
     }
 }

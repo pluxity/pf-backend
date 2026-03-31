@@ -4,7 +4,7 @@ import com.pluxity.common.auth.authentication.security.CustomUserDetails
 import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.weekly.teams.repository.TeamsAccountRepository
-import com.pluxity.weekly.teams.service.TeamsAuthClient
+import com.pluxity.weekly.teams.service.TeamsApiClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.FilterChain
 import jakarta.servlet.ReadListener
@@ -31,7 +31,7 @@ class TeamsAuthFilter(
     private val objectMapper: ObjectMapper,
     private val userRepository: UserRepository,
     private val teamsAccountRepository: TeamsAccountRepository,
-    private val teamsAuthClient: TeamsAuthClient,
+    private val teamsApiClient: TeamsApiClient,
 ) : OncePerRequestFilter() {
     override fun shouldNotFilter(request: HttpServletRequest): Boolean = !request.requestURI.endsWith("/teams")
 
@@ -41,7 +41,7 @@ class TeamsAuthFilter(
         filterChain: FilterChain,
     ) {
         val authHeader = request.getHeader("Authorization")
-        if (authHeader.isNullOrBlank() || !teamsAuthClient.verifyBotToken(authHeader)) {
+        if (authHeader.isNullOrBlank() || !teamsApiClient.verifyBotToken(authHeader)) {
             log.warn { "Teams JWT 검증 실패" }
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
             return
@@ -80,7 +80,7 @@ class TeamsAuthFilter(
         }
 
         // 2. Graph API로 사용자 정보 조회 → username(이메일) 매칭
-        val graphUser = teamsAuthClient.getGraphUser(aadObjectId)
+        val graphUser = teamsApiClient.getGraphUser(aadObjectId)
         if (graphUser == null) {
             log.warn { "Graph API 사용자 조회 실패 - aadObjectId: $aadObjectId" }
             return null
