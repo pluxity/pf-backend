@@ -3,7 +3,7 @@ package com.pluxity.weekly.teams.config
 import com.pluxity.common.auth.authentication.security.CustomUserDetails
 import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.auth.user.repository.UserRepository
-import com.pluxity.weekly.teams.repository.TeamsConversationRepository
+import com.pluxity.weekly.teams.repository.TeamsAccountRepository
 import com.pluxity.weekly.teams.service.TeamsAuthClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.FilterChain
@@ -30,7 +30,7 @@ private val log = KotlinLogging.logger {}
 class TeamsAuthFilter(
     private val objectMapper: ObjectMapper,
     private val userRepository: UserRepository,
-    private val teamsConversationRepository: TeamsConversationRepository,
+    private val teamsAccountRepository: TeamsAccountRepository,
     private val teamsAuthClient: TeamsAuthClient,
 ) : OncePerRequestFilter() {
     override fun shouldNotFilter(request: HttpServletRequest): Boolean = !request.requestURI.endsWith("/teams")
@@ -73,10 +73,10 @@ class TeamsAuthFilter(
     }
 
     private fun resolveUser(aadObjectId: String): User? {
-        // 1. TeamsConversation에서 매핑된 사용자 조회
-        val conversation = teamsConversationRepository.findByAadObjectId(aadObjectId)
-        if (conversation != null) {
-            return userRepository.findWithGraphById(conversation.userId)
+        // 1. TeamsAccount에서 매핑된 사용자 조회
+        val account = teamsAccountRepository.findByAadObjectId(aadObjectId)
+        if (account != null) {
+            return userRepository.findWithGraphById(account.userId)
         }
 
         // 2. Graph API로 사용자 정보 조회 → username(이메일) 매칭
