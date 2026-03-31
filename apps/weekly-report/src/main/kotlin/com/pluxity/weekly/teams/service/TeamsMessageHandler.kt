@@ -148,6 +148,7 @@ class TeamsMessageHandler(
 
         val serviceUrl = activity.serviceUrl
         val conversationId = activity.conversation?.id
+        val aadObjectId = activity.from?.aadObjectId
         if (serviceUrl.isNullOrBlank() || conversationId.isNullOrBlank()) {
             log.warn { "serviceUrl 또는 conversationId 누락 - conversationReference 저장 불가" }
         } else {
@@ -155,14 +156,17 @@ class TeamsMessageHandler(
             val existing = teamsConversationRepository.findByUserId(currentUser.requiredId)
             if (existing != null) {
                 existing.update(serviceUrl, conversationId)
-            } else {
+            } else if (!aadObjectId.isNullOrBlank()) {
                 teamsConversationRepository.save(
                     TeamsConversation(
+                        aadObjectId = aadObjectId,
                         userId = currentUser.requiredId,
                         serviceUrl = serviceUrl,
                         conversationId = conversationId,
                     ),
                 )
+            } else {
+                log.warn { "aadObjectId 누락 - TeamsConversation 저장 불가" }
             }
         }
 
