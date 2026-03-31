@@ -14,17 +14,22 @@ import java.net.URI
 private val log = KotlinLogging.logger {}
 private const val OPENID_METADATA_URL = "https://login.botframework.com/v1/.well-known/openidconfiguration"
 
+private const val JWK_CACHE_TTL_MS = 24 * 60 * 60 * 1000L
+
 @Component
 class TeamsApiClient(
     webClientBuilder: WebClient.Builder,
     private val teamsProperties: TeamsProperties,
 ) {
     private val webClient = webClientBuilder.build()
+    private var jwkCache: CachedJwkSet? = null
+    private var botTokenCache: CachedToken? = null
+    private var graphTokenCache: CachedToken? = null
 
     // Graph API 사용자 조회
     fun getGraphUser(aadObjectId: String): GraphUser? {
         return try {
-            val token = fetchToken("https://graph.microsoft.com/.default")
+            val token = getToken("https://graph.microsoft.com/.default")
             val response =
                 webClient
                     .get()
@@ -54,7 +59,7 @@ class TeamsApiClient(
     }
 
     // Bot Framework 토큰 발급 (봇 → Teams API 호출용)
-    fun getBotToken(): String = fetchToken("https://api.botframework.com/.default")
+    fun getBotToken(): String = getToken("https://api.botframework.com/.default")
 
     // Azure → PMS 요청 JWT 검증
     fun verifyBotToken(authHeader: String): Boolean {
@@ -64,8 +69,7 @@ class TeamsApiClient(
         return try {
             val jwt = SignedJWT.parse(token)
             val kid = jwt.header.keyID
-            val jwksUri = fetchJwksUri()
-            val jwkSet = JWKSet.load(URI.create(jwksUri).toURL())
+            val jwkSet = getJwkSet()
             val jwk = jwkSet.getKeyByKeyId(kid) as? RSAKey
 
             if (jwk == null) {
@@ -86,7 +90,7 @@ class TeamsApiClient(
             }
 
             val issuer = claims.issuer
-            if (issuer == null || !issuer.contains("https://api.botframework.com")) {
+            if (issuer != "https://api.botframework.com") {
                 log.warn { "JWT issuer 불일치 - actual: $issuer" }
                 return false
             }
@@ -97,7 +101,11 @@ class TeamsApiClient(
         }
     }
 
-    private fun fetchToken(scope: String): String {
+    private fun getToken(scope: String): String {
+        val isBot = scope.contains("botframework")
+        val cached = if (isBot) botTokenCache else graphTokenCache
+        if (cached != null && !cached.isExpired()) return cached.token
+
         val form =
             LinkedMultiValueMap<String, String>().apply {
                 add("grant_type", "client_credentials")
@@ -115,10 +123,25 @@ class TeamsApiClient(
                 .retrieve()
                 .bodyToMono(Map::class.java)
                 .block()
+                ?: throw IllegalStateException("토큰 발급 실패")
+        val accessToken =
+            response["access_token"] as? String
+                ?: throw IllegalStateException("토큰 응답에 access_token 없음")
+        val expiresIn = (response["expires_in"] as? Number)?.toLong() ?: 3600L
 
-        val body = response ?: throw IllegalStateException("토큰 발급 실패")
-        return body["access_token"] as? String
-            ?: throw IllegalStateException("토큰 응답에 access_token 없음")
+        val newToken = CachedToken(accessToken, expiresIn)
+        if (isBot) botTokenCache = newToken else graphTokenCache = newToken
+        return accessToken
+    }
+
+    private fun getJwkSet(): JWKSet {
+        val cached = jwkCache
+        if (cached != null && !cached.isExpired()) return cached.jwkSet
+
+        val jwksUri = fetchJwksUri()
+        val jwkSet = JWKSet.load(URI.create(jwksUri).toURL())
+        jwkCache = CachedJwkSet(jwkSet)
+        return jwkSet
     }
 
     private fun fetchJwksUri(): String {
@@ -133,6 +156,21 @@ class TeamsApiClient(
 
         return metadata["jwks_uri"] as? String
             ?: throw IllegalStateException("OpenID metadata에 jwks_uri 없음")
+    }
+
+    private data class CachedJwkSet(
+        val jwkSet: JWKSet,
+        val cachedAt: Long = System.currentTimeMillis(),
+    ) {
+        fun isExpired(): Boolean = System.currentTimeMillis() - cachedAt > JWK_CACHE_TTL_MS
+    }
+
+    private data class CachedToken(
+        val token: String,
+        val expiresIn: Long,
+        val cachedAt: Long = System.currentTimeMillis(),
+    ) {
+        fun isExpired(): Boolean = System.currentTimeMillis() - cachedAt > (expiresIn - 300) * 1000
     }
 }
 
