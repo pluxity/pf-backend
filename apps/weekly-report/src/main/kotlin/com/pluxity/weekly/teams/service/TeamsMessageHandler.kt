@@ -9,8 +9,8 @@ import com.pluxity.weekly.project.dto.ProjectRequest
 import com.pluxity.weekly.project.service.ProjectService
 import com.pluxity.weekly.teams.converter.AdaptiveCardConverter
 import com.pluxity.weekly.teams.dto.Activity
-import com.pluxity.weekly.teams.entity.TeamsConversation
-import com.pluxity.weekly.teams.repository.TeamsConversationRepository
+import com.pluxity.weekly.teams.entity.TeamsAccount
+import com.pluxity.weekly.teams.repository.TeamsAccountRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Service
 import java.time.LocalDate
@@ -25,7 +25,7 @@ class TeamsMessageHandler(
     private val projectService: ProjectService,
     private val epicService: EpicService,
     private val authorizationService: AuthorizationService,
-    private val teamsConversationRepository: TeamsConversationRepository,
+    private val teamsAccountRepository: TeamsAccountRepository,
 ) {
     fun handleActivity(activity: Activity) {
         when (activity.type) {
@@ -153,12 +153,12 @@ class TeamsMessageHandler(
             log.warn { "serviceUrl 또는 conversationId 누락 - conversationReference 저장 불가" }
         } else {
             val currentUser = authorizationService.currentUser()
-            val existing = teamsConversationRepository.findByUserId(currentUser.requiredId)
+            val existing = teamsAccountRepository.findByUserId(currentUser.requiredId)
             if (existing != null) {
                 existing.update(serviceUrl, conversationId)
             } else if (!aadObjectId.isNullOrBlank()) {
-                teamsConversationRepository.save(
-                    TeamsConversation(
+                teamsAccountRepository.save(
+                    TeamsAccount(
                         aadObjectId = aadObjectId,
                         userId = currentUser.requiredId,
                         serviceUrl = serviceUrl,
@@ -166,7 +166,7 @@ class TeamsMessageHandler(
                     ),
                 )
             } else {
-                log.warn { "aadObjectId 누락 - TeamsConversation 저장 불가" }
+                log.warn { "aadObjectId 누락 - TeamsAccount 저장 불가" }
             }
         }
 
