@@ -33,7 +33,7 @@ class TeamsAuthFilter(
     private val teamsAccountRepository: TeamsAccountRepository,
     private val teamsApiClient: TeamsApiClient,
 ) : OncePerRequestFilter() {
-    override fun shouldNotFilter(request: HttpServletRequest): Boolean = !request.requestURI.endsWith("/teams")
+    override fun shouldNotFilter(request: HttpServletRequest): Boolean = !request.requestURI.endsWith("/teams/messages")
 
     override fun doFilterInternal(
         request: HttpServletRequest,
