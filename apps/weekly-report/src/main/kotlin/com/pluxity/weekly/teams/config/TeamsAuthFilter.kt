@@ -59,9 +59,7 @@ class TeamsAuthFilter(
         if (!aadObjectId.isNullOrBlank()) {
             val user = resolveUser(aadObjectId)
             if (user != null) {
-                val userDetails = CustomUserDetails(user)
-                val auth = UsernamePasswordAuthenticationToken(userDetails, null, userDetails.authorities)
-                SecurityContextHolder.getContext().authentication = auth
+                setSecurityContext(user)
             } else {
                 log.warn { "Teams 인증 실패 - 매칭되는 사용자 없음 (aadObjectId: $aadObjectId)" }
             }
@@ -70,6 +68,12 @@ class TeamsAuthFilter(
         }
 
         filterChain.doFilter(CachedBodyRequestWrapper(request, body), response)
+    }
+
+    private fun setSecurityContext(user: User) {
+        val userDetails = CustomUserDetails(user)
+        val auth = UsernamePasswordAuthenticationToken(userDetails, null, userDetails.authorities)
+        SecurityContextHolder.getContext().authentication = auth
     }
 
     private fun resolveUser(aadObjectId: String): User? {
