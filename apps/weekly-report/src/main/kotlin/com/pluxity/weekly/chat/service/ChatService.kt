@@ -4,10 +4,13 @@ import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.chat.context.ContextBuilder
 import com.pluxity.weekly.chat.dto.ChatActionResponse
 import com.pluxity.weekly.chat.llm.LlmService
+import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
 import tools.jackson.databind.ObjectMapper
+import java.time.Duration
 
 private val log = KotlinLogging.logger {}
 
@@ -20,6 +23,8 @@ class ChatService(
     private val chatReadHandler: ChatReadHandler,
     private val chatExecutor: ChatExecutor,
     private val objectMapper: ObjectMapper,
+    private val redisTemplate: RedisTemplate<String, Any>,
+    private val authorizationService: AuthorizationService,
 ) {
     /**
      * read              → 서버 조회 → readResult
@@ -29,6 +34,23 @@ class ChatService(
      * 나머지 CUD (확정)  → 서버 실행 → id 반환
      */
     fun chat(message: String): List<ChatActionResponse> {
+        val userId = authorizationService.currentUser().requiredId
+        val lockKey = "chat:lock:$userId"
+
+        // 같은 유저의 동시 요청 차단 (SETNX + TTL 30초 안전장치)
+        val acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "1", Duration.ofSeconds(30))
+        if (acquired != true) {
+            throw CustomException(WeeklyReportErrorCode.CHAT_ALREADY_PROCESSING)
+        }
+
+        try {
+            return processChat(message)
+        } finally {
+            redisTemplate.delete(lockKey)
+        }
+    }
+
+    private fun processChat(message: String): List<ChatActionResponse> {
         // 1차: 의도 추출
         val intent = llmService.extractIntent(message)
         log.info { "1차 의도 추출 - action: ${intent.actions}, target: ${intent.target}" }
