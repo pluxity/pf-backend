@@ -38,6 +38,18 @@ class TeamsMessageSender(
         postActivity(serviceUrl, conversationId, replyActivity)
     }
 
+    fun sendTyping(activity: Activity) {
+        val serviceUrl = activity.serviceUrl?.trimEnd('/') ?: return
+        val conversationId = activity.conversation?.id ?: return
+
+        val typingActivity = buildReplyActivity(
+            activity,
+            conversationId,
+            mapOf("type" to "typing"),
+        )
+        postActivity(serviceUrl, conversationId, typingActivity)
+    }
+
     fun notify(
         serviceUrl: String,
         conversationId: String,

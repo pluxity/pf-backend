@@ -12,6 +12,7 @@ import com.pluxity.weekly.teams.dto.Activity
 import com.pluxity.weekly.teams.entity.TeamsAccount
 import com.pluxity.weekly.teams.repository.TeamsAccountRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
@@ -29,10 +30,18 @@ class TeamsMessageHandler(
 ) {
     fun handleActivity(activity: Activity) {
         when (activity.type) {
-            "message" -> handleMessage(activity)
+            "message" -> {
+                messageSender.sendTyping(activity)
+                handleMessageAsync(activity)
+            }
             "installationUpdate" -> handleInstallationUpdate(activity)
             else -> log.debug { "Unhandled activity type: ${activity.type}" }
         }
+    }
+
+    @Async
+    fun handleMessageAsync(activity: Activity) {
+        handleMessage(activity)
     }
 
     private fun handleMessage(activity: Activity) {
