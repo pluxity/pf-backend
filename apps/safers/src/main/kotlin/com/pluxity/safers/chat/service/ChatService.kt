@@ -34,7 +34,7 @@ class ChatService(
             val intentMessages =
                 buildList {
                     add(Message(role = "system", content = intentPrompt))
-                    addAll(history.takeLast(10))
+                    addAll(history)
                     add(Message(role = "user", content = message))
                 }
             val intentResult = chatLlmClient.analyzeIntent(intentMessages)

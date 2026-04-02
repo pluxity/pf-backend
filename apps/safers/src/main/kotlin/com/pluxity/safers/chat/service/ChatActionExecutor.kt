@@ -115,7 +115,7 @@ class ChatActionExecutor(
     }
 
     private fun executeWeatherQuery(action: QueryAction): Any {
-        val siteId = action.filters["siteId"]?.toString()?.toLong()
+        val siteId = action.filters["siteId"]?.toString()?.toLongOrNull()
         if (siteId != null) {
             return weatherService.findDashboard(siteId)
         }
@@ -125,7 +125,7 @@ class ChatActionExecutor(
     }
 
     private fun executeSiteQuery(action: QueryAction): List<SiteResponse> {
-        val siteId = action.filters["siteId"]?.toString()?.toLong()
+        val siteId = action.filters["siteId"]?.toString()?.toLongOrNull()
         if (siteId != null) {
             val site =
                 siteRepository.findByIdOrNull(siteId)
