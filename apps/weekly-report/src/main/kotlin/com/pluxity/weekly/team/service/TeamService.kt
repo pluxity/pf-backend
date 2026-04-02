@@ -37,14 +37,8 @@ class TeamService(
         }
 
     fun search(filter: TeamSearchFilter): List<TeamResponse> =
-        teamRepository
-            .findAllNotNull {
-                select(entity(Team::class))
-                    .from(entity(Team::class))
-                    .whereAnd(
-                        filter.name?.let { path(Team::name).like("%$it%") },
-                    )
-            }.map { team ->
+        teamRepository.findByFilter(filter)
+            .map { team ->
                 val members = memberRepository.findByTeam(team).map { it.user.toResponse() }
                 val leaderName = team.leaderId?.let { getUserById(it).name }
                 team.toResponse(leaderName = leaderName, members = members)
