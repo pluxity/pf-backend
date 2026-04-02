@@ -1,0 +1,95 @@
+package com.pluxity.safers.chat.prompt
+
+import com.pluxity.safers.cctv.service.CctvService
+import com.pluxity.safers.site.repository.SiteRepository
+import org.springframework.core.io.ClassPathResource
+import org.springframework.stereotype.Component
+import java.time.LocalDateTime
+
+@Component
+class ChatPromptBuilder(
+    private val siteRepository: SiteRepository,
+    private val cctvService: CctvService,
+) {
+    private val intentPrompt: String by lazy {
+        ClassPathResource("prompts/chat-intent-system.txt").getContentAsString(Charsets.UTF_8)
+    }
+
+    private val layoutPrompt: String by lazy {
+        ClassPathResource("prompts/chat-system.txt").getContentAsString(Charsets.UTF_8)
+    }
+
+    /**
+     * 1차 호출용: 의도 파악 시스템 프롬프트
+     */
+    fun buildIntentPrompt(): String =
+        buildString {
+            val sites = siteRepository.findAll()
+            val now = LocalDateTime.now()
+
+            append(intentPrompt.replace("{{now}}", now.toString()))
+            appendLine()
+            appendLine()
+            appendLine("## SITES (${sites.size}개 현장)")
+            sites.forEach { site ->
+                appendLine("- id=${site.requiredId}, ${site.name}")
+            }
+        }
+
+    /**
+     * 2차 호출용: UI 배치 시스템 프롬프트
+     */
+    fun buildLayoutPrompt(): String =
+        buildString {
+            val sites = siteRepository.findAll()
+
+            append(layoutPrompt)
+            appendLine()
+            appendLine()
+            appendLine("## SITES")
+            sites.forEach { site ->
+                appendLine("- id=${site.requiredId}, ${site.name}")
+            }
+            appendLine()
+            appendCameras()
+        }
+
+    /**
+     * 2차 호출용: 조회된 데이터 요약 메시지
+     */
+    fun buildDataSummary(
+        userQuery: String,
+        dataModel: Map<String, Any>,
+    ): String =
+        buildString {
+            appendLine("사용자 질문: $userQuery")
+            appendLine()
+            appendLine("조회된 데이터:")
+            dataModel.forEach { (key, value) ->
+                when (value) {
+                    is Collection<*> -> appendLine("- $key: ${value.size}건")
+                    is Map<*, *> -> {
+                        val content = value["content"]
+                        if (content is Collection<*>) {
+                            appendLine("- $key: ${content.size}건 (총 ${value["totalElements"] ?: "?"}건)")
+                        } else {
+                            appendLine("- $key: 데이터 있음")
+                        }
+                    }
+                    else -> appendLine("- $key: 데이터 있음")
+                }
+            }
+            appendLine()
+            appendLine("위 데이터를 기반으로 적절한 UI를 배치해주세요.")
+        }
+
+    private fun StringBuilder.appendCameras() {
+        val cctvs = cctvService.findAll()
+        if (cctvs.isEmpty()) return
+        appendLine("## AVAILABLE_CAMERAS")
+        cctvs.groupBy { it.site.name }.forEach { (siteName, cameras) ->
+            appendLine("$siteName:")
+            cameras.forEach { appendLine("  - ${it.name}") }
+        }
+    }
+}

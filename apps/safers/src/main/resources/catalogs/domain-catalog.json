@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "catalogId": "domain",
+  "description": "SAFERS 도메인 컴포넌트 (CCTV, 날씨, 이벤트) — 모든 데이터 props는 path 바인딩 사용",
+  "components": {
+    "CCTVViewer": {
+      "description": "CCTV 그리드 뷰어. cameras path로 CCTV 데이터 참조",
+      "properties": {
+        "cameras": { "$ref": "#/$defs/PathBinding", "description": "CCTV 배열 데이터 경로" },
+        "siteId": { "type": "number", "description": "현장 ID" },
+        "columns": { "type": "number", "default": 2 },
+        "pageSize": { "type": "number", "default": 4 },
+        "size": { "type": "string", "enum": ["sm", "md", "lg"], "default": "md" }
+      },
+      "required": ["cameras", "siteId"]
+    },
+    "CCTVFeed": {
+      "description": "단일 CCTV 피드 (List 안에서 사용)",
+      "properties": {
+        "name": { "$ref": "#/$defs/PathBinding", "description": "카메라 이름" },
+        "streamName": { "$ref": "#/$defs/PathBinding", "description": "스트림명" },
+        "variant": { "type": "string", "enum": ["live", "alert", "offline"] },
+        "size": { "type": "string", "enum": ["sm", "md", "lg"], "default": "md" }
+      },
+      "required": ["name", "streamName"]
+    },
+    "WeatherCard": {
+      "description": "날씨 카드. data path로 날씨 데이터 참조",
+      "properties": {
+        "data": { "$ref": "#/$defs/PathBinding", "description": "날씨 데이터 경로" },
+        "size": { "type": "string", "enum": ["sm", "md", "lg"], "default": "md" }
+      },
+      "required": ["data"]
+    },
+    "EventAlertCard": {
+      "description": "이벤트 알림 카드 (List 안에서 path 바인딩 사용)",
+      "properties": {
+        "variant": { "$ref": "#/$defs/PathBinding", "description": "이벤트 유형" },
+        "title": { "$ref": "#/$defs/PathBinding", "description": "이벤트 제목" },
+        "location": { "$ref": "#/$defs/PathBinding", "description": "위치" },
+        "time": { "$ref": "#/$defs/PathBinding", "description": "발생 시간" },
+        "size": { "type": "string", "enum": ["sm", "md", "lg"], "default": "md" },
+        "confidence": { "$ref": "#/$defs/PathBinding", "description": "신뢰도" }
+      },
+      "required": ["variant", "title", "location", "time"]
+    },
+    "EnvironmentGauge": {
+      "description": "환경 지표 게이지 (List 안에서 path 바인딩 사용)",
+      "properties": {
+        "type": { "$ref": "#/$defs/PathBinding", "description": "환경 지표 타입" },
+        "value": { "$ref": "#/$defs/PathBinding", "description": "측정값" },
+        "size": { "type": "string", "enum": ["sm", "md", "lg"], "default": "md" }
+      },
+      "required": ["type", "value"]
+    },
+    "SafetyScoreGauge": {
+      "description": "안전 점수 게이지",
+      "properties": {
+        "score": { "$ref": "#/$defs/PathBinding", "description": "안전 점수 경로" },
+        "size": { "type": "string", "enum": ["sm", "md", "lg"], "default": "md" }
+      },
+      "required": ["score"]
+    },
+    "WorkerBioRow": {
+      "description": "작업자 바이오 데이터 행 (List 안에서 path 바인딩 사용)",
+      "properties": {
+        "name": { "$ref": "#/$defs/PathBinding", "description": "작업자 이름" },
+        "location": { "$ref": "#/$defs/PathBinding", "description": "위치" },
+        "temperature": { "$ref": "#/$defs/PathBinding", "description": "체온" },
+        "heartRate": { "$ref": "#/$defs/PathBinding", "description": "심박수" },
+        "status": { "$ref": "#/$defs/PathBinding", "description": "상태" },
+        "size": { "type": "string", "enum": ["sm", "md", "lg"], "default": "md" }
+      },
+      "required": ["name", "location", "temperature", "heartRate", "status"]
+    }
+  },
+  "$defs": {
+    "PathBinding": {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string" }
+      },
+      "required": ["path"]
+    }
+  }
+}
