@@ -3,14 +3,12 @@ package com.pluxity.weekly.task.service
 import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.utils.findAllNotNull
 import com.pluxity.weekly.chat.dto.TaskSearchFilter
 import com.pluxity.weekly.epic.entity.Epic
 import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.UserType
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
-import com.pluxity.weekly.project.entity.Project
 import com.pluxity.weekly.project.repository.ProjectRepository
 import com.pluxity.weekly.task.dto.TaskRequest
 import com.pluxity.weekly.task.dto.TaskResponse
@@ -44,21 +42,7 @@ class TaskService(
         return taskRepository.findByEpicInAndAssigneeId(epics, user.requiredId).map { it.toResponse() }
     }
 
-    fun search(filter: TaskSearchFilter): List<TaskResponse> =
-        taskRepository
-            .findAllNotNull {
-                select(entity(Task::class))
-                    .from(entity(Task::class))
-                    .whereAnd(
-                        filter.status?.let { path(Task::status).eq(it) },
-                        filter.epicId?.let { path(Task::epic)(Epic::id).eq(it) },
-                        filter.projectId?.let { path(Task::epic)(Epic::project)(Project::id).eq(it) },
-                        filter.assigneeId?.let { path(Task::assignee)(User::id).eq(it) },
-                        filter.name?.let { path(Task::name).like("%$it%") },
-                        filter.dueDateFrom?.let { path(Task::dueDate).greaterThanOrEqualTo(it) },
-                        filter.dueDateTo?.let { path(Task::dueDate).lessThanOrEqualTo(it) },
-                    )
-            }.map { it.toResponse() }
+    fun search(filter: TaskSearchFilter): List<TaskResponse> = taskRepository.findByFilter(filter).map { it.toResponse() }
 
     fun findById(id: Long): TaskResponse = getTaskById(id).toResponse()
 

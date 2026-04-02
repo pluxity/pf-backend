@@ -2,7 +2,6 @@ package com.pluxity.weekly.project.service
 
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.utils.findAllNotNull
 import com.pluxity.weekly.chat.dto.ProjectSearchFilter
 import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.UserType
@@ -16,9 +15,6 @@ import com.pluxity.weekly.project.repository.ProjectRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-
-// TODO: ProjectStatus 상태 전이 규칙 (예: TODO → IN_PROGRESS → DONE, 역방향 제한 등)
-// TODO: dueDate 초과 시 status를 OVERDUE로 변경하는 스케줄러 또는 조회 시 판정 로직
 
 @Service
 @Transactional(readOnly = true)
@@ -48,23 +44,15 @@ class ProjectService(
 
     // TODO: "내 프로젝트" 필터 — PM은 pmId, 일반 사용자는 Project > Epic > EpicAssignment 2단계 조인 필요
     fun search(filter: ProjectSearchFilter): List<ProjectResponse> =
-        projectRepository
-            .findAllNotNull {
-                select(entity(Project::class))
-                    .from(entity(Project::class))
-                    .whereAnd(
-                        filter.status?.let { path(Project::status).eq(it) },
-                        filter.name?.let { path(Project::name).like("%$it%") },
-                    )
-            }.let { projects ->
-                if (projects.isEmpty()) return emptyList()
-                val memberMap =
-                    projectRepository
-                        .findMembersByProjectIds(projects.map { it.requiredId })
-                        .groupBy { it.projectId }
-                val pmNameMap = resolvePmNames(projects.mapNotNull { it.pmId })
-                projects.map { it.toResponse(memberMap[it.requiredId].orEmpty(), pmNameMap[it.pmId]) }
-            }
+        projectRepository.findByFilter(filter).let { projects ->
+            if (projects.isEmpty()) return emptyList()
+            val memberMap =
+                projectRepository
+                    .findMembersByProjectIds(projects.map { it.requiredId })
+                    .groupBy { it.projectId }
+            val pmNameMap = resolvePmNames(projects.mapNotNull { it.pmId })
+            projects.map { it.toResponse(memberMap[it.requiredId].orEmpty(), pmNameMap[it.pmId]) }
+        }
 
     fun findById(id: Long): ProjectResponse {
         val project = getById(id)
