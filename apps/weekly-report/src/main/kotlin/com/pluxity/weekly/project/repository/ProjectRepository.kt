@@ -1,6 +1,5 @@
 package com.pluxity.weekly.project.repository
 
-import com.linecorp.kotlinjdsl.support.spring.data.jpa.repository.KotlinJdslJpqlExecutor
 import com.pluxity.weekly.project.dto.ProjectMemberResponse
 import com.pluxity.weekly.project.entity.Project
 import org.springframework.data.jpa.repository.JpaRepository
@@ -8,9 +7,7 @@ import org.springframework.data.jpa.repository.Query
 
 interface ProjectRepository :
     JpaRepository<Project, Long>,
-    KotlinJdslJpqlExecutor {
-    fun findByNameContainingIgnoreCase(name: String): List<Project>
-
+    ProjectCustomRepository {
     fun findByPmId(pmId: Long): List<Project>
 
     fun existsByIdAndPmId(

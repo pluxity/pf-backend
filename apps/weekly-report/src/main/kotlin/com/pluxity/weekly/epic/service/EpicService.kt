@@ -3,7 +3,6 @@ package com.pluxity.weekly.epic.service
 import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.utils.findAllNotNull
 import com.pluxity.weekly.chat.dto.EpicSearchFilter
 import com.pluxity.weekly.epic.dto.EpicAssignmentResponse
 import com.pluxity.weekly.epic.dto.EpicRequest
@@ -11,7 +10,6 @@ import com.pluxity.weekly.epic.dto.EpicResponse
 import com.pluxity.weekly.epic.dto.EpicUpdateRequest
 import com.pluxity.weekly.epic.dto.toResponse
 import com.pluxity.weekly.epic.entity.Epic
-import com.pluxity.weekly.epic.entity.EpicAssignment
 import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.UserType
@@ -24,8 +22,6 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
-// TODO: EpicStatus 상태 전이 규칙 (예: TODO → IN_PROGRESS → DONE, 역방향 제한 등)
-// TODO: Role별 llm context 생성 메서드
 @Service
 @Transactional(readOnly = true)
 class EpicService(
@@ -47,20 +43,7 @@ class EpicService(
         return epicRepository.findByAssignmentsUserId(user.requiredId).map { it.toResponse() }
     }
 
-    fun search(filter: EpicSearchFilter): List<EpicResponse> =
-        epicRepository
-            .findAllNotNull {
-                selectDistinct(entity(Epic::class))
-                    .from(
-                        entity(Epic::class),
-                        leftJoin(Epic::assignments),
-                    ).whereAnd(
-                        filter.status?.let { path(Epic::status).eq(it) },
-                        filter.name?.let { path(Epic::name).like("%$it%") },
-                        filter.projectId?.let { path(Epic::project)(Project::id).eq(it) },
-                        filter.assigneeId?.let { path(EpicAssignment::user)(User::id).eq(it) },
-                    )
-            }.map { it.toResponse() }
+    fun search(filter: EpicSearchFilter): List<EpicResponse> = epicRepository.findByFilter(filter).map { it.toResponse() }
 
     fun findById(id: Long): EpicResponse = getEpicById(id).toResponse()
 
