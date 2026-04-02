@@ -7,13 +7,12 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor
 import java.util.concurrent.Executor
 
-@EnableAsync
-@Configuration
-
 /**
  * DelegatingSecurityContextAsyncTaskExecutor = 쓰레드 로컬에 securityContext 전파용
  */
 
+@EnableAsync
+@Configuration
 class AsyncConfig {
     @Bean
     fun taskExecutor(): Executor {
