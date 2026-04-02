@@ -7,4 +7,5 @@ data class EventFilterCriteria(
     val startDate: LocalDateTime? = null,
     val endDate: LocalDateTime? = null,
     val types: List<EventType>? = null,
+    val siteId: Long? = null,
 )

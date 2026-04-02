@@ -30,8 +30,9 @@ class CctvServiceTest :
         val fileService: FileService = mockk(relaxed = true)
         val apiClient: CctvApiClient = mockk()
         val llmClient: LlmClient = mockk(relaxed = true)
+        val cctvSiteCache: CctvSiteCache = mockk(relaxed = true)
         val service = CctvService(repository, fileService)
-        val facade = CctvFacade(service, siteRepository, apiClient, llmClient)
+        val facade = CctvFacade(service, siteRepository, apiClient, llmClient, cctvSiteCache)
 
         val site = dummySite(id = 1L, baseUrl = "http://media-server:9997")
 
@@ -196,8 +197,6 @@ class CctvServiceTest :
                 every {
                     repository.findAllWithSite(CctvFilterCriteria(name = null, siteIds = listOf(1L)))
                 } returns emptyList()
-
-                val result = facade.findAll(siteId = 1L, query = "알 수 없는 질문")
 
                 Then("siteId만으로 조회된다") {
                     verify {

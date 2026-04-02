@@ -35,6 +35,8 @@ class Event(
     val confidence: Double? = null,
     @Column(name = "path")
     val path: String = "",
+    @Column(name = "site_id", nullable = false)
+    val siteId: Long,
 ) : IdentityIdEntity() {
     @Column(name = "snapshot_file_id")
     var snapshotFileId: Long? = null

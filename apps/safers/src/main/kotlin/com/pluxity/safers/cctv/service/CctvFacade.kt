@@ -31,6 +31,7 @@ class CctvFacade(
     private val siteRepository: SiteRepository,
     private val apiClient: CctvApiClient,
     private val llmClient: LlmClient,
+    private val cctvSiteCache: CctvSiteCache,
 ) {
     companion object {
         private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
@@ -65,6 +66,7 @@ class CctvFacade(
             }
 
         cctvService.syncAll(sitePathsMap)
+        cctvSiteCache.refresh()
     }
 
     fun findAll(

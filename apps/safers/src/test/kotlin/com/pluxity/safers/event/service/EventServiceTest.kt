@@ -4,6 +4,7 @@ import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.file.service.FileService
 import com.pluxity.common.test.dto.dummyFileResponse
+import com.pluxity.safers.cctv.service.CctvSiteCache
 import com.pluxity.safers.event.dto.dummyEventCreateRequest
 import com.pluxity.safers.event.entity.Event
 import com.pluxity.safers.event.entity.dummyEvent
@@ -11,6 +12,7 @@ import com.pluxity.safers.event.listener.EventCreated
 import com.pluxity.safers.event.repository.EventRepository
 import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.llm.LlmClient
+import com.pluxity.safers.site.repository.SiteRepository
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -29,12 +31,15 @@ class EventServiceTest :
         val eventFileDownloadService: EventFileDownloadService = mockk()
         val eventPublisher: ApplicationEventPublisher = mockk(relaxed = true)
         val llmClient: LlmClient = mockk(relaxed = true)
+        val cctvSiteCache: CctvSiteCache = mockk(relaxed = true)
+        val siteRepository: SiteRepository = mockk(relaxed = true)
 
         val service =
             EventService(
                 eventRepository,
                 fileService,
                 eventPublisher,
+                siteRepository,
             )
 
         val facade =
@@ -42,6 +47,7 @@ class EventServiceTest :
                 service,
                 eventFileDownloadService,
                 llmClient,
+                cctvSiteCache,
             )
 
         Given("이벤트 생성") {

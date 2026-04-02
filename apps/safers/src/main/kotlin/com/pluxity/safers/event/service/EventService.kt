@@ -16,6 +16,8 @@ import com.pluxity.safers.event.listener.EventVideoRegistered
 import com.pluxity.safers.event.repository.EventRepository
 import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.llm.dto.EventFilterCriteria
+import com.pluxity.safers.site.dto.toResponse
+import com.pluxity.safers.site.repository.SiteRepository
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
@@ -28,6 +30,7 @@ class EventService(
     private val eventRepository: EventRepository,
     private val fileService: FileService,
     private val eventPublisher: ApplicationEventPublisher,
+    private val siteRepository: SiteRepository,
 ) {
     companion object {
         private const val EVENT_PATH = "events/"
@@ -37,6 +40,7 @@ class EventService(
     fun create(
         request: EventCreateRequest,
         snapshotFileId: Long?,
+        siteId: Long,
     ): Long {
         val event =
             Event(
@@ -51,6 +55,7 @@ class EventService(
                 centerY = request.center?.y,
                 confidence = request.confidence,
                 path = request.path,
+                siteId = siteId,
             )
 
         val savedEvent = eventRepository.save(event)
@@ -92,7 +97,8 @@ class EventService(
 
         val snapshotFileResponse = fileService.getFileResponse(event.snapshotFileId)
         val videoFileResponse = fileService.getFileResponse(event.videoFileId)
-        return event.toResponse(snapshotFileResponse, videoFileResponse)
+        val siteResponse = siteRepository.findByIdOrNull(event.siteId)?.toResponse(null)
+        return event.toResponse(snapshotFileResponse, videoFileResponse, siteResponse)
     }
 
     fun findAll(
@@ -103,10 +109,14 @@ class EventService(
         val page = eventRepository.findAllByFilter(pageable, criteria)
 
         val fileMap = fileService.getFileMapByIds(page.content) { listOf(it.snapshotFileId, it.videoFileId) }
+        val siteIds = page.content.map { it.siteId }.distinct()
+        val siteMap = siteRepository.findAllById(siteIds).associateBy { it.requiredId }
+
         return page.toPageResponse {
             it.toResponse(
                 fileMap[it.snapshotFileId],
                 fileMap[it.videoFileId],
+                siteMap[it.siteId]?.toResponse(null),
             )
         }
     }

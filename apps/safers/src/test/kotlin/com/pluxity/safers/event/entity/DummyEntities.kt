@@ -16,6 +16,7 @@ fun dummyEvent(
     centerY: Double? = 200.0,
     confidence: Double? = 0.95,
     path: String = "",
+    siteId: Long = 1L,
     snapshotFileId: Long? = null,
     videoFileId: Long? = null,
 ): Event =
@@ -31,6 +32,7 @@ fun dummyEvent(
         centerY = centerY,
         confidence = confidence,
         path = path,
+        siteId = siteId,
     ).withId(id).apply {
         snapshotFileId?.let { assignSnapshotFile(it) }
         videoFileId?.let { assignVideoFile(it) }
