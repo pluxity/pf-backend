@@ -5,7 +5,6 @@ import com.pluxity.common.auth.user.dto.toResponse
 import com.pluxity.common.auth.user.entity.User
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.utils.findAllNotNull
 import com.pluxity.weekly.chat.dto.TeamSearchFilter
 import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
@@ -37,7 +36,8 @@ class TeamService(
         }
 
     fun search(filter: TeamSearchFilter): List<TeamResponse> =
-        teamRepository.findByFilter(filter)
+        teamRepository
+            .findByFilter(filter)
             .map { team ->
                 val members = memberRepository.findByTeam(team).map { it.user.toResponse() }
                 val leaderName = team.leaderId?.let { getUserById(it).name }

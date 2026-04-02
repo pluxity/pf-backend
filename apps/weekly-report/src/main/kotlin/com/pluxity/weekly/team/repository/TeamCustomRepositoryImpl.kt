@@ -7,7 +7,7 @@ import com.pluxity.weekly.team.entity.Team
 
 class TeamCustomRepositoryImpl(
     private val executor: KotlinJdslJpqlExecutor,
-) : TeamCustomRepository{
+) : TeamCustomRepository {
     override fun findByFilter(filter: TeamSearchFilter): List<Team> =
         executor.findAllNotNull {
             select(entity(Team::class))
