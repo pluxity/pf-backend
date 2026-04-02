@@ -67,11 +67,7 @@ class EventServiceTest :
                 every { eventRepository.save(any()) } returns savedEvent
                 every { fileService.getFileResponse(snapshotFileId) } returns snapshotFileResponse
 
-                val result = facade.create(request)
-
-                Then("이벤트 ID가 반환된다") {
-                    result shouldBe 1L
-                }
+                facade.create(request)
 
                 Then("파일 업로드가 확정된다") {
                     verify { fileService.finalizeUpload(snapshotFileId, "events/1/") }
@@ -91,10 +87,9 @@ class EventServiceTest :
                 every { eventRepository.save(any()) } returns savedEvent
                 every { fileService.getFileResponse(null) } returns null
 
-                val result = facade.create(request)
+                facade.create(request)
 
                 Then("이벤트는 저장되지만 파일 업로드는 수행되지 않는다") {
-                    result shouldBe 2L
                     verify(exactly = 0) { fileService.finalizeUpload(any(), any()) }
                 }
             }

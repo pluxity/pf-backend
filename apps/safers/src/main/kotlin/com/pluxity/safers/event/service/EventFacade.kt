@@ -15,12 +15,12 @@ class EventFacade(
     private val llmClient: LlmClient,
     private val cctvSiteCache: CctvSiteCache,
 ) {
-    fun create(request: EventCreateRequest): Long {
+    fun create(request: EventCreateRequest) {
         val snapshotFileId = eventFileDownloadService.downloadAndInitiateUpload(request.snapshot)
         val siteId =
             cctvSiteCache.getSiteIdByStreamName(request.path)
                 ?: throw IllegalArgumentException("CCTV 스트림(${request.path})에 매핑된 현장을 찾을 수 없습니다")
-        return eventService.create(request, snapshotFileId, siteId)
+        eventService.create(request, snapshotFileId, siteId)
     }
 
     fun uploadVideoByEventId(

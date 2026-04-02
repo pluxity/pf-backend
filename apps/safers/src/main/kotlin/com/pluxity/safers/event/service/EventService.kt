@@ -41,7 +41,7 @@ class EventService(
         request: EventCreateRequest,
         snapshotFileId: Long?,
         siteId: Long,
-    ): Long {
+    ) {
         val event =
             Event(
                 eventId = request.eventId,
@@ -68,8 +68,6 @@ class EventService(
         val fileResponse = fileService.getFileResponse(snapshotFileId)
         val siteResponse = siteRepository.findByIdOrNull(siteId)?.toResponse(null)
         eventPublisher.publishEvent(EventCreated(savedEvent.toResponse(fileResponse, siteResponse = siteResponse)))
-
-        return savedEvent.requiredId
     }
 
     @Transactional
