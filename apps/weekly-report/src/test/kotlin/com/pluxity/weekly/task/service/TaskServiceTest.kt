@@ -9,7 +9,6 @@ import com.pluxity.weekly.epic.entity.dummyEpic
 import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
-import com.pluxity.weekly.project.repository.ProjectRepository
 import com.pluxity.weekly.task.dto.dummyTaskRequest
 import com.pluxity.weekly.task.dto.dummyTaskUpdateRequest
 import com.pluxity.weekly.task.entity.Task
@@ -34,8 +33,7 @@ class TaskServiceTest :
         val epicRepository: EpicRepository = mockk()
         val userRepository: UserRepository = mockk()
         val authorizationService: AuthorizationService = mockk()
-        val projectRepository: ProjectRepository = mockk()
-        val service = TaskService(taskRepository, epicRepository, userRepository, authorizationService, projectRepository)
+        val service = TaskService(taskRepository, epicRepository, userRepository, authorizationService)
 
         val adminUser =
             dummyUser(id = 1L, name = "관리자").apply {
@@ -46,6 +44,8 @@ class TaskServiceTest :
             every { authorizationService.currentUser() } returns adminUser
             every { authorizationService.requireEpicAccess(any(), any()) } just runs
             every { authorizationService.requireTaskOwner(any(), any()) } just runs
+            every { authorizationService.visibleEpicIds(any()) } returns null
+            every { authorizationService.restrictedAssigneeId(any()) } returns null
         }
 
         Given("태스크 전체 조회") {
@@ -58,7 +58,7 @@ class TaskServiceTest :
                         dummyTask(id = 3L, epic = epic, name = "태스크C"),
                     )
 
-                every { taskRepository.findAll() } returns entities
+                every { taskRepository.findByFilter(any()) } returns entities
 
                 val result = service.findAll()
 

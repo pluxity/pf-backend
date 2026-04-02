@@ -41,6 +41,7 @@ class ProjectServiceTest :
             every { authorizationService.currentUser() } returns adminUser
             every { authorizationService.requireProjectManager(any(), any()) } just runs
             every { authorizationService.requireAdmin(any()) } just runs
+            every { authorizationService.visibleProjectIds(any()) } returns null
         }
 
         Given("프로젝트 전체 조회") {
@@ -52,7 +53,7 @@ class ProjectServiceTest :
                         dummyProject(id = 3L, name = "프로젝트C"),
                     )
 
-                every { projectRepository.findAll() } returns entities
+                every { projectRepository.findByFilter(any()) } returns entities
                 every { projectRepository.findMembersByProjectIds(any()) } returns emptyList()
                 every { userRepository.findAllById(any<List<Long>>()) } returns emptyList()
 
