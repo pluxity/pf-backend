@@ -33,8 +33,9 @@ class EventServiceTest :
         val llmClient: LlmClient = mockk(relaxed = true)
         val cctvSiteCache: CctvSiteCache = mockk(relaxed = true)
         val siteRepository: SiteRepository =
-            mockk(relaxed = true) {
+            mockk {
                 every { findByIdOrNull(any<Long>()) } returns null
+                every { findAllById(any<Iterable<Long>>()) } returns emptyList()
             }
 
         val service =
