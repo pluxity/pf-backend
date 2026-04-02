@@ -4,5 +4,5 @@ import com.pluxity.weekly.chat.dto.TeamSearchFilter
 import com.pluxity.weekly.team.entity.Team
 
 interface TeamCustomRepository {
-    fun findByFilter(filter : TeamSearchFilter): List<Team>
+    fun findByFilter(filter: TeamSearchFilter): List<Team>
 }
