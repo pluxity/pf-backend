@@ -31,24 +31,27 @@ class ChatService(
 
             // 1차 LLM: 의도 파악 (actions)
             val intentPrompt = promptBuilder.buildIntentPrompt()
-            val intentMessages = buildList {
-                add(Message(role = "system", content = intentPrompt))
-                addAll(history.takeLast(10))
-                add(Message(role = "user", content = message))
-            }
+            val intentMessages =
+                buildList {
+                    add(Message(role = "system", content = intentPrompt))
+                    addAll(history.takeLast(10))
+                    add(Message(role = "user", content = message))
+                }
             val intentResult = chatLlmClient.analyzeIntent(intentMessages)
 
             // 데이터 조회
-            val dataModel = runBlocking {
-                actionExecutor.execute(intentResult.actions)
-            }
+            val dataModel =
+                runBlocking {
+                    actionExecutor.execute(intentResult.actions)
+                }
 
             // 2차 LLM: 데이터 기반 UI 배치
             val dataSummary = promptBuilder.buildDataSummary(message, dataModel)
-            val layoutMessages = listOf(
-                Message(role = "system", content = promptBuilder.buildLayoutPrompt()),
-                Message(role = "user", content = dataSummary),
-            )
+            val layoutMessages =
+                listOf(
+                    Message(role = "system", content = promptBuilder.buildLayoutPrompt()),
+                    Message(role = "user", content = dataSummary),
+                )
             val surfaceUpdate = chatLlmClient.generateLayout(layoutMessages)
 
             // 히스토리 저장
@@ -64,19 +67,23 @@ class ChatService(
         }
     }
 
-    private fun buildResponse(surfaceUpdate: SurfaceUpdate, dataModel: Map<String, Any>): ChatResponse {
+    private fun buildResponse(
+        surfaceUpdate: SurfaceUpdate,
+        dataModel: Map<String, Any>,
+    ): ChatResponse {
         val surfaceId = surfaceUpdate.surfaceId
-        val messages = listOf(
-            A2uiMessage(
-                createSurface = CreateSurface(surfaceId = surfaceId, catalogId = "safers"),
-            ),
-            A2uiMessage(
-                updateComponents = UpdateComponents(surfaceId = surfaceId, components = surfaceUpdate.components),
-            ),
-            A2uiMessage(
-                updateDataModel = UpdateDataModel(surfaceId = surfaceId, value = dataModel),
-            ),
-        )
+        val messages =
+            listOf(
+                A2uiMessage(
+                    createSurface = CreateSurface(surfaceId = surfaceId, catalogId = "safers"),
+                ),
+                A2uiMessage(
+                    updateComponents = UpdateComponents(surfaceId = surfaceId, components = surfaceUpdate.components),
+                ),
+                A2uiMessage(
+                    updateDataModel = UpdateDataModel(surfaceId = surfaceId, value = dataModel),
+                ),
+            )
         return ChatResponse(messages = messages)
     }
 
@@ -88,28 +95,43 @@ class ChatService(
         }
     }
 
-    private fun buildFallbackResponse(message: String): ChatResponse {
-        return ChatResponse(
-            messages = listOf(
-                A2uiMessage(
-                    createSurface = CreateSurface(surfaceId = "fallback", catalogId = "safers"),
-                ),
-                A2uiMessage(
-                    updateComponents = UpdateComponents(
-                        surfaceId = "fallback",
-                        components = listOf(
-                            mapOf(
-                                "id" to "msg",
-                                "component" to mapOf("AgentMessageCard" to mapOf("message" to "죄송합니다. 요청을 처리하지 못했습니다: $message")),
+    private fun buildFallbackResponse(message: String): ChatResponse =
+        ChatResponse(
+            messages =
+                listOf(
+                    A2uiMessage(
+                        createSurface = CreateSurface(surfaceId = "fallback", catalogId = "safers"),
+                    ),
+                    A2uiMessage(
+                        updateComponents =
+                            UpdateComponents(
+                                surfaceId = "fallback",
+                                components =
+                                    listOf(
+                                        mapOf(
+                                            "id" to "msg",
+                                            "component" to
+                                                mapOf(
+                                                    "AgentMessageCard" to
+                                                        mapOf(
+                                                            "message" to "죄송합니다. 요청을 처리하지 못했습니다: $message",
+                                                        ),
+                                                ),
+                                        ),
+                                        mapOf(
+                                            "id" to "root",
+                                            "component" to
+                                                mapOf(
+                                                    "FlexCol" to
+                                                        mapOf(
+                                                            "children" to mapOf("explicitList" to listOf("msg")),
+                                                            "gap" to 0,
+                                                        ),
+                                                ),
+                                        ),
+                                    ),
                             ),
-                            mapOf(
-                                "id" to "root",
-                                "component" to mapOf("FlexCol" to mapOf("children" to mapOf("explicitList" to listOf("msg")), "gap" to 0)),
-                            ),
-                        ),
                     ),
                 ),
-            ),
         )
-    }
 }
