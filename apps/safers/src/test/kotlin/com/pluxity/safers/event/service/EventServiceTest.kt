@@ -4,6 +4,7 @@ import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.file.service.FileService
 import com.pluxity.common.test.dto.dummyFileResponse
+import com.pluxity.safers.cctv.service.CctvSiteCache
 import com.pluxity.safers.event.dto.dummyEventCreateRequest
 import com.pluxity.safers.event.entity.Event
 import com.pluxity.safers.event.entity.dummyEvent
@@ -11,6 +12,7 @@ import com.pluxity.safers.event.listener.EventCreated
 import com.pluxity.safers.event.repository.EventRepository
 import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.llm.LlmClient
+import com.pluxity.safers.site.repository.SiteRepository
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -29,12 +31,19 @@ class EventServiceTest :
         val eventFileDownloadService: EventFileDownloadService = mockk()
         val eventPublisher: ApplicationEventPublisher = mockk(relaxed = true)
         val llmClient: LlmClient = mockk(relaxed = true)
+        val cctvSiteCache: CctvSiteCache = mockk(relaxed = true)
+        val siteRepository: SiteRepository =
+            mockk {
+                every { findByIdOrNull(any<Long>()) } returns null
+                every { findAllById(any<Iterable<Long>>()) } returns emptyList()
+            }
 
         val service =
             EventService(
                 eventRepository,
                 fileService,
                 eventPublisher,
+                siteRepository,
             )
 
         val facade =
@@ -42,6 +51,7 @@ class EventServiceTest :
                 service,
                 eventFileDownloadService,
                 llmClient,
+                cctvSiteCache,
             )
 
         Given("이벤트 생성") {
@@ -53,14 +63,11 @@ class EventServiceTest :
                 val snapshotFileResponse = dummyFileResponse(id = snapshotFileId)
 
                 every { eventFileDownloadService.downloadAndInitiateUpload(request.snapshot) } returns snapshotFileId
+                every { cctvSiteCache.getSiteIdByStreamName(any()) } returns 1L
                 every { eventRepository.save(any()) } returns savedEvent
                 every { fileService.getFileResponse(snapshotFileId) } returns snapshotFileResponse
 
-                val result = facade.create(request)
-
-                Then("이벤트 ID가 반환된다") {
-                    result shouldBe 1L
-                }
+                facade.create(request)
 
                 Then("파일 업로드가 확정된다") {
                     verify { fileService.finalizeUpload(snapshotFileId, "events/1/") }
@@ -76,13 +83,13 @@ class EventServiceTest :
                 val savedEvent = dummyEvent(id = 2L)
 
                 every { eventFileDownloadService.downloadAndInitiateUpload(request.snapshot) } returns null
+                every { cctvSiteCache.getSiteIdByStreamName(any()) } returns 1L
                 every { eventRepository.save(any()) } returns savedEvent
                 every { fileService.getFileResponse(null) } returns null
 
-                val result = facade.create(request)
+                facade.create(request)
 
                 Then("이벤트는 저장되지만 파일 업로드는 수행되지 않는다") {
-                    result shouldBe 2L
                     verify(exactly = 0) { fileService.finalizeUpload(any(), any()) }
                 }
             }

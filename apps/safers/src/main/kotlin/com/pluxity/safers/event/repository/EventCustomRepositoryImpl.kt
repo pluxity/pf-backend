@@ -21,6 +21,7 @@ class EventCustomRepositoryImpl(
                     criteria?.startDate?.let { path(Event::eventTimestamp).greaterThanOrEqualTo(it) },
                     criteria?.endDate?.let { path(Event::eventTimestamp).lessThanOrEqualTo(it) },
                     criteria?.types?.takeIf { it.isNotEmpty() }?.let { path(Event::type).`in`(it) },
+                    criteria?.siteId?.let { path(Event::siteId).equal(it) },
                 ).orderBy(path(Event::id).desc())
         }
 }

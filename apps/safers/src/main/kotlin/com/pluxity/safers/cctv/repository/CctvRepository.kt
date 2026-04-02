@@ -11,4 +11,7 @@ interface CctvRepository :
 
     @Query("SELECT c FROM Cctv c JOIN FETCH c.site WHERE c.id = :id")
     fun findByIdWithSite(id: Long): Cctv?
+
+    @Query("SELECT c FROM Cctv c JOIN FETCH c.site")
+    fun findAllWithSite(): List<Cctv>
 }

@@ -20,7 +20,7 @@ class CctvEventConsumerTest :
 
             When("이벤트 메시지를 소비하면") {
                 val request = dummyEventCreateRequest()
-                every { eventFacade.create(any()) } returns 1L
+                every { eventFacade.create(any()) } just runs
 
                 consumer.consumeEvent(request)
 

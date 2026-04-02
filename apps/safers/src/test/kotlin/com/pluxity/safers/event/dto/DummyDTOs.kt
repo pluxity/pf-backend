@@ -28,6 +28,7 @@ fun dummyEventResponse(
         name = name,
         confidence = confidence,
         path = path,
+        site = null,
         snapshot = snapshot,
         video = video,
     )
