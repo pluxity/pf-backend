@@ -42,11 +42,12 @@ class TeamsMessageSender(
         val serviceUrl = activity.serviceUrl?.trimEnd('/') ?: return
         val conversationId = activity.conversation?.id ?: return
 
-        val typingActivity = buildReplyActivity(
-            activity,
-            conversationId,
-            mapOf("type" to "typing"),
-        )
+        val typingActivity =
+            buildReplyActivity(
+                activity,
+                conversationId,
+                mapOf("type" to "typing"),
+            )
         postActivity(serviceUrl, conversationId, typingActivity)
     }
 

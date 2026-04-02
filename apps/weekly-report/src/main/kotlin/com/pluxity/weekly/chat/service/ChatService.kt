@@ -7,10 +7,13 @@ import com.pluxity.weekly.chat.llm.LlmService
 import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.core.io.ClassPathResource
 import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.data.redis.core.script.RedisScript
 import org.springframework.stereotype.Service
 import tools.jackson.databind.ObjectMapper
 import java.time.Duration
+import java.util.UUID
 
 private val log = KotlinLogging.logger {}
 
@@ -33,12 +36,20 @@ class ChatService(
      * CUD + missingFields → 예외 (LLM message)
      * 나머지 CUD (확정)  → 서버 실행 → id 반환
      */
+    companion object {
+        private val RELEASE_LOCK_SCRIPT =
+            RedisScript.of(
+                ClassPathResource("scripts/release-lock.lua"),
+                Long::class.java,
+            )
+    }
+
     fun chat(message: String): List<ChatActionResponse> {
         val userId = authorizationService.currentUser().requiredId
         val lockKey = "chat:lock:$userId"
+        val lockValue = UUID.randomUUID().toString()
 
-        // 같은 유저의 동시 요청 차단 (SETNX + TTL 30초 안전장치)
-        val acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "1", Duration.ofSeconds(30))
+        val acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, lockValue, Duration.ofSeconds(30))
         if (acquired != true) {
             throw CustomException(WeeklyReportErrorCode.CHAT_ALREADY_PROCESSING)
         }
@@ -46,7 +57,7 @@ class ChatService(
         try {
             return processChat(message)
         } finally {
-            redisTemplate.delete(lockKey)
+            redisTemplate.execute(RELEASE_LOCK_SCRIPT, listOf(lockKey), lockValue)
         }
     }
 
