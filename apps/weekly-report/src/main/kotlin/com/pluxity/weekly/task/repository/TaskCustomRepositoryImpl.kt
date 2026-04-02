@@ -23,6 +23,7 @@ class TaskCustomRepositoryImpl(
                     filter.name?.let { path(Task::name).like("%$it%") },
                     filter.dueDateFrom?.let { path(Task::dueDate).greaterThanOrEqualTo(it) },
                     filter.dueDateTo?.let { path(Task::dueDate).lessThanOrEqualTo(it) },
+                    filter.epicIds?.let { path(Task::epic)(Epic::id).`in`(it) },
                 )
         }
 }

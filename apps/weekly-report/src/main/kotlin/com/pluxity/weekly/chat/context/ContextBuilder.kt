@@ -15,18 +15,15 @@ import tools.jackson.databind.ObjectMapper
 import java.time.LocalDate
 
 /**
- * target + action 별 CONTEXT 포함 데이터
+ * target별 CONTEXT 포함 데이터
  *
- * project create/update → projects(simple) + users(PM 권한)
- * project delete        → projects(simple)
- * epic    create/update → projects > epics + users(전체)
- * epic    delete        → projects > epics
- * task    create        → projects > epics
- * task    update/delete → projects > epics > tasks
- * team    create/update → teams + users(전체)
- * team    delete        → teams
+ * project → projects(simple) + users(PM)
+ * epic    → projects > epics + users(전체)
+ * task    → create: projects > epics / 그 외: projects > epics > tasks
+ * team    → teams + users(전체)
  *
- * 에픽 기준 바텀업으로 프로젝트 hierarchy 구성 (권한 필터링된 에픽에서 프로젝트 역그루핑)
+ * users는 항상 포함 (read에서도 이름→ID 매칭 필요)
+ * 조회 범위는 Service.search()에서 AuthorizationService 기반으로 제한
  */
 @Component
 @Transactional(readOnly = true)
@@ -53,37 +50,28 @@ class ContextBuilder(
                 "user" to mapOf("id" to user.requiredId, "name" to user.name),
             )
 
-        val hasMutation = "create" in actions || "update" in actions
         val hasCreateOnly = "create" in actions && "update" !in actions
 
         when (target) {
-            "project" -> buildProjectContext(context, hasMutation)
-            "epic" -> buildEpicContext(context, hasMutation)
-            "team" -> buildTeamContext(context, hasMutation)
+            "project" -> buildProjectContext(context)
+            "epic" -> buildEpicContext(context)
+            "team" -> buildTeamContext(context)
             else -> buildTaskContext(context, hasCreateOnly)
         }
 
         return objectMapper.writeValueAsString(context)
     }
 
-    private fun buildProjectContext(
-        context: MutableMap<String, Any?>,
-        hasMutation: Boolean,
-    ) {
+    private fun buildProjectContext(context: MutableMap<String, Any?>) {
         val projects = projectService.findAll()
         context["projects"] =
             projects.map {
                 mapOf("id" to it.id, "name" to it.name, "status" to it.status.name)
             }
-        if (hasMutation) {
-            context["users"] = findUsersByRole("PM")
-        }
+        context["users"] = findUsersByRole("PM")
     }
 
-    private fun buildEpicContext(
-        context: MutableMap<String, Any?>,
-        hasMutation: Boolean,
-    ) {
+    private fun buildEpicContext(context: MutableMap<String, Any?>) {
         val projects = projectService.findAll()
         val epics = epicService.findAll()
         val epicsByProject = epics.groupBy { it.projectId }
@@ -98,9 +86,7 @@ class ContextBuilder(
                         },
                 )
             }
-        if (hasMutation) {
-            context["users"] = findAllUsers()
-        }
+        context["users"] = findAllUsers()
     }
 
     private fun buildTaskContext(
@@ -115,17 +101,13 @@ class ContextBuilder(
             val tasks = taskService.findAll()
             val tasksByEpicId = tasks.groupBy { it.epicId }
             context["projects"] = groupByProjectFull(epics, tasksByEpicId)
+            context["users"] = findAllUsers()
         }
     }
 
-    private fun buildTeamContext(
-        context: MutableMap<String, Any?>,
-        hasMutation: Boolean,
-    ) {
+    private fun buildTeamContext(context: MutableMap<String, Any?>) {
         context["teams"] = teamService.findAll().map { mapOf("id" to it.id, "name" to it.name) }
-        if (hasMutation) {
-            context["users"] = findAllUsers()
-        }
+        context["users"] = findAllUsers()
     }
 
     private fun groupByProject(epics: List<EpicResponse>): List<Map<String, Any?>> =

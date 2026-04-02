@@ -22,6 +22,9 @@ class EpicCustomRepositoryImpl(
                     filter.name?.let { path(Epic::name).like("%$it%") },
                     filter.projectId?.let { path(Epic::project)(Project::id).eq(it) },
                     filter.assigneeId?.let { path(EpicAssignment::user)(User::id).eq(it) },
+                    filter.dueDateFrom?.let { path(Epic::dueDate).greaterThanOrEqualTo(it) },
+                    filter.dueDateTo?.let { path(Epic::dueDate).lessThanOrEqualTo(it) },
+                    filter.epicIds?.let { path(Epic::id).`in`(it) },
                 )
         }
 }

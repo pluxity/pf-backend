@@ -12,7 +12,6 @@ import com.pluxity.weekly.epic.dto.toResponse
 import com.pluxity.weekly.epic.entity.Epic
 import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.global.auth.AuthorizationService
-import com.pluxity.weekly.global.constant.UserType
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.entity.Project
 import com.pluxity.weekly.project.repository.ProjectRepository
@@ -31,19 +30,14 @@ class EpicService(
     private val authorizationService: AuthorizationService,
     private val eventPublisher: ApplicationEventPublisher,
 ) {
-    fun findAll(): List<EpicResponse> {
-        val user = authorizationService.currentUser()
-        if (user.isAdmin()) return epicRepository.findAll().map { it.toResponse() }
-        if (user.userRoles.any { it.role.name.equals(UserType.PM.roleName, ignoreCase = true) }) {
-            return epicRepository
-                .findByProjectIdIn(
-                    projectRepository.findByPmId(user.requiredId).map { it.requiredId },
-                ).map { it.toResponse() }
-        }
-        return epicRepository.findByAssignmentsUserId(user.requiredId).map { it.toResponse() }
-    }
+    fun findAll(): List<EpicResponse> = search(EpicSearchFilter())
 
-    fun search(filter: EpicSearchFilter): List<EpicResponse> = epicRepository.findByFilter(filter).map { it.toResponse() }
+    fun search(filter: EpicSearchFilter): List<EpicResponse> {
+        val user = authorizationService.currentUser()
+        val scoped = filter.copy(epicIds = filter.epicIds ?: authorizationService.visibleEpicIds(user))
+        if (scoped.epicIds?.isEmpty() == true) return emptyList()
+        return epicRepository.findByFilter(scoped).map { it.toResponse() }
+    }
 
     fun findById(id: Long): EpicResponse = getEpicById(id).toResponse()
 
