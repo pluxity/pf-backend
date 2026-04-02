@@ -15,6 +15,10 @@ class ProjectCustomRepositoryImpl(
                 .whereAnd(
                     filter.status?.let { path(Project::status).eq(it) },
                     filter.name?.let { path(Project::name).like("%$it%") },
+                    filter.pmId?.let { path(Project::pmId).eq(it) },
+                    filter.dueDateFrom?.let { path(Project::dueDate).greaterThanOrEqualTo(it) },
+                    filter.dueDateTo?.let { path(Project::dueDate).lessThanOrEqualTo(it) },
+                    filter.projectIds?.let { path(Project::id).`in`(it) },
                 )
         }
 }

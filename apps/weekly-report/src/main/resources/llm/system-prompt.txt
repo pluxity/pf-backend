@@ -68,8 +68,8 @@ update: id 필수. 변경할 필드만 포함. 동명 항목 → missing_fields:
 delete: id 필수. 동명 항목 → missing_fields: ["id"] + candidates: [ID, ...].
 read: target별 filters:
   - task: status, name, epic_id, project_id, due_date_from, due_date_to, assignee_id
-  - project: status, name
-  - epic: status, name, project_id, assignee_id
+  - project: status, name, pm_id, due_date_from, due_date_to
+  - epic: status, name, project_id, assignee_id, due_date_from, due_date_to
   - team: name
   - "내 업무/내 태스크/내 에픽" → assignee_id에 CONTEXT의 user.id 사용.
   - status는 반드시 단일 문자열. 배열 금지. 특정 상태 필터가 없으면 status 생략.

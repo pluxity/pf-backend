@@ -66,6 +66,9 @@ class ChatReadHandler(
         ProjectSearchFilter(
             status = (filters["status"] as? String)?.let { ProjectStatus.valueOf(it) },
             name = filters["name"] as? String,
+            pmId = (filters["pm_id"] as? Number)?.toLong(),
+            dueDateFrom = (filters["due_date_from"] as? String)?.let { LocalDate.parse(it) },
+            dueDateTo = (filters["due_date_to"] as? String)?.let { LocalDate.parse(it) },
         )
 
     private fun buildEpicFilter(filters: Map<String, Any?>): EpicSearchFilter =
@@ -74,6 +77,8 @@ class ChatReadHandler(
             name = filters["name"] as? String,
             projectId = (filters["project_id"] as? Number)?.toLong(),
             assigneeId = (filters["assignee_id"] as? Number)?.toLong(),
+            dueDateFrom = (filters["due_date_from"] as? String)?.let { LocalDate.parse(it) },
+            dueDateTo = (filters["due_date_to"] as? String)?.let { LocalDate.parse(it) },
         )
 
     private fun buildTeamFilter(filters: Map<String, Any?>): TeamSearchFilter =

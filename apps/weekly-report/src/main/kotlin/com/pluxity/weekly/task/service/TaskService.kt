@@ -7,9 +7,7 @@ import com.pluxity.weekly.chat.dto.TaskSearchFilter
 import com.pluxity.weekly.epic.entity.Epic
 import com.pluxity.weekly.epic.repository.EpicRepository
 import com.pluxity.weekly.global.auth.AuthorizationService
-import com.pluxity.weekly.global.constant.UserType
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
-import com.pluxity.weekly.project.repository.ProjectRepository
 import com.pluxity.weekly.task.dto.TaskRequest
 import com.pluxity.weekly.task.dto.TaskResponse
 import com.pluxity.weekly.task.dto.TaskUpdateRequest
@@ -27,22 +25,20 @@ class TaskService(
     private val epicRepository: EpicRepository,
     private val userRepository: UserRepository,
     private val authorizationService: AuthorizationService,
-    private val projectRepository: ProjectRepository,
 ) {
-    fun findAll(): List<TaskResponse> {
-        val user = authorizationService.currentUser()
-        if (user.isAdmin()) return taskRepository.findAll().map { it.toResponse() }
-        if (user.userRoles.any { it.role.name.equals(UserType.PM.roleName, ignoreCase = true) }) {
-            val pmProjects = projectRepository.findByPmId(user.requiredId)
-            val epics = epicRepository.findByProjectIdIn(pmProjects.map { it.requiredId })
-            return taskRepository.findByEpicIn(epics).map { it.toResponse() }
-        }
-        val epics = epicRepository.findByAssignmentsUserId(user.requiredId)
-        if (epics.isEmpty()) return emptyList()
-        return taskRepository.findByEpicInAndAssigneeId(epics, user.requiredId).map { it.toResponse() }
-    }
+    fun findAll(): List<TaskResponse> = search(TaskSearchFilter())
 
-    fun search(filter: TaskSearchFilter): List<TaskResponse> = taskRepository.findByFilter(filter).map { it.toResponse() }
+    fun search(filter: TaskSearchFilter): List<TaskResponse> {
+        val user = authorizationService.currentUser()
+        val restrictedId = authorizationService.restrictedAssigneeId(user)
+        val scoped =
+            filter.copy(
+                epicIds = filter.epicIds ?: authorizationService.visibleEpicIds(user),
+                assigneeId = restrictedId ?: filter.assigneeId,
+            )
+        if (scoped.epicIds?.isEmpty() == true) return emptyList()
+        return taskRepository.findByFilter(scoped).map { it.toResponse() }
+    }
 
     fun findById(id: Long): TaskResponse = getTaskById(id).toResponse()
 

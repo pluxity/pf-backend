@@ -4,7 +4,6 @@ import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.chat.dto.ProjectSearchFilter
 import com.pluxity.weekly.global.auth.AuthorizationService
-import com.pluxity.weekly.global.constant.UserType
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import com.pluxity.weekly.project.dto.ProjectRequest
 import com.pluxity.weekly.project.dto.ProjectResponse
@@ -23,17 +22,16 @@ class ProjectService(
     private val userRepository: UserRepository,
     private val authorizationService: AuthorizationService,
 ) {
-    fun findAll(): List<ProjectResponse> {
+    fun findAll(): List<ProjectResponse> = search(ProjectSearchFilter())
+
+    fun search(filter: ProjectSearchFilter): List<ProjectResponse> {
         val user = authorizationService.currentUser()
-        val projects =
-            if (user.isAdmin()) {
-                projectRepository.findAll()
-            } else if (user.userRoles.any { it.role.name.equals(UserType.PM.roleName, ignoreCase = true) }) {
-                projectRepository.findByPmId(user.requiredId)
-            } else {
-                emptyList()
-            }
+        val scoped = filter.copy(projectIds = filter.projectIds ?: authorizationService.visibleProjectIds(user))
+        if (scoped.projectIds?.isEmpty() == true) return emptyList()
+
+        val projects = projectRepository.findByFilter(scoped)
         if (projects.isEmpty()) return emptyList()
+
         val memberMap =
             projectRepository
                 .findMembersByProjectIds(projects.map { it.requiredId })
@@ -41,18 +39,6 @@ class ProjectService(
         val pmNameMap = resolvePmNames(projects.mapNotNull { it.pmId })
         return projects.map { it.toResponse(memberMap[it.requiredId].orEmpty(), pmNameMap[it.pmId]) }
     }
-
-    // TODO: "내 프로젝트" 필터 — PM은 pmId, 일반 사용자는 Project > Epic > EpicAssignment 2단계 조인 필요
-    fun search(filter: ProjectSearchFilter): List<ProjectResponse> =
-        projectRepository.findByFilter(filter).let { projects ->
-            if (projects.isEmpty()) return emptyList()
-            val memberMap =
-                projectRepository
-                    .findMembersByProjectIds(projects.map { it.requiredId })
-                    .groupBy { it.projectId }
-            val pmNameMap = resolvePmNames(projects.mapNotNull { it.pmId })
-            projects.map { it.toResponse(memberMap[it.requiredId].orEmpty(), pmNameMap[it.pmId]) }
-        }
 
     fun findById(id: Long): ProjectResponse {
         val project = getById(id)

@@ -11,4 +11,5 @@ data class TaskSearchFilter(
     val name: String? = null,
     val dueDateFrom: LocalDate? = null,
     val dueDateTo: LocalDate? = null,
+    val epicIds: List<Long>? = null,
 )

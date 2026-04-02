@@ -107,5 +107,31 @@ class AuthorizationService(
         }
     }
 
+    // ── 조회 범위 ──
+
+    /** 사용자가 볼 수 있는 프로젝트 ID. null=전체(Admin) */
+    fun visibleProjectIds(user: User): List<Long>? {
+        if (user.hasRole(UserType.ADMIN)) return null
+        if (user.hasRole(UserType.PM)) return projectRepository.findByPmId(user.requiredId).map { it.requiredId }
+        return epicRepository.findByAssignmentsUserId(user.requiredId).map { it.project.requiredId }.distinct()
+    }
+
+    /** 사용자가 볼 수 있는 에픽 ID. null=전체(Admin) */
+    fun visibleEpicIds(user: User): List<Long>? {
+        if (user.hasRole(UserType.ADMIN)) return null
+        if (user.hasRole(UserType.PM)) {
+            val projectIds = projectRepository.findByPmId(user.requiredId).map { it.requiredId }
+            return epicRepository.findByProjectIdIn(projectIds).map { it.requiredId }
+        }
+        return epicRepository.findByAssignmentsUserId(user.requiredId).map { it.requiredId }
+    }
+
+    /** Worker는 본인 태스크만. null=제한없음(Admin/PM) */
+    fun restrictedAssigneeId(user: User): Long? {
+        if (user.hasRole(UserType.ADMIN)) return null
+        if (user.hasRole(UserType.PM)) return null
+        return user.requiredId
+    }
+
     fun User.hasRole(userType: UserType): Boolean = userRoles.any { it.role.name.equals(userType.roleName, ignoreCase = true) }
 }
