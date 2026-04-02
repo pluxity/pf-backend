@@ -32,7 +32,10 @@ class EventServiceTest :
         val eventPublisher: ApplicationEventPublisher = mockk(relaxed = true)
         val llmClient: LlmClient = mockk(relaxed = true)
         val cctvSiteCache: CctvSiteCache = mockk(relaxed = true)
-        val siteRepository: SiteRepository = mockk(relaxed = true)
+        val siteRepository: SiteRepository =
+            mockk(relaxed = true) {
+                every { findByIdOrNull(any<Long>()) } returns null
+            }
 
         val service =
             EventService(
@@ -59,6 +62,7 @@ class EventServiceTest :
                 val snapshotFileResponse = dummyFileResponse(id = snapshotFileId)
 
                 every { eventFileDownloadService.downloadAndInitiateUpload(request.snapshot) } returns snapshotFileId
+                every { cctvSiteCache.getSiteIdByStreamName(any()) } returns 1L
                 every { eventRepository.save(any()) } returns savedEvent
                 every { fileService.getFileResponse(snapshotFileId) } returns snapshotFileResponse
 
@@ -82,6 +86,7 @@ class EventServiceTest :
                 val savedEvent = dummyEvent(id = 2L)
 
                 every { eventFileDownloadService.downloadAndInitiateUpload(request.snapshot) } returns null
+                every { cctvSiteCache.getSiteIdByStreamName(any()) } returns 1L
                 every { eventRepository.save(any()) } returns savedEvent
                 every { fileService.getFileResponse(null) } returns null
 
