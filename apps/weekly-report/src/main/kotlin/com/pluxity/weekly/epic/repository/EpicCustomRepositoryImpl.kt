@@ -13,16 +13,15 @@ class EpicCustomRepositoryImpl(
 ) : EpicCustomRepository {
     override fun findByFilter(filter: EpicSearchFilter): List<Epic> =
         executor.findAllNotNull {
-            val assignments = leftJoin(Epic::assignments)
             selectDistinct(entity(Epic::class))
                 .from(
                     entity(Epic::class),
-                    assignments,
+                    leftJoin(Epic::assignments),
                 ).whereAnd(
                     filter.status?.let { path(Epic::status).eq(it) },
                     filter.name?.let { path(Epic::name).like("%$it%") },
                     filter.projectId?.let { path(Epic::project)(Project::id).eq(it) },
-                    filter.assigneeId?.let { assignments(EpicAssignment::user)(User::id).eq(it) },
+                    filter.assigneeId?.let { path(EpicAssignment::user)(User::id).eq(it) },
                     filter.dueDateFrom?.let { path(Epic::dueDate).greaterThanOrEqualTo(it) },
                     filter.dueDateTo?.let { path(Epic::dueDate).lessThanOrEqualTo(it) },
                     filter.epicIds?.let { path(Epic::id).`in`(it) },
