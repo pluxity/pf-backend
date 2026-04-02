@@ -66,7 +66,8 @@ class EventService(
         savedEvent.assignSnapshotFile(snapshotFileId)
 
         val fileResponse = fileService.getFileResponse(snapshotFileId)
-        eventPublisher.publishEvent(EventCreated(savedEvent.toResponse(fileResponse)))
+        val siteResponse = siteRepository.findByIdOrNull(siteId)?.toResponse(null)
+        eventPublisher.publishEvent(EventCreated(savedEvent.toResponse(fileResponse, siteResponse = siteResponse)))
 
         return savedEvent.requiredId
     }
@@ -86,7 +87,8 @@ class EventService(
             fileService.finalizeUpload(it, "$EVENT_PATH${event.requiredId}/")
             val snapshotFileResponse = fileService.getFileResponse(event.snapshotFileId)
             val videoFileResponse = fileService.getFileResponse(it)
-            eventPublisher.publishEvent(EventVideoRegistered(event.toResponse(snapshotFileResponse, videoFileResponse)))
+            val siteResponse = siteRepository.findByIdOrNull(event.siteId)?.toResponse(null)
+            eventPublisher.publishEvent(EventVideoRegistered(event.toResponse(snapshotFileResponse, videoFileResponse, siteResponse)))
         }
     }
 

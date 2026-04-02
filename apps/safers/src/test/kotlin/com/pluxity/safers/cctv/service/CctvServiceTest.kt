@@ -198,6 +198,8 @@ class CctvServiceTest :
                     repository.findAllWithSite(CctvFilterCriteria(name = null, siteIds = listOf(1L)))
                 } returns emptyList()
 
+                facade.findAll(siteId = 1L, query = "알 수 없는 질문")
+
                 Then("siteId만으로 조회된다") {
                     verify {
                         repository.findAllWithSite(CctvFilterCriteria(name = null, siteIds = listOf(1L)))
