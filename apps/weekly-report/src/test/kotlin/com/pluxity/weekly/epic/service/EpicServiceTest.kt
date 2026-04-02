@@ -49,6 +49,7 @@ class EpicServiceTest :
             every { authorizationService.requireEpicManage(any(), any()) } just runs
             every { authorizationService.requireEpicAccess(any(), any()) } just runs
             every { authorizationService.requireEpicAssign(any(), any()) } just runs
+            every { authorizationService.visibleEpicIds(any()) } returns null
         }
 
         Given("에픽 전체 조회") {
@@ -61,7 +62,7 @@ class EpicServiceTest :
                         dummyEpic(id = 3L, project = project, name = "에픽C"),
                     )
 
-                every { epicRepository.findAll() } returns entities
+                every { epicRepository.findByFilter(any()) } returns entities
 
                 val result = service.findAll()
 
