@@ -21,24 +21,13 @@ class ChatLlmClient(
      * 1차 호출: 의도 파악 (summary + actions)
      */
     fun analyzeIntent(messages: List<Message>): IntentResult {
-        repeat(2) { attempt ->
-            val start = System.currentTimeMillis()
-            val content =
-                llmClient.call(messages)
-                    ?: throw IllegalStateException("LLM 응답이 없습니다")
-            val elapsed = System.currentTimeMillis() - start
-            log.info { "LLM 1차(의도 파악) 시도${attempt + 1} - ${elapsed}ms, content: $content" }
-            try {
-                return parseIntentResult(content)
-            } catch (e: Exception) {
-                if (attempt == 0) {
-                    log.warn { "LLM 1차 JSON 파싱 실패, 재시도합니다: ${e.message}" }
-                } else {
-                    throw e
-                }
-            }
-        }
-        throw IllegalStateException("LLM 1차 호출 실패")
+        val start = System.currentTimeMillis()
+        val content =
+            llmClient.call(messages)
+                ?: throw IllegalStateException("LLM 응답이 없습니다")
+        val elapsed = System.currentTimeMillis() - start
+        log.info { "LLM 1차(의도 파악) - ${elapsed}ms, content: $content" }
+        return parseIntentResult(content)
     }
 
     /**
