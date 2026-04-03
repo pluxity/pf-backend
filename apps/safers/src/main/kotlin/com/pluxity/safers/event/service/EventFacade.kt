@@ -5,6 +5,8 @@ import com.pluxity.common.core.response.PageResponse
 import com.pluxity.safers.cctv.service.CctvSiteCache
 import com.pluxity.safers.event.dto.EventCreateRequest
 import com.pluxity.safers.event.dto.EventResponse
+import com.pluxity.safers.event.kafka.RetryableException
+import com.pluxity.safers.event.repository.EventRepository
 import com.pluxity.safers.llm.EventLlmClient
 import org.springframework.stereotype.Component
 
@@ -13,6 +15,7 @@ class EventFacade(
     private val eventService: EventService,
     private val eventFileDownloadService: EventFileDownloadService,
     private val eventLlmClient: EventLlmClient,
+    private val eventRepository: EventRepository,
     private val cctvSiteCache: CctvSiteCache,
 ) {
     fun create(request: EventCreateRequest) {
@@ -27,6 +30,11 @@ class EventFacade(
         eventId: String,
         videoUrl: String,
     ) {
+        val event =
+            eventRepository.findByEventId(eventId)
+                ?: throw RetryableException("이벤트 미생성 상태, 재시도 필요: eventId=$eventId")
+        if (event.videoFileId != null) return
+
         val videoFileId = eventFileDownloadService.downloadAndInitiateUpload(videoUrl)
         eventService.uploadVideoByEventId(eventId, videoFileId)
     }

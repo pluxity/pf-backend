@@ -10,7 +10,6 @@ import com.pluxity.safers.event.dto.EventCreateRequest
 import com.pluxity.safers.event.dto.EventResponse
 import com.pluxity.safers.event.dto.toResponse
 import com.pluxity.safers.event.entity.Event
-import com.pluxity.safers.event.kafka.RetryableException
 import com.pluxity.safers.event.listener.EventCreated
 import com.pluxity.safers.event.listener.EventVideoRegistered
 import com.pluxity.safers.event.repository.EventRepository
@@ -77,9 +76,7 @@ class EventService(
     ) {
         val event =
             eventRepository.findByEventId(eventId)
-                ?: throw RetryableException("이벤트 미생성 상태, 재시도 필요: eventId=$eventId")
-
-        if (event.videoFileId != null) return
+                ?: throw IllegalStateException("이벤트를 찾을 수 없습니다: eventId=$eventId")
 
         event.assignVideoFile(videoFileId)
 

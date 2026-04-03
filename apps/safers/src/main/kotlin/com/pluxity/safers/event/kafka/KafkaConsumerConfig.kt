@@ -35,7 +35,7 @@ class KafkaConsumerConfig(
         DefaultErrorHandler({ record, ex ->
             logger.error(ex) { "Kafka 소비 최종 실패 (DLT 전송 생략): topic=${record.topic()}, key=${record.key()}" }
         }, FixedBackOff(1000L, 3L)).apply {
-            addRetryableExceptions(RetryableException::class.java)
+            setClassifications(mapOf(RetryableException::class.java to true), false)
             setRetryListeners({ record, ex, deliveryAttempt ->
                 logger.warn(ex) { "Kafka 소비 재시도 (${deliveryAttempt}회): topic=${record.topic()}, key=${record.key()}" }
             })
