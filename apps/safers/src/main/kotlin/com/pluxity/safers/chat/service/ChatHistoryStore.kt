@@ -14,7 +14,7 @@ class ChatHistoryStore(
     private val redisTemplate: StringRedisTemplate,
 ) {
     companion object {
-        private const val MAX_HISTORY = 20
+        private const val MAX_HISTORY = 10 // 1턴 = 1 system 메시지, 최대 10턴
         private const val TTL_HOURS = 24L
     }
 

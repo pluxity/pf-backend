@@ -54,14 +54,13 @@ class ChatService(
                 )
             val surfaceUpdate = chatLlmClient.generateLayout(layoutMessages)
 
-            // 히스토리 저장 — system role + 구분된 포맷으로 저장하여 LLM이 응답 형식으로 모방하지 않게 함
+            // 히스토리 저장 — 유저 질문 + 결과를 하나의 system 메시지로 저장
             val turnNumber = chatHistoryStore.incrementTurn(userId)
             val actionsJson = LlmClient.objectMapper.writeValueAsString(intentResult.actions)
-            chatHistoryStore.save(userId, "user", message)
             chatHistoryStore.save(
                 userId,
                 "system",
-                "--- 히스토리 #$turnNumber: ${intentResult.summary} | actions=$actionsJson ---",
+                "--- 히스토리 #$turnNumber | 질문: $message | 결과: ${intentResult.summary} | actions=$actionsJson ---",
             )
 
             buildResponse(surfaceUpdate, dataModel)
