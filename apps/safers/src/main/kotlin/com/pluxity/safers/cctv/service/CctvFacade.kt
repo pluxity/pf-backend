@@ -8,7 +8,7 @@ import com.pluxity.safers.cctv.dto.CctvResponse
 import com.pluxity.safers.cctv.dto.CctvUpdateRequest
 import com.pluxity.safers.cctv.entity.Cctv
 import com.pluxity.safers.global.constant.SafersErrorCode
-import com.pluxity.safers.llm.LlmClient
+import com.pluxity.safers.llm.CctvLlmClient
 import com.pluxity.safers.llm.dto.CctvFilterCriteria
 import com.pluxity.safers.llm.dto.SiteInfo
 import com.pluxity.safers.site.repository.SiteRepository
@@ -30,7 +30,7 @@ class CctvFacade(
     private val cctvService: CctvService,
     private val siteRepository: SiteRepository,
     private val apiClient: CctvApiClient,
-    private val llmClient: LlmClient,
+    private val cctvLlmClient: CctvLlmClient,
     private val cctvSiteCache: CctvSiteCache,
 ) {
     companion object {
@@ -84,7 +84,7 @@ class CctvFacade(
             sites.map {
                 SiteInfo(id = it.requiredId, name = it.name, address = it.address, description = it.description)
             }
-        val llmCriteria = llmClient.parseCctvFilter(query, siteInfos)
+        val llmCriteria = cctvLlmClient.parseCctvFilter(query, siteInfos)
 
         val mergedSiteIds =
             (listOfNotNull(siteId) + llmCriteria?.siteIds.orEmpty()).distinct().ifEmpty { null }

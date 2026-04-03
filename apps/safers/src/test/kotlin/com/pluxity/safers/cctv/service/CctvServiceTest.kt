@@ -9,7 +9,7 @@ import com.pluxity.safers.cctv.entity.Cctv
 import com.pluxity.safers.cctv.entity.dummyCctv
 import com.pluxity.safers.cctv.repository.CctvRepository
 import com.pluxity.safers.global.constant.SafersErrorCode
-import com.pluxity.safers.llm.LlmClient
+import com.pluxity.safers.llm.CctvLlmClient
 import com.pluxity.safers.llm.dto.CctvFilterCriteria
 import com.pluxity.safers.site.entity.dummySite
 import com.pluxity.safers.site.repository.SiteRepository
@@ -29,10 +29,10 @@ class CctvServiceTest :
         val siteRepository: SiteRepository = mockk(relaxed = true)
         val fileService: FileService = mockk(relaxed = true)
         val apiClient: CctvApiClient = mockk()
-        val llmClient: LlmClient = mockk(relaxed = true)
+        val cctvLlmClient: CctvLlmClient = mockk(relaxed = true)
         val cctvSiteCache: CctvSiteCache = mockk(relaxed = true)
         val service = CctvService(repository, fileService)
-        val facade = CctvFacade(service, siteRepository, apiClient, llmClient, cctvSiteCache)
+        val facade = CctvFacade(service, siteRepository, apiClient, cctvLlmClient, cctvSiteCache)
 
         val site = dummySite(id = 1L, baseUrl = "http://media-server:9997")
 
@@ -161,7 +161,7 @@ class CctvServiceTest :
                         dummyCctv(id = 1L, site = site, streamName = "cam1", name = "로비 카메라"),
                     )
                 every { siteRepository.findAll() } returns listOf(site)
-                every { llmClient.parseCctvFilter(any(), any()) } returns
+                every { cctvLlmClient.parseCctvFilter(any(), any()) } returns
                     CctvFilterCriteria(name = "로비", siteIds = listOf(1L))
                 every { repository.findAllWithSite(CctvFilterCriteria(name = "로비", siteIds = listOf(1L))) } returns entities
 
@@ -175,7 +175,7 @@ class CctvServiceTest :
 
             When("query와 siteId를 함께 지정하면 siteIds가 합쳐진다") {
                 every { siteRepository.findAll() } returns listOf(site)
-                every { llmClient.parseCctvFilter(any(), any()) } returns
+                every { cctvLlmClient.parseCctvFilter(any(), any()) } returns
                     CctvFilterCriteria(name = "출입구", siteIds = listOf(2L))
                 every {
                     repository.findAllWithSite(CctvFilterCriteria(name = "출입구", siteIds = listOf(1L, 2L)))
@@ -193,7 +193,7 @@ class CctvServiceTest :
 
             When("LLM 파싱이 실패하면 siteId만으로 조회된다") {
                 every { siteRepository.findAll() } returns listOf(site)
-                every { llmClient.parseCctvFilter(any(), any()) } returns null
+                every { cctvLlmClient.parseCctvFilter(any(), any()) } returns null
                 every {
                     repository.findAllWithSite(CctvFilterCriteria(name = null, siteIds = listOf(1L)))
                 } returns emptyList()

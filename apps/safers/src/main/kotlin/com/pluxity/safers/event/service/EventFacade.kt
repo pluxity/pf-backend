@@ -5,14 +5,14 @@ import com.pluxity.common.core.response.PageResponse
 import com.pluxity.safers.cctv.service.CctvSiteCache
 import com.pluxity.safers.event.dto.EventCreateRequest
 import com.pluxity.safers.event.dto.EventResponse
-import com.pluxity.safers.llm.LlmClient
+import com.pluxity.safers.llm.EventLlmClient
 import org.springframework.stereotype.Component
 
 @Component
 class EventFacade(
     private val eventService: EventService,
     private val eventFileDownloadService: EventFileDownloadService,
-    private val llmClient: LlmClient,
+    private val eventLlmClient: EventLlmClient,
     private val cctvSiteCache: CctvSiteCache,
 ) {
     fun create(request: EventCreateRequest) {
@@ -37,7 +37,7 @@ class EventFacade(
         request: PageSearchRequest,
         query: String? = null,
     ): PageResponse<EventResponse> {
-        val criteria = query?.let { llmClient.parseEventFilter(it) }
+        val criteria = query?.let { eventLlmClient.parseEventFilter(it) }
         return eventService.findAll(request, criteria)
     }
 }

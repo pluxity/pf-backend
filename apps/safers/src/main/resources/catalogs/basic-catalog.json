@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "catalogId": "basic",
+  "description": "레이아웃 및 메시지 컴포넌트",
+  "components": {
+    "FlexCol": {
+      "description": "세로 배치 컨테이너",
+      "properties": {
+        "children": {
+          "type": "object",
+          "properties": {
+            "explicitList": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["explicitList"]
+        },
+        "gap": { "type": "number", "description": "자식 간 간격 (px)" }
+      },
+      "required": ["children"]
+    },
+    "FlexRow": {
+      "description": "가로 배치 컨테이너 (자식은 균등 너비)",
+      "properties": {
+        "children": {
+          "type": "object",
+          "properties": {
+            "explicitList": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["explicitList"]
+        },
+        "gap": { "type": "number", "description": "자식 간 간격 (px)" }
+      },
+      "required": ["children"]
+    },
+    "Grid": {
+      "description": "CSS 그리드 레이아웃",
+      "properties": {
+        "children": {
+          "type": "object",
+          "properties": {
+            "explicitList": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["explicitList"]
+        },
+        "columns": { "type": "number", "description": "열 수" },
+        "gap": { "type": "number", "description": "간격 (px)" }
+      },
+      "required": ["children"]
+    },
+    "AgentMessageCard": {
+      "description": "AI 에이전트 메시지 카드",
+      "properties": {
+        "message": { "type": "string", "description": "표시할 메시지" }
+      },
+      "required": ["message"]
+    },
+    "StatusBadge": {
+      "description": "상태 표시 배지",
+      "properties": {
+        "label": { "type": "string" },
+        "variant": { "type": "string", "enum": ["critical", "major", "minor", "normal", "info"] },
+        "size": { "type": "string", "enum": ["sm", "md", "lg"], "default": "md" },
+        "description": { "type": "string", "description": "lg 사이즈에서만 표시" }
+      },
+      "required": ["label", "variant"]
+    },
+    "CommandButton": {
+      "description": "긴급 행동 버튼",
+      "properties": {
+        "variant": { "type": "string", "enum": ["sos", "evacuation", "emergency-call"] }
+      },
+      "required": ["variant"]
+    },
+    "AlertBanner": {
+      "description": "위험 알림 배너 (전체 너비, 빨간색, 펄스)",
+      "properties": {
+        "message": { "type": "string" },
+        "zone": { "type": "string" },
+        "time": { "type": "string" }
+      },
+      "required": ["message"]
+    }
+  }
+}

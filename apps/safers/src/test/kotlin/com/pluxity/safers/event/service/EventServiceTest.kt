@@ -11,7 +11,7 @@ import com.pluxity.safers.event.entity.dummyEvent
 import com.pluxity.safers.event.listener.EventCreated
 import com.pluxity.safers.event.repository.EventRepository
 import com.pluxity.safers.global.constant.SafersErrorCode
-import com.pluxity.safers.llm.LlmClient
+import com.pluxity.safers.llm.EventLlmClient
 import com.pluxity.safers.site.repository.SiteRepository
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -30,7 +30,7 @@ class EventServiceTest :
         val fileService: FileService = mockk(relaxed = true)
         val eventFileDownloadService: EventFileDownloadService = mockk()
         val eventPublisher: ApplicationEventPublisher = mockk(relaxed = true)
-        val llmClient: LlmClient = mockk(relaxed = true)
+        val eventLlmClient: EventLlmClient = mockk(relaxed = true)
         val cctvSiteCache: CctvSiteCache = mockk(relaxed = true)
         val siteRepository: SiteRepository =
             mockk {
@@ -50,7 +50,7 @@ class EventServiceTest :
             EventFacade(
                 service,
                 eventFileDownloadService,
-                llmClient,
+                eventLlmClient,
                 cctvSiteCache,
             )
 
