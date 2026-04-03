@@ -79,6 +79,8 @@ class EventService(
             eventRepository.findByEventId(eventId)
                 ?: throw RetryableException("이벤트 미생성 상태, 재시도 필요: eventId=$eventId")
 
+        if (event.videoFileId != null) return
+
         event.assignVideoFile(videoFileId)
 
         videoFileId?.let {
