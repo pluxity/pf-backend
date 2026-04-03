@@ -47,6 +47,7 @@ class ContextBuilder(
         val context =
             mutableMapOf<String, Any?>(
                 "today" to LocalDate.now().toString(),
+                "today_day_of_week" to LocalDate.now().dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.KOREAN),
                 "user" to mapOf("id" to user.requiredId, "name" to user.name),
             )
 
