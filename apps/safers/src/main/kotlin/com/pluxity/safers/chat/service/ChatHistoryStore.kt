@@ -1,10 +1,10 @@
 package com.pluxity.safers.chat.service
 
+import com.pluxity.safers.llm.LlmClient
 import com.pluxity.safers.llm.dto.Message
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.stereotype.Component
-import tools.jackson.databind.json.JsonMapper
 import java.time.Duration
 
 private val log = KotlinLogging.logger {}
@@ -14,11 +14,11 @@ class ChatHistoryStore(
     private val redisTemplate: StringRedisTemplate,
 ) {
     companion object {
-        private const val MAX_HISTORY = 10
+        private const val MAX_HISTORY = 20
         private const val TTL_HOURS = 24L
     }
 
-    private val objectMapper = JsonMapper.builder().build()
+    private val objectMapper = LlmClient.objectMapper
 
     fun save(
         sessionId: String,
@@ -30,6 +30,13 @@ class ChatHistoryStore(
         redisTemplate.opsForList().rightPush(key, entry)
         redisTemplate.opsForList().trim(key, -MAX_HISTORY.toLong(), -1)
         redisTemplate.expire(key, Duration.ofHours(TTL_HOURS))
+    }
+
+    fun incrementTurn(sessionId: String): Long {
+        val key = "chat:turn:$sessionId"
+        val turn = redisTemplate.opsForValue().increment(key) ?: 1L
+        redisTemplate.expire(key, Duration.ofHours(TTL_HOURS))
+        return turn
     }
 
     fun load(sessionId: String): List<Message> {

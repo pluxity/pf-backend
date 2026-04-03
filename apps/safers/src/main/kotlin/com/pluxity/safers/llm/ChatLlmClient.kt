@@ -7,9 +7,7 @@ import com.pluxity.safers.chat.dto.SurfaceUpdate
 import com.pluxity.safers.llm.dto.Message
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
-import tools.jackson.databind.DeserializationFeature
 import tools.jackson.databind.JsonNode
-import tools.jackson.databind.json.JsonMapper
 
 private val log = KotlinLogging.logger {}
 
@@ -17,11 +15,7 @@ private val log = KotlinLogging.logger {}
 class ChatLlmClient(
     private val llmClient: LlmClient,
 ) {
-    private val objectMapper =
-        JsonMapper
-            .builder()
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .build()
+    private val objectMapper = LlmClient.objectMapper
 
     /**
      * 1차 호출: 의도 파악 (summary + actions)
@@ -85,9 +79,10 @@ class ChatLlmClient(
 
         return actionsNode.mapNotNull { actionNode ->
             try {
+                val targetStr = actionNode["target"].asString().uppercase()
                 QueryAction(
                     id = actionNode["id"].asString(),
-                    target = QueryTarget.valueOf(actionNode["target"].asString().uppercase()),
+                    target = QueryTarget.valueOf(targetStr),
                     filters = parseFilters(actionNode["filters"]),
                 )
             } catch (e: Exception) {

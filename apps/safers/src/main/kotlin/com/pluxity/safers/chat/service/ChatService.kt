@@ -9,6 +9,7 @@ import com.pluxity.safers.chat.dto.UpdateComponents
 import com.pluxity.safers.chat.dto.UpdateDataModel
 import com.pluxity.safers.chat.prompt.ChatPromptBuilder
 import com.pluxity.safers.llm.ChatLlmClient
+import com.pluxity.safers.llm.LlmClient
 import com.pluxity.safers.llm.dto.Message
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
@@ -29,14 +30,13 @@ class ChatService(
         return try {
             val history = chatHistoryStore.load(userId)
 
-            // 1차 LLM: 의도 파악 (actions)
-            val intentPrompt = promptBuilder.buildIntentPrompt()
+            // 1차 LLM: 의도 파악 — 히스토리를 시스템 프롬프트에 포함시켜 system+user 2개 메시지만 전송
+            val intentPrompt = promptBuilder.buildIntentPrompt(history)
             val intentMessages =
-                buildList {
-                    add(Message(role = "system", content = intentPrompt))
-                    addAll(history)
-                    add(Message(role = "user", content = message))
-                }
+                listOf(
+                    Message(role = "system", content = intentPrompt),
+                    Message(role = "user", content = message),
+                )
             val intentResult = chatLlmClient.analyzeIntent(intentMessages)
 
             // 데이터 조회
@@ -54,11 +54,15 @@ class ChatService(
                 )
             val surfaceUpdate = chatLlmClient.generateLayout(layoutMessages)
 
-            // 히스토리 저장
-            val actionsDesc = intentResult.actions.joinToString(", ") { "${it.target} ${it.filters}" }
-            val historyContent = "응답: ${intentResult.summary} (actions: $actionsDesc)"
+            // 히스토리 저장 — system role + 구분된 포맷으로 저장하여 LLM이 응답 형식으로 모방하지 않게 함
+            val turnNumber = chatHistoryStore.incrementTurn(userId)
+            val actionsJson = LlmClient.objectMapper.writeValueAsString(intentResult.actions)
             chatHistoryStore.save(userId, "user", message)
-            chatHistoryStore.save(userId, "assistant", historyContent)
+            chatHistoryStore.save(
+                userId,
+                "system",
+                "--- 히스토리 #$turnNumber: ${intentResult.summary} | actions=$actionsJson ---",
+            )
 
             buildResponse(surfaceUpdate, dataModel)
         } catch (e: Exception) {

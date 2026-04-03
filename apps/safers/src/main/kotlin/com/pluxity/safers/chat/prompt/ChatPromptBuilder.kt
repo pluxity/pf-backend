@@ -1,6 +1,7 @@
 package com.pluxity.safers.chat.prompt
 
 import com.pluxity.safers.cctv.service.CctvService
+import com.pluxity.safers.llm.dto.Message
 import com.pluxity.safers.site.repository.SiteRepository
 import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Component
@@ -20,9 +21,9 @@ class ChatPromptBuilder(
     }
 
     /**
-     * 1차 호출용: 의도 파악 시스템 프롬프트
+     * 1차 호출용: 의도 파악 시스템 프롬프트 (히스토리를 시스템 프롬프트에 포함)
      */
-    fun buildIntentPrompt(): String =
+    fun buildIntentPrompt(history: List<Message>): String =
         buildString {
             val sites = siteRepository.findAll()
             val now = LocalDateTime.now()
@@ -33,6 +34,14 @@ class ChatPromptBuilder(
             appendLine("## SITES (${sites.size}개 현장)")
             sites.forEach { site ->
                 appendLine("- id=${site.requiredId}, ${site.name}")
+            }
+
+            // 히스토리를 시스템 프롬프트 내 별도 블록으로 포함
+            val historyEntries = history.filter { it.role == "system" && it.content.startsWith("---") }
+            if (historyEntries.isNotEmpty()) {
+                appendLine()
+                appendLine("## 대화 히스토리 (참조용, 절대 이 형식으로 응답하지 마세요)")
+                historyEntries.forEach { appendLine(it.content) }
             }
         }
 

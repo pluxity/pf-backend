@@ -12,6 +12,8 @@ import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.json.JsonMapper
 import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicReference
 
@@ -140,6 +142,12 @@ class LlmClient(
     }
 
     companion object {
+        val objectMapper: JsonMapper =
+            JsonMapper
+                .builder()
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build()
+
         fun extractJson(content: String): String {
             val start = content.indexOf('{')
             val end = content.lastIndexOf('}')

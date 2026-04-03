@@ -6,8 +6,6 @@ import com.pluxity.safers.llm.dto.Message
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Component
-import tools.jackson.databind.DeserializationFeature
-import tools.jackson.databind.json.JsonMapper
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -17,11 +15,7 @@ private val log = KotlinLogging.logger {}
 class EventLlmClient(
     private val llmClient: LlmClient,
 ) {
-    private val objectMapper =
-        JsonMapper
-            .builder()
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .build()
+    private val objectMapper = LlmClient.objectMapper
 
     private val promptTemplate: String by lazy {
         ClassPathResource("prompts/event-filter-system.txt").getContentAsString(Charsets.UTF_8)
