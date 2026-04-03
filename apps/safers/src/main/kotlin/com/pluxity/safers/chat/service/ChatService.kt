@@ -2,11 +2,11 @@ package com.pluxity.safers.chat.service
 
 import com.pluxity.common.auth.authentication.security.CustomUserDetails
 import com.pluxity.safers.chat.dto.A2uiMessage
+import com.pluxity.safers.chat.dto.BeginRenderingMessage
 import com.pluxity.safers.chat.dto.ChatResponse
-import com.pluxity.safers.chat.dto.CreateSurface
+import com.pluxity.safers.chat.dto.DataModelUpdateMessage
 import com.pluxity.safers.chat.dto.SurfaceUpdate
-import com.pluxity.safers.chat.dto.UpdateComponents
-import com.pluxity.safers.chat.dto.UpdateDataModel
+import com.pluxity.safers.chat.dto.SurfaceUpdateMessage
 import com.pluxity.safers.chat.prompt.ChatPromptBuilder
 import com.pluxity.safers.llm.ChatLlmClient
 import com.pluxity.safers.llm.LlmClient
@@ -78,13 +78,16 @@ class ChatService(
         val messages =
             listOf(
                 A2uiMessage(
-                    createSurface = CreateSurface(surfaceId = surfaceId, catalogId = "safers"),
+                    surfaceUpdate =
+                        SurfaceUpdateMessage(surfaceId = surfaceId, components = surfaceUpdate.components),
                 ),
                 A2uiMessage(
-                    updateComponents = UpdateComponents(surfaceId = surfaceId, components = surfaceUpdate.components),
+                    dataModelUpdate =
+                        DataModelUpdateMessage(surfaceId = surfaceId, contents = dataModel),
                 ),
                 A2uiMessage(
-                    updateDataModel = UpdateDataModel(surfaceId = surfaceId, value = dataModel),
+                    beginRendering =
+                        BeginRenderingMessage(surfaceId = surfaceId, root = "root", catalogId = "safers"),
                 ),
             )
         return ChatResponse(messages = messages)
@@ -98,43 +101,40 @@ class ChatService(
         }
     }
 
-    private fun buildFallbackResponse(message: String): ChatResponse =
-        ChatResponse(
+    private fun buildFallbackResponse(message: String): ChatResponse {
+        val surfaceId = "fallback"
+        val components =
+            listOf(
+                mapOf(
+                    "id" to "msg",
+                    "component" to
+                        mapOf(
+                            "AgentMessageCard" to
+                                mapOf("message" to "죄송합니다. 요청을 처리하지 못했습니다: $message"),
+                        ),
+                ),
+                mapOf(
+                    "id" to "root",
+                    "component" to
+                        mapOf(
+                            "FlexCol" to
+                                mapOf(
+                                    "children" to mapOf("explicitList" to listOf("msg")),
+                                    "gap" to 0,
+                                ),
+                        ),
+                ),
+            )
+        return ChatResponse(
             messages =
                 listOf(
                     A2uiMessage(
-                        createSurface = CreateSurface(surfaceId = "fallback", catalogId = "safers"),
+                        surfaceUpdate = SurfaceUpdateMessage(surfaceId = surfaceId, components = components),
                     ),
                     A2uiMessage(
-                        updateComponents =
-                            UpdateComponents(
-                                surfaceId = "fallback",
-                                components =
-                                    listOf(
-                                        mapOf(
-                                            "id" to "msg",
-                                            "component" to
-                                                mapOf(
-                                                    "AgentMessageCard" to
-                                                        mapOf(
-                                                            "message" to "죄송합니다. 요청을 처리하지 못했습니다: $message",
-                                                        ),
-                                                ),
-                                        ),
-                                        mapOf(
-                                            "id" to "root",
-                                            "component" to
-                                                mapOf(
-                                                    "FlexCol" to
-                                                        mapOf(
-                                                            "children" to mapOf("explicitList" to listOf("msg")),
-                                                            "gap" to 0,
-                                                        ),
-                                                ),
-                                        ),
-                                    ),
-                            ),
+                        beginRendering = BeginRenderingMessage(surfaceId = surfaceId, root = "root", catalogId = "safers"),
                     ),
                 ),
         )
+    }
 }
