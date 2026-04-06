@@ -45,9 +45,10 @@ class ChatPromptBuilder(
                 appendLine()
                 appendLine("## 캐시된 화면 목록 (recall/modify 시 ref로 참조)")
                 screenMetaList.forEach { meta ->
-                    val sites = meta.siteIds.joinToString(",")
-                    val targets = meta.targets.joinToString(",")
-                    appendLine("- ref=${meta.ref}, summary=${meta.summary}, siteIds=[$sites], targets=[$targets]")
+                    val siteIdsCsv = meta.siteIds.joinToString(",")
+                    val targetsCsv = meta.targets.joinToString(",")
+                    val actionIdsCsv = meta.actionIds.joinToString(",")
+                    appendLine("- ref=${meta.ref}, summary=${meta.summary}, siteIds=[$siteIdsCsv], targets=[$targetsCsv], actionIds=[$actionIdsCsv]")
                 }
             }
 

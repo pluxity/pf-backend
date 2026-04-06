@@ -89,14 +89,14 @@ class ChatService(
     ): ChatResponse {
         val ref = intentResult.ref
         if (ref == null) {
-            log.warn { "recall 모드인데 ref가 없음, new로 폴백: $message" }
-            return handleNew(userId, intentResult.copy(mode = IntentMode.NEW), message)
+            log.warn { "recall 모드인데 ref가 없음: $message" }
+            return buildFallbackResponse("요청하신 화면을 찾을 수 없습니다.")
         }
 
         val cached = chatHistoryStore.loadScreen(userId, ref)
         if (cached == null) {
-            log.warn { "캐시된 화면을 찾을 수 없음: ref=$ref, new로 폴백" }
-            return handleNew(userId, intentResult.copy(mode = IntentMode.NEW, actions = intentResult.actions), message)
+            log.warn { "캐시된 화면을 찾을 수 없음: ref=$ref" }
+            return buildFallbackResponse("이전 화면(${ref})이 만료되었거나 존재하지 않습니다.")
         }
 
         log.info { "화면 복원: ref=$ref, summary=${cached.meta.summary}" }
@@ -112,14 +112,14 @@ class ChatService(
         val patch = intentResult.patch
 
         if (ref == null || patch == null) {
-            log.warn { "modify 모드인데 ref 또는 patch가 없음, new로 폴백: $message" }
-            return handleNew(userId, intentResult.copy(mode = IntentMode.NEW), message)
+            log.warn { "modify 모드인데 ref 또는 patch가 없음: $message" }
+            return buildFallbackResponse("수정할 이전 화면을 찾을 수 없습니다.")
         }
 
         val cached = chatHistoryStore.loadScreen(userId, ref)
         if (cached == null) {
-            log.warn { "캐시된 화면을 찾을 수 없음: ref=$ref, new로 폴백" }
-            return handleNew(userId, intentResult.copy(mode = IntentMode.NEW), message)
+            log.warn { "캐시된 화면을 찾을 수 없음: ref=$ref" }
+            return buildFallbackResponse("이전 화면(${ref})이 만료되었거나 존재하지 않습니다.")
         }
 
         // 이전 actions에서 remove 대상 제거 후 add 대상 추가

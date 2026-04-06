@@ -19,6 +19,7 @@ data class ScreenMeta(
     val summary: String,
     val siteIds: List<Long>,
     val targets: List<String>,
+    val actionIds: List<String>,
 )
 
 /**
@@ -104,9 +105,11 @@ class ChatHistoryStore(
                 .map { it.target.name.lowercase() }
                 .distinct()
 
+        val actionIds = actions.map { it.id }
+
         val cache =
             ScreenCache(
-                meta = ScreenMeta(ref = ref, summary = summary, siteIds = siteIds, targets = targets),
+                meta = ScreenMeta(ref = ref, summary = summary, siteIds = siteIds, targets = targets, actionIds = actionIds),
                 actions = actions,
                 response = response,
             )
@@ -115,7 +118,7 @@ class ChatHistoryStore(
         // 오래된 캐시 정리: MAX_SCREENS 초과 시 가장 오래된 것 제거
         val size = redisTemplate.opsForHash<String, String>().size(key)
         if (size > MAX_SCREENS) {
-            val allKeys = redisTemplate.opsForHash<String, String>().keys(key).sorted()
+            val allKeys = redisTemplate.opsForHash<String, String>().keys(key).sortedBy { it.removePrefix("h").toLongOrNull() ?: 0L }
             val toRemove = allKeys.take((size - MAX_SCREENS).toInt())
             toRemove.forEach { redisTemplate.opsForHash<String, String>().delete(key, it) }
         }
@@ -154,11 +157,13 @@ class ChatHistoryStore(
                                 metaNode["siteIds"]?.map { it.asLong() } ?: emptyList(),
                             targets =
                                 metaNode["targets"]?.map { it.asString() } ?: emptyList(),
+                            actionIds =
+                                metaNode["actionIds"]?.map { it.asString() } ?: emptyList(),
                         )
                     } catch (e: Exception) {
                         null
                     }
-                }.sortedBy { it.ref }
+                }.sortedBy { it.ref.removePrefix("h").toLongOrNull() ?: 0L }
         } catch (e: Exception) {
             log.warn(e) { "화면 메타데이터 로드 실패: $sessionId" }
             emptyList()

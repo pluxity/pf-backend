@@ -128,7 +128,7 @@ User: "방금 거 다시"
 
 ### mode: "modify"
 
-(캐시된 화면: h1=김포 CCTV+이벤트 [cctvs, events], h2=제주 전체 현황 [events-15, cctvs-15, weather-15])
+(캐시된 화면: h1=김포 CCTV+이벤트, actionIds=[cctvs, events], h2=제주 전체 현황, actionIds=[events-15, cctvs-15, weather-15])
 
 User: "아까 김포 화면에 날씨도 추가해줘"
 {"summary":"김포 화면에 날씨 추가","mode":"modify","ref":"h1","patch":{"add":[{"id":"weather","target":"weather","filters":{"siteId":17}}],"remove":[]}}
@@ -141,7 +141,7 @@ User: "아까 김포에서 이벤트 빼고 날씨 추가"
 
 ### mode: "modify" (암시적 참조 — "이전 화면" 언급 없이)
 
-(캐시된 화면: h1=김포 이벤트 [events], siteIds=[17], targets=[event])
+(캐시된 화면: h1=김포 이벤트, siteIds=[17], targets=[event], actionIds=[events])
 
 User: "CCTV도 추가해줘"
 {"summary":"현재 화면에 CCTV 추가","mode":"modify","ref":"h1","patch":{"add":[{"id":"cctvs","target":"cctv","filters":{"siteId":17}}],"remove":[]}}
@@ -153,4 +153,4 @@ User: "이벤트는 빼줘"
 {"summary":"현재 화면에서 이벤트 제거","mode":"modify","ref":"h1","patch":{"add":[],"remove":["events"]}}
 
 User: "CCTV만 보여줘"
-{"summary":"현재 화면에서 CCTV만 남기기","mode":"modify","ref":"h1","patch":{"add":[],"remove":["events"]}}
+{"summary":"현재 화면에서 CCTV만 남기기","mode":"modify","ref":"h1","patch":{"add":[{"id":"cctvs","target":"cctv","filters":{"siteId":17}}],"remove":["events"]}}
