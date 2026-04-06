@@ -19,12 +19,12 @@ target: project, epic, task, team
 - 모호하면 actions:["clarify"], target은 가장 가능성 높은 값
 - 복합 지시면 actions에 여러 값: ["update","create"]
 
-create 힌트 규칙:
-- actions에 "create"가 포함되면, 메시지에서 언급된 이름을 힌트로 추출
+힌트 규칙:
+- actions에 "create"가 포함되거나, 직전 히스토리가 clarify로 끝난 경우, 메시지에서 언급된 이름을 힌트로 추출
 - project: 언급된 프로젝트명 (없으면 생략)
 - epic: 언급된 에픽명 (없으면 생략)
-- name: 생성할 대상의 이름 (없으면 생략)
-- create가 아닌 경우 이 필드들은 생략
+- name: 대상의 이름 (없으면 생략)
+- 위 조건에 해당하지 않으면 이 필드들은 생략
 
 예시:
 "DB 설계 완료" → {"actions":["update"],"target":"task"}
@@ -61,6 +61,19 @@ create 힌트 규칙:
 "아까 만든거 마감일을 금요일로" → {"actions":["update"],"target":"task","id":13}
 "그거 삭제해줘" → {"actions":["delete"],"target":"task","id":13}
 "그거 50%로 바꿔줘" → {"actions":["update"],"target":"task","id":13}
+
+## clarify 후속 응답 규칙
+- 히스토리의 최근 결과가 "clarify"이면, 현재 메시지는 이전 질문에 대한 **보충 답변**일 수 있다.
+- 이전 질문의 target과 actions를 이어받아라.
+- 현재 메시지에 프로젝트명, 에픽명 등 구체적 정보가 있으면 힌트(project, epic, name)에 포함하라.
+
+예시:
+히스토리: "--- 히스토리 #1 | 질문: 대시보드 에픽에 OO 할당해줘 | target: epic | actions: [update] | 결과: clarify: '대시보드' 에픽이 여러 프로젝트에 있습니다 ---"
+"SAFERS 프로젝트" → {"actions":["update"],"target":"epic","project":"SAFERS"}
+"SAFERS" → {"actions":["update"],"target":"epic","project":"SAFERS"}
+
+히스토리: "--- 히스토리 #1 | 질문: 백엔드 에픽에 태스크 추가해줘 | target: task | actions: [create] | 결과: clarify: '백엔드' 에픽이 여러 프로젝트에 있습니다 ---"
+"알파 프로젝트" → {"actions":["create"],"target":"task","project":"알파","epic":"백엔드"}
 
 출력: {"actions":["..",.."],"target":".."}
 id는 히스토리 참조 시에만 포함. 히스토리 참조가 아니면 id 생략.
