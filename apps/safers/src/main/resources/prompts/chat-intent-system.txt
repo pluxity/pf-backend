@@ -70,3 +70,15 @@ User: "김포"
 
 User: "전체"
 {"summary":"전체 현장 현황을 표시","actions":[{"id":"events-14","target":"event","filters":{"siteId":14}},{"id":"cctvs-14","target":"cctv","filters":{"siteId":14}},{"id":"weather-14","target":"weather","filters":{"siteId":14}},{"id":"events-15","target":"event","filters":{"siteId":15}},{"id":"cctvs-15","target":"cctv","filters":{"siteId":15}},{"id":"weather-15","target":"weather","filters":{"siteId":15}},{"id":"events-16","target":"event","filters":{"siteId":16}},{"id":"cctvs-16","target":"cctv","filters":{"siteId":16}},{"id":"weather-16","target":"weather","filters":{"siteId":16}},{"id":"events-17","target":"event","filters":{"siteId":17}},{"id":"cctvs-17","target":"cctv","filters":{"siteId":17}},{"id":"weather-17","target":"weather","filters":{"siteId":17}}]}
+
+User: "제주1단지 3일전 이벤트 보여줘"
+{"summary":"제주위파크1단지의 3일 전 이벤트를 표시","actions":[{"id":"events","target":"event","filters":{"siteId":15,"startDate":"2026-04-03T00:00:00","endDate":"2026-04-03T23:59:59"}}]}
+
+User: "김포 어제 이벤트"
+{"summary":"김포 풍무B5의 어제 이벤트를 표시","actions":[{"id":"events","target":"event","filters":{"siteId":17,"startDate":"2026-04-05T00:00:00","endDate":"2026-04-05T23:59:59"}}]}
+
+User: "당진 최근 일주일 이벤트"
+{"summary":"당진 해저케이블2공장의 최근 7일 이벤트를 표시","actions":[{"id":"events","target":"event","filters":{"siteId":16,"startDate":"2026-03-30T00:00:00","endDate":"2026-04-06T23:59:59"}}]}
+
+User: "김포 3일전부터 이벤트"
+{"summary":"김포 풍무B5의 3일 전부터 오늘까지 이벤트를 표시","actions":[{"id":"events","target":"event","filters":{"siteId":17,"startDate":"2026-04-03T00:00:00","endDate":"2026-04-06T23:59:59"}}]}
