@@ -43,6 +43,18 @@ class SelectFieldResolver(
         return result
     }
 
+    fun resolveCandidateNames(
+        field: String,
+        target: String?,
+        candidateIds: List<Long>,
+    ): List<String> =
+        when (field) {
+            "id" -> resolveIdCandidates(target, candidateIds)?.candidates?.map { it.name } ?: emptyList()
+            "project_id" -> resolveProjectCandidates(candidateIds)?.candidates?.map { it.name } ?: emptyList()
+            "epic_id" -> resolveEpicCandidates(candidateIds)?.candidates?.map { it.name } ?: emptyList()
+            else -> emptyList()
+        }
+
     private fun resolveIdCandidates(
         target: String?,
         candidateIds: List<Long>,

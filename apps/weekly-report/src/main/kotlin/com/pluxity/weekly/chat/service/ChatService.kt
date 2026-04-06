@@ -3,6 +3,7 @@ package com.pluxity.weekly.chat.service
 import com.pluxity.common.core.exception.CustomException
 import com.pluxity.weekly.chat.context.ContextBuilder
 import com.pluxity.weekly.chat.dto.ChatActionResponse
+import com.pluxity.weekly.chat.dto.LlmAction
 import com.pluxity.weekly.chat.llm.LlmService
 import com.pluxity.weekly.global.auth.AuthorizationService
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
@@ -31,13 +32,6 @@ class ChatService(
     private val redisTemplate: RedisTemplate<String, Any>,
     private val authorizationService: AuthorizationService,
 ) {
-    /**
-     * read              → 서버 조회 → readResult
-     * clarify           → 예외 (LLM message)
-     * project/epic create → dto + selectFields (프론트에서 POST)
-     * CUD + missingFields → 예외 (LLM message)
-     * 나머지 CUD (확정)  → 서버 실행 → id 반환
-     */
     companion object {
         private val RELEASE_LOCK_SCRIPT =
             RedisScript.of(
@@ -69,18 +63,21 @@ class ChatService(
     ): List<ChatActionResponse> {
         // 히스토리 로드
         val history = chatHistoryStore.load(userId)
+        if (history.isNotEmpty()) {
+            log.info { "히스토리 (${history.size}건):\n${history.joinToString("\n") { it.content }}" }
+        }
 
         // 1차: 의도 추출 (히스토리 포함)
         val intentMessages = promptBuilder.buildIntentMessages(message, history)
         val intent = llmService.extractIntent(intentMessages)
-        log.info { "1차 의도 추출 - action: ${intent.actions}, target: ${intent.target}, id: ${intent.id}" }
+        log.info { "1차 의도 추출 - action: ${intent.actions}, target: ${intent.target}, id: ${intent.id}, response: $intent" }
 
         // target별+action별+권한별 context 조회
         val context = contextBuilder.build(intent.target, intent.actions)
         log.info { "context:\n${objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMapper.readTree(context))}" }
 
         // 2차: LlmAction 생성
-        val actionMessages = promptBuilder.buildActionMessages(message, intent, context)
+        val actionMessages = promptBuilder.buildActionMessages(message, intent, context, history)
         val actions = llmService.generate(actionMessages).take(1)
         log.info { "LLM 응답 액션:\n${objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(actions)}" }
 
@@ -90,19 +87,16 @@ class ChatService(
                 actions.map { action ->
                     val target = action.target ?: "task"
                     when {
-                        // read → 서버 조회
                         action.action == "read" ->
                             ChatActionResponse(
                                 action = action.action,
                                 target = target,
                                 readResult = chatReadHandler.handle(action),
                             )
-                        // clarify → 예외
                         action.action == "clarify" -> throw CustomException(
                             WeeklyReportErrorCode.LLM_AMBIGUOUS_REQUEST,
                             action.message ?: "좀 더 구체적으로 말씀해주세요.",
                         )
-                        // project/epic create → 항상 dto + selectFields
                         action.action == "create" && target in listOf("project", "epic") -> {
                             val selectFields = selectFieldResolver.resolve(action)
                             ChatActionResponse(
@@ -112,14 +106,14 @@ class ChatService(
                                 selectFields = selectFields.ifEmpty { null },
                             )
                         }
-                        // CUD + missingFields 또는 update/delete인데 id 없음 → 예외
                         !action.missingFields.isNullOrEmpty() ||
-                            (action.action in listOf("update", "delete") && action.id == null) ->
+                            (action.action in listOf("update", "delete") && action.id == null) -> {
+                            val message = buildClarifyMessage(action)
                             throw CustomException(
                                 WeeklyReportErrorCode.LLM_AMBIGUOUS_REQUEST,
-                                action.message ?: "대상을 특정할 수 없습니다.",
+                                message,
                             )
-                        // 나머지 CUD (확정) → 서버 실행
+                        }
                         else -> {
                             val resultId = chatExecutor.execute(action)
                             ChatActionResponse(
@@ -131,7 +125,6 @@ class ChatService(
                     }
                 }
 
-            // 성공 시 히스토리 저장
             saveHistory(userId, message, intent.target, intent.actions, buildActionSummary(responses))
             return responses
         } catch (e: CustomException) {
@@ -139,6 +132,23 @@ class ChatService(
                 saveHistory(userId, message, intent.target, intent.actions, "clarify: ${e.message}")
             }
             throw e
+        }
+    }
+
+    private fun buildClarifyMessage(action: LlmAction): String {
+        val base = action.message ?: "대상을 특정할 수 없습니다."
+        val candidates = action.candidates
+        val missingFields = action.missingFields
+
+        if (candidates.isNullOrEmpty() || missingFields.isNullOrEmpty()) return base
+
+        val field = missingFields.first()
+        val names = selectFieldResolver.resolveCandidateNames(field, action.target, candidates)
+
+        return if (names.isNotEmpty()) {
+            "$base (${names.joinToString(", ")})"
+        } else {
+            base
         }
     }
 
