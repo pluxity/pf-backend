@@ -113,6 +113,15 @@ User: "당진 최근 일주일 이벤트"
 User: "김포 3일전부터 이벤트"
 {"summary":"김포 풍무B5의 3일 전부터 오늘까지 이벤트를 표시","mode":"new","actions":[{"id":"events","target":"event","filters":{"siteId":17,"startDate":"2026-04-03T00:00:00","endDate":"2026-04-06T23:59:59"}}]}
 
+User: "김포 녹화영상 보여줘"
+{"summary":"김포 풍무B5의 녹화영상 재생 화면을 표시","mode":"new","actions":[{"id":"cctvs","target":"cctv","filters":{"siteId":17}}]}
+
+User: "제주1단지 다시보기"
+{"summary":"제주위파크1단지의 녹화영상 재생 화면을 표시","mode":"new","actions":[{"id":"cctvs","target":"cctv","filters":{"siteId":15}}]}
+
+User: "당진 녹화"
+{"summary":"당진 해저케이블2공장의 녹화영상 재생 화면을 표시","mode":"new","actions":[{"id":"cctvs","target":"cctv","filters":{"siteId":16}}]}
+
 ### mode: "recall"
 
 (캐시된 화면: h1=김포 전체 현황, h2=당진 CCTV, h3=제주 전체 현황)
