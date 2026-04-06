@@ -149,12 +149,79 @@ class LlmClient(
                 .build()
 
         fun extractJson(content: String): String {
-            val start = content.indexOf('{')
-            val end = content.lastIndexOf('}')
+            // 마크다운 코드블록 제거
+            val cleaned =
+                content
+                    .replace(Regex("```json\\s*"), "")
+                    .replace(Regex("```\\s*"), "")
+                    .trim()
+
+            val start = cleaned.indexOf('{')
+            val end = cleaned.lastIndexOf('}')
             if (start == -1 || end == -1 || start >= end) {
                 throw IllegalStateException("LLM 응답에 JSON이 없습니다: $content")
             }
-            return content.substring(start, end + 1)
+            val raw = cleaned.substring(start, end + 1)
+
+            // 괄호 불일치 보정
+            return repairJson(raw)
+        }
+
+        private fun repairJson(json: String): String {
+            val sb = StringBuilder()
+            val stack = ArrayDeque<Char>()
+            var inString = false
+            var escape = false
+
+            for (ch in json) {
+                if (escape) {
+                    sb.append(ch)
+                    escape = false
+                    continue
+                }
+                if (ch == '\\' && inString) {
+                    sb.append(ch)
+                    escape = true
+                    continue
+                }
+                if (ch == '"') {
+                    inString = !inString
+                    sb.append(ch)
+                    continue
+                }
+                if (inString) {
+                    sb.append(ch)
+                    continue
+                }
+                when (ch) {
+                    '{', '[' -> {
+                        stack.addLast(ch)
+                        sb.append(ch)
+                    }
+                    '}' -> {
+                        if (stack.isNotEmpty() && stack.last() == '{') {
+                            stack.removeLast()
+                            sb.append(ch)
+                        }
+                    }
+                    ']' -> {
+                        if (stack.isNotEmpty() && stack.last() == '[') {
+                            stack.removeLast()
+                            sb.append(ch)
+                        }
+                    }
+                    else -> sb.append(ch)
+                }
+            }
+
+            while (stack.isNotEmpty()) {
+                when (stack.removeLast()) {
+                    '{' -> sb.append('}')
+                    '[' -> sb.append(']')
+                }
+            }
+
+            return sb.toString()
         }
     }
 }
