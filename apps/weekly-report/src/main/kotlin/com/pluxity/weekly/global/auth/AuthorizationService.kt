@@ -112,9 +112,12 @@ class AuthorizationService(
     /** 사용자가 볼 수 있는 프로젝트 ID. null=전체(Admin). PM+Worker 합집합 */
     fun visibleProjectIds(user: User): List<Long>? {
         if (user.hasRole(UserType.ADMIN)) return null
-        val pmProjectIds = if (user.hasRole(UserType.PM)) {
-            projectRepository.findByPmId(user.requiredId).map { it.requiredId }
-        } else emptyList()
+        val pmProjectIds =
+            if (user.hasRole(UserType.PM)) {
+                projectRepository.findByPmId(user.requiredId).map { it.requiredId }
+            } else {
+                emptyList()
+            }
         val assignedProjectIds = epicRepository.findByAssignmentsUserId(user.requiredId).map { it.project.requiredId }
         return (pmProjectIds + assignedProjectIds).distinct()
     }
@@ -122,10 +125,13 @@ class AuthorizationService(
     /** 사용자가 볼 수 있는 에픽 ID. null=전체(Admin). PM+Worker 합집합 */
     fun visibleEpicIds(user: User): List<Long>? {
         if (user.hasRole(UserType.ADMIN)) return null
-        val pmEpicIds = if (user.hasRole(UserType.PM)) {
-            val projectIds = projectRepository.findByPmId(user.requiredId).map { it.requiredId }
-            epicRepository.findByProjectIdIn(projectIds).map { it.requiredId }
-        } else emptyList()
+        val pmEpicIds =
+            if (user.hasRole(UserType.PM)) {
+                val projectIds = projectRepository.findByPmId(user.requiredId).map { it.requiredId }
+                epicRepository.findByProjectIdIn(projectIds).map { it.requiredId }
+            } else {
+                emptyList()
+            }
         val assignedEpicIds = epicRepository.findByAssignmentsUserId(user.requiredId).map { it.requiredId }
         return (pmEpicIds + assignedEpicIds).distinct()
     }

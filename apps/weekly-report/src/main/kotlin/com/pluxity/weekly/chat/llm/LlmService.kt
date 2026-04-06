@@ -18,7 +18,6 @@ import com.pluxity.weekly.chat.llm.dto.OpenAiChatRequest
 import com.pluxity.weekly.chat.llm.dto.OpenAiChatResponse
 import com.pluxity.weekly.global.constant.WeeklyReportErrorCode
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.springframework.core.io.ClassPathResource
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
@@ -69,49 +68,11 @@ class LlmService(
         }
     }
 
-    private val systemPrompt: String by lazy {
-        ClassPathResource("llm/system-prompt.txt").getContentAsString(Charsets.UTF_8)
-    }
-
-    private val intentPrompt: String by lazy {
-        ClassPathResource("llm/intent-prompt.txt").getContentAsString(Charsets.UTF_8)
-    }
-
-    fun generate(userMessage: String): List<LlmAction> {
+    fun extractIntent(messages: List<Message>): IntentResult {
         var lastException: Exception? = null
         repeat(MAX_RETRIES) { attempt ->
             try {
-                val messages =
-                    listOf(
-                        Message(role = "system", content = systemPrompt),
-                        Message(role = "user", content = userMessage),
-                    )
                 val content = callLlm(messages)
-                log.info { "llm response : $content" }
-
-                return parseActions(content)
-            } catch (e: CustomException) {
-                throw e
-            } catch (e: Exception) {
-                lastException = e
-                log.warn { "LLM 호출 실패 (시도 ${attempt + 1}/$MAX_RETRIES): ${e.message}" }
-            }
-        }
-        log.error(lastException) { "LLM 서비스 $MAX_RETRIES 회 재시도 실패" }
-        throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
-    }
-
-    fun extractIntent(message: String): IntentResult {
-        var lastException: Exception? = null
-        repeat(MAX_RETRIES) { attempt ->
-            try {
-                val messages =
-                    listOf(
-                        Message(role = "system", content = intentPrompt),
-                        Message(role = "user", content = message),
-                    )
-                val content = callLlm(messages)
-                log.info { "intent response : $content" }
                 return parseIntent(content)
             } catch (e: CustomException) {
                 throw e
@@ -121,6 +82,24 @@ class LlmService(
             }
         }
         log.error(lastException) { "Intent 추출 $MAX_RETRIES 회 재시도 실패" }
+        throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
+    }
+
+    fun generate(messages: List<Message>): List<LlmAction> {
+        var lastException: Exception? = null
+        repeat(MAX_RETRIES) { attempt ->
+            try {
+                val content = callLlm(messages)
+                log.info { "llm response : $content" }
+                return parseActions(content)
+            } catch (e: CustomException) {
+                throw e
+            } catch (e: Exception) {
+                lastException = e
+                log.warn { "LLM 호출 실패 (시도 ${attempt + 1}/$MAX_RETRIES): ${e.message}" }
+            }
+        }
+        log.error(lastException) { "LLM 서비스 $MAX_RETRIES 회 재시도 실패" }
         throw CustomException(WeeklyReportErrorCode.LLM_SERVICE_UNAVAILABLE)
     }
 
