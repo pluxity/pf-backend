@@ -1,6 +1,8 @@
 package com.pluxity.safers.llm
 
+import com.pluxity.safers.chat.dto.IntentMode
 import com.pluxity.safers.chat.dto.IntentResult
+import com.pluxity.safers.chat.dto.PatchAction
 import com.pluxity.safers.chat.dto.QueryAction
 import com.pluxity.safers.chat.dto.QueryTarget
 import com.pluxity.safers.chat.dto.SurfaceUpdate
@@ -47,9 +49,26 @@ class ChatLlmClient(
         val json = LlmClient.extractJson(content)
         val node = objectMapper.readTree(json)
 
+        val modeStr = node["mode"]?.asString()?.uppercase() ?: "NEW"
+        val mode =
+            try {
+                IntentMode.valueOf(modeStr)
+            } catch (e: IllegalArgumentException) {
+                IntentMode.NEW
+            }
+
         return IntentResult(
             summary = node["summary"]?.asString() ?: "",
+            mode = mode,
             actions = parseActions(node["actions"]),
+            ref = node["ref"]?.asString(),
+            patch =
+                node["patch"]?.let { patchNode ->
+                    PatchAction(
+                        add = parseActions(patchNode["add"]),
+                        remove = patchNode["remove"]?.map { it.asString() } ?: emptyList(),
+                    )
+                },
         )
     }
 

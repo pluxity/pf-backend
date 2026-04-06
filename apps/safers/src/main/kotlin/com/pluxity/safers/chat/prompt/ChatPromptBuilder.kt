@@ -1,6 +1,7 @@
 package com.pluxity.safers.chat.prompt
 
 import com.pluxity.safers.cctv.service.CctvService
+import com.pluxity.safers.chat.service.ScreenMeta
 import com.pluxity.safers.llm.dto.Message
 import com.pluxity.safers.site.repository.SiteRepository
 import org.springframework.core.io.ClassPathResource
@@ -21,9 +22,12 @@ class ChatPromptBuilder(
     }
 
     /**
-     * 1차 호출용: 의도 파악 시스템 프롬프트 (히스토리를 시스템 프롬프트에 포함)
+     * 1차 호출용: 의도 파악 시스템 프롬프트 (히스토리 + 캐시 메타데이터 포함)
      */
-    fun buildIntentPrompt(history: List<Message>): String =
+    fun buildIntentPrompt(
+        history: List<Message>,
+        screenMetaList: List<ScreenMeta> = emptyList(),
+    ): String =
         buildString {
             val sites = siteRepository.findAll()
             val now = LocalDateTime.now()
@@ -34,6 +38,17 @@ class ChatPromptBuilder(
             appendLine("## SITES (${sites.size}개 현장)")
             sites.forEach { site ->
                 appendLine("- id=${site.requiredId}, ${site.name}")
+            }
+
+            // 캐시된 화면 목록 (recall/modify에서 ref 매칭용)
+            if (screenMetaList.isNotEmpty()) {
+                appendLine()
+                appendLine("## 캐시된 화면 목록 (recall/modify 시 ref로 참조)")
+                screenMetaList.forEach { meta ->
+                    val sites = meta.siteIds.joinToString(",")
+                    val targets = meta.targets.joinToString(",")
+                    appendLine("- ref=${meta.ref}, summary=${meta.summary}, siteIds=[$sites], targets=[$targets]")
+                }
             }
 
             // 히스토리를 시스템 프롬프트 내 별도 블록으로 포함
