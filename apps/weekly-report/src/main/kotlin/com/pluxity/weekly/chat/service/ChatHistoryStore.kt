@@ -25,7 +25,7 @@ class ChatHistoryStore(
         content: String,
     ) {
         val key = "chat:history:$userId"
-        val entry = objectMapper.writeValueAsString(mapOf("role" to role, "content" to content))
+        val entry = objectMapper.writeValueAsString(Message(role = role, content = content))
         redisTemplate.opsForList().rightPush(key, entry)
         redisTemplate.opsForList().trim(key, -MAX_HISTORY.toLong(), -1)
         redisTemplate.expire(key, Duration.ofHours(TTL_HOURS))
@@ -56,8 +56,8 @@ class ChatHistoryStore(
         try {
             val node = objectMapper.readTree(json)
             Message(
-                role = node["role"].asString(),
-                content = node["content"].asString(),
+                role = node.path("role").asString(),
+                content = node.path("content").asString()
             )
         } catch (e: Exception) {
             log.warn(e) { "메시지 파싱 실패: $json" }
