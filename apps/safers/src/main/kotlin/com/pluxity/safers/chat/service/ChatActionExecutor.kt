@@ -90,7 +90,7 @@ class ChatActionExecutor(
         val criteria =
             EventFilterCriteria(
                 startDate = filters["startDate"]?.toString()?.let { parseDateTime(it) },
-                endDate = filters["endDate"]?.toString()?.let { parseDateTime(it).plusDays(1).minusSeconds(1) },
+                endDate = filters["endDate"]?.toString()?.let { parseDateTime(it) },
                 types =
                     (filters["types"] as? List<*>)?.mapNotNull { typeName ->
                         runCatching { EventType.valueOf(typeName.toString()) }.getOrNull()
