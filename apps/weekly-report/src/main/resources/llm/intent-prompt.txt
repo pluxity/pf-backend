@@ -43,4 +43,24 @@ create 힌트 규칙:
 "OO 에픽에서 OO 빼줘" → {"actions":["update"],"target":"epic"}
 "OO 에픽에서 OO, OO 제거해줘" → {"actions":["update"],"target":"epic"}
 
+## 대화 히스토리 참조 규칙
+- "그중에", "아까 그거", "위에서", "방금 것", "아까 만든거" 등 이전 대화를 참조하는 표현이 있으면:
+  1. 히스토리의 최근 항목에서 target을 이어받아라.
+  2. 히스토리 결과에 id가 있으면(예: `create task id=13`, `update task id=1001`) **id 필드에 해당 숫자를 포함**하라.
+  3. 새로운 action 키워드가 있으면 actions는 새로 판단.
+- 히스토리가 없거나 참조 대상이 불명확하면 clarify로 분류.
+
+히스토리 예시:
+히스토리: "--- 히스토리 #1 | 질문: 내 태스크 보여줘 | target: task | actions: [read] | 결과: read task 5건 ---"
+"그중에 진행중인 것만" → {"actions":["read"],"target":"task"}
+
+히스토리: "--- 히스토리 #1 | 질문: 백엔드 에픽 보여줘 | target: epic | actions: [read] | 결과: read epic 3건 ---"
+"거기에 태스크 추가해줘" → {"actions":["create"],"target":"task","epic":"백엔드"}
+
+히스토리: "--- 히스토리 #1 | 질문: 로그인 태스크 만들어줘 | target: task | actions: [create] | 결과: create task id=13 ---"
+"아까 만든거 마감일을 금요일로" → {"actions":["update"],"target":"task","id":13}
+"그거 삭제해줘" → {"actions":["delete"],"target":"task","id":13}
+"그거 50%로 바꿔줘" → {"actions":["update"],"target":"task","id":13}
+
 출력: {"actions":["..",.."],"target":".."}
+id는 히스토리 참조 시에만 포함. 히스토리 참조가 아니면 id 생략.
