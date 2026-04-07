@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.security.Principal
 
 @RestController
 @RequestMapping("/chat")
@@ -21,6 +22,8 @@ class ChatController(
     @PostMapping
     @Operation(summary = "자연어 질문으로 데이터 조회 및 A2UI 응답 생성")
     fun chat(
+        principal: Principal,
         @RequestBody request: ChatRequest,
-    ): ResponseEntity<DataResponseBody<ChatResponse>> = ResponseEntity.ok(DataResponseBody(chatService.chat(request.message)))
+    ): ResponseEntity<DataResponseBody<ChatResponse>> =
+        ResponseEntity.ok(DataResponseBody(chatService.chat(principal.name, request.message)))
 }

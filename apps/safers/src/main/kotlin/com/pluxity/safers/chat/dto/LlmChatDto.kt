@@ -34,11 +34,3 @@ enum class QueryTarget {
     WEATHER,
     SITE,
 }
-
-/**
- * 2차 LLM 응답: UI 배치 (surfaceUpdate)
- */
-data class SurfaceUpdate(
-    val surfaceId: String = "main",
-    val components: List<Map<String, Any>>,
-)

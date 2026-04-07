@@ -1,6 +1,5 @@
 package com.pluxity.safers.chat.service
 
-import com.pluxity.common.auth.authentication.security.CustomUserDetails
 import com.pluxity.safers.chat.dto.A2uiMessage
 import com.pluxity.safers.chat.dto.BeginRenderingMessage
 import com.pluxity.safers.chat.dto.ChatResponse
@@ -8,14 +7,12 @@ import com.pluxity.safers.chat.dto.DataModelUpdateMessage
 import com.pluxity.safers.chat.dto.IntentMode
 import com.pluxity.safers.chat.dto.IntentResult
 import com.pluxity.safers.chat.dto.QueryAction
-import com.pluxity.safers.chat.dto.SurfaceUpdate
 import com.pluxity.safers.chat.dto.SurfaceUpdateMessage
 import com.pluxity.safers.chat.prompt.ChatPromptBuilder
 import com.pluxity.safers.llm.ChatLlmClient
 import com.pluxity.safers.llm.dto.Message
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 
 private val log = KotlinLogging.logger {}
@@ -27,9 +24,11 @@ class ChatService(
     private val promptBuilder: ChatPromptBuilder,
     private val chatHistoryStore: ChatHistoryStore,
 ) {
-    fun chat(message: String): ChatResponse {
-        val userId = getCurrentUserId()
-        return try {
+    fun chat(
+        userId: String,
+        message: String,
+    ): ChatResponse =
+        try {
             val history = chatHistoryStore.load(userId)
             val screenMetaList = chatHistoryStore.loadScreenMetaList(userId)
 
@@ -41,16 +40,16 @@ class ChatService(
                     Message(role = "user", content = message),
                 )
             val intentResult = chatLlmClient.analyzeIntent(intentMessages)
+            val turnNumber = chatHistoryStore.incrementTurn(userId)
 
             val response =
                 when (intentResult.mode) {
                     IntentMode.RECALL -> handleRecall(userId, intentResult, message)
-                    IntentMode.MODIFY -> handleModify(userId, intentResult, message)
-                    IntentMode.NEW -> handleNew(userId, intentResult, message)
+                    IntentMode.MODIFY -> handleModify(userId, intentResult, message, turnNumber)
+                    IntentMode.NEW -> handleNew(userId, intentResult, message, turnNumber)
                 }
 
             // 히스토리 저장
-            val turnNumber = chatHistoryStore.incrementTurn(userId)
             chatHistoryStore.save(
                 userId,
                 "system",
@@ -62,12 +61,12 @@ class ChatService(
             log.error(e) { "채팅 처리 실패: $message" }
             buildFallbackResponse(message)
         }
-    }
 
     private fun handleNew(
         userId: String,
         intentResult: IntentResult,
         message: String,
+        turnNumber: Long,
     ): ChatResponse {
         val actions = intentResult.actions
         val dataModel = runBlocking { actionExecutor.execute(actions) }
@@ -75,8 +74,7 @@ class ChatService(
 
         // 화면 캐시 저장 (actions가 있을 때만)
         if (actions.isNotEmpty()) {
-            val ref = chatHistoryStore.nextScreenRef(userId)
-            chatHistoryStore.saveScreen(userId, ref, intentResult.summary, actions, response)
+            chatHistoryStore.saveScreen(userId, "h$turnNumber", intentResult.summary, actions, response)
         }
 
         return response
@@ -96,17 +94,24 @@ class ChatService(
         val cached = chatHistoryStore.loadScreen(userId, ref)
         if (cached == null) {
             log.warn { "캐시된 화면을 찾을 수 없음: ref=$ref" }
-            return buildFallbackResponse("이전 화면(${ref})이 만료되었거나 존재하지 않습니다.")
+            return buildFallbackResponse("이전 화면($ref)이 만료되었거나 존재하지 않습니다.")
         }
 
         log.info { "화면 복원: ref=$ref, summary=${cached.meta.summary}" }
-        return cached.response
+
+        // 캐시된 레이아웃은 유지하고 데이터만 재조회
+        val cachedSurfaceUpdate =
+            cached.response.messages.firstNotNullOfOrNull { it.surfaceUpdate }
+                ?: return buildFallbackResponse("이전 화면의 레이아웃을 복원할 수 없습니다.")
+        val dataModel = runBlocking { actionExecutor.execute(cached.actions) }
+        return buildResponse(cachedSurfaceUpdate, dataModel)
     }
 
     private fun handleModify(
         userId: String,
         intentResult: IntentResult,
         message: String,
+        turnNumber: Long,
     ): ChatResponse {
         val ref = intentResult.ref
         val patch = intentResult.patch
@@ -119,7 +124,7 @@ class ChatService(
         val cached = chatHistoryStore.loadScreen(userId, ref)
         if (cached == null) {
             log.warn { "캐시된 화면을 찾을 수 없음: ref=$ref" }
-            return buildFallbackResponse("이전 화면(${ref})이 만료되었거나 존재하지 않습니다.")
+            return buildFallbackResponse("이전 화면($ref)이 만료되었거나 존재하지 않습니다.")
         }
 
         // 이전 actions에서 remove 대상 제거 후 add 대상 추가
@@ -131,8 +136,7 @@ class ChatService(
         val response = generateLayout(message, dataModel)
 
         // 수정된 화면도 새 ref로 캐시
-        val newRef = chatHistoryStore.nextScreenRef(userId)
-        chatHistoryStore.saveScreen(userId, newRef, intentResult.summary, mergedActions, response)
+        chatHistoryStore.saveScreen(userId, "h$turnNumber", intentResult.summary, mergedActions, response)
 
         return response
     }
@@ -152,34 +156,22 @@ class ChatService(
     }
 
     private fun buildResponse(
-        surfaceUpdate: SurfaceUpdate,
+        surfaceUpdate: SurfaceUpdateMessage,
         dataModel: Map<String, Any>,
     ): ChatResponse {
         val surfaceId = surfaceUpdate.surfaceId
-        val messages =
-            listOf(
-                A2uiMessage(
-                    surfaceUpdate =
-                        SurfaceUpdateMessage(surfaceId = surfaceId, components = surfaceUpdate.components),
+        return ChatResponse(
+            messages =
+                listOf(
+                    A2uiMessage(surfaceUpdate = surfaceUpdate),
+                    A2uiMessage(
+                        dataModelUpdate = DataModelUpdateMessage(surfaceId = surfaceId, contents = dataModel),
+                    ),
+                    A2uiMessage(
+                        beginRendering = BeginRenderingMessage(surfaceId = surfaceId, root = "root", catalogId = "safers"),
+                    ),
                 ),
-                A2uiMessage(
-                    dataModelUpdate =
-                        DataModelUpdateMessage(surfaceId = surfaceId, contents = dataModel),
-                ),
-                A2uiMessage(
-                    beginRendering =
-                        BeginRenderingMessage(surfaceId = surfaceId, root = "root", catalogId = "safers"),
-                ),
-            )
-        return ChatResponse(messages = messages)
-    }
-
-    private fun getCurrentUserId(): String {
-        val principal = SecurityContextHolder.getContext().authentication?.principal
-        return when (principal) {
-            is CustomUserDetails -> principal.user.requiredId.toString()
-            else -> "anonymous"
-        }
+        )
     }
 
     private fun buildFallbackResponse(message: String): ChatResponse {

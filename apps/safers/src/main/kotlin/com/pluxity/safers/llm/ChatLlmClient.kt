@@ -5,7 +5,7 @@ import com.pluxity.safers.chat.dto.IntentResult
 import com.pluxity.safers.chat.dto.PatchAction
 import com.pluxity.safers.chat.dto.QueryAction
 import com.pluxity.safers.chat.dto.QueryTarget
-import com.pluxity.safers.chat.dto.SurfaceUpdate
+import com.pluxity.safers.chat.dto.SurfaceUpdateMessage
 import com.pluxity.safers.llm.dto.Message
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
@@ -35,14 +35,14 @@ class ChatLlmClient(
     /**
      * 2차 호출: UI 배치 (surfaceUpdate)
      */
-    fun generateLayout(messages: List<Message>): SurfaceUpdate {
+    fun generateLayout(messages: List<Message>): SurfaceUpdateMessage {
         val start = System.currentTimeMillis()
         val content =
             llmClient.call(messages)
                 ?: throw IllegalStateException("LLM 응답이 없습니다")
         val elapsed = System.currentTimeMillis() - start
         log.info { "LLM 2차(UI 배치) - ${elapsed}ms, content: $content" }
-        return parseSurfaceUpdate(content)
+        return parseSurfaceUpdateMessage(content)
     }
 
     private fun parseIntentResult(content: String): IntentResult {
@@ -53,7 +53,7 @@ class ChatLlmClient(
         val mode =
             try {
                 IntentMode.valueOf(modeStr)
-            } catch (e: IllegalArgumentException) {
+            } catch (_: IllegalArgumentException) {
                 IntentMode.NEW
             }
 
@@ -72,14 +72,14 @@ class ChatLlmClient(
         )
     }
 
-    private fun parseSurfaceUpdate(content: String): SurfaceUpdate {
+    private fun parseSurfaceUpdateMessage(content: String): SurfaceUpdateMessage {
         val json = LlmClient.extractJson(content)
         val node = objectMapper.readTree(json)
 
         val surfaceUpdateNode = node["surfaceUpdate"] ?: node
         val surfaceId = surfaceUpdateNode["surfaceId"]?.asString() ?: "main"
         val components = surfaceUpdateNode["components"]?.map { nodeToMap(it) } ?: emptyList()
-        return SurfaceUpdate(surfaceId = surfaceId, components = components)
+        return SurfaceUpdateMessage(surfaceId = surfaceId, components = components)
     }
 
     private fun parseActions(actionsNode: JsonNode?): List<QueryAction> {

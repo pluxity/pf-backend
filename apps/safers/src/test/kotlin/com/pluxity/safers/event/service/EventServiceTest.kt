@@ -51,6 +51,7 @@ class EventServiceTest :
                 service,
                 eventFileDownloadService,
                 eventLlmClient,
+                eventRepository,
                 cctvSiteCache,
             )
 

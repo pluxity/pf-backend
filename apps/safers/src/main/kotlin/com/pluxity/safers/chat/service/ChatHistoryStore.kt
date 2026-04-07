@@ -36,9 +36,8 @@ class ChatHistoryStore(
     private val redisTemplate: StringRedisTemplate,
 ) {
     companion object {
-        private const val MAX_HISTORY = 10
-        private const val MAX_SCREENS = 10
-        private const val TTL_HOURS = 24L
+        private const val MAX_SIZE = 10
+        private const val TTL_HOURS = 6L
     }
 
     private val objectMapper = LlmClient.objectMapper
@@ -53,7 +52,7 @@ class ChatHistoryStore(
         val key = "chat:history:$sessionId"
         val entry = objectMapper.writeValueAsString(mapOf("role" to role, "content" to content))
         redisTemplate.opsForList().rightPush(key, entry)
-        redisTemplate.opsForList().trim(key, -MAX_HISTORY.toLong(), -1)
+        redisTemplate.opsForList().trim(key, -MAX_SIZE.toLong(), -1)
         redisTemplate.expire(key, Duration.ofHours(TTL_HOURS))
     }
 
@@ -62,13 +61,6 @@ class ChatHistoryStore(
         val turn = redisTemplate.opsForValue().increment(key) ?: 1L
         redisTemplate.expire(key, Duration.ofHours(TTL_HOURS))
         return turn
-    }
-
-    fun nextScreenRef(sessionId: String): String {
-        val key = "chat:screen-seq:$sessionId"
-        val seq = redisTemplate.opsForValue().increment(key) ?: 1L
-        redisTemplate.expire(key, Duration.ofHours(TTL_HOURS))
-        return "h$seq"
     }
 
     fun load(sessionId: String): List<Message> {
@@ -115,11 +107,11 @@ class ChatHistoryStore(
             )
         redisTemplate.opsForHash<String, String>().put(key, ref, objectMapper.writeValueAsString(cache))
 
-        // 오래된 캐시 정리: MAX_SCREENS 초과 시 가장 오래된 것 제거
+        // 오래된 캐시 정리: MAX_SIZE 초과 시 가장 오래된 것 제거
         val size = redisTemplate.opsForHash<String, String>().size(key)
-        if (size > MAX_SCREENS) {
+        if (size > MAX_SIZE) {
             val allKeys = redisTemplate.opsForHash<String, String>().keys(key).sortedBy { it.removePrefix("h").toLongOrNull() ?: 0L }
-            val toRemove = allKeys.take((size - MAX_SCREENS).toInt())
+            val toRemove = allKeys.take((size - MAX_SIZE).toInt())
             toRemove.forEach { redisTemplate.opsForHash<String, String>().delete(key, it) }
         }
         redisTemplate.expire(key, Duration.ofHours(TTL_HOURS))
@@ -160,7 +152,7 @@ class ChatHistoryStore(
                             actionIds =
                                 metaNode["actionIds"]?.map { it.asString() } ?: emptyList(),
                         )
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         null
                     }
                 }.sortedBy { it.ref.removePrefix("h").toLongOrNull() ?: 0L }

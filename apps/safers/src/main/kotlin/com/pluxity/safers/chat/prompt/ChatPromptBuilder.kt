@@ -48,7 +48,9 @@ class ChatPromptBuilder(
                     val siteIdsCsv = meta.siteIds.joinToString(",")
                     val targetsCsv = meta.targets.joinToString(",")
                     val actionIdsCsv = meta.actionIds.joinToString(",")
-                    appendLine("- ref=${meta.ref}, summary=${meta.summary}, siteIds=[$siteIdsCsv], targets=[$targetsCsv], actionIds=[$actionIdsCsv]")
+                    appendLine(
+                        "- ref=${meta.ref}, summary=${meta.summary}, siteIds=[$siteIdsCsv], targets=[$targetsCsv], actionIds=[$actionIdsCsv]",
+                    )
                 }
             }
 
