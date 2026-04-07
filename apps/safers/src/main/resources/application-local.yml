@@ -14,9 +14,6 @@ spring:
     password: pluxity0304
     driver-class-name: org.postgresql.Driver
 
-domain:
-  url: ${API_URL:http://localhost:8080}
-
 file:
   storage-strategy: s3
   local:

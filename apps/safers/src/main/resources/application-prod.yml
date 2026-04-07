@@ -17,9 +17,6 @@ spring:
     username: ${DB_USERNAME:pluxity}
     password: ${DB_PASSWORD:pluxity0304}
 
-domain:
-  url: ${API_URL:}
-
 file:
   storage-strategy: ${FILE_STORAGE_STRATEGY:s3}
   local:
