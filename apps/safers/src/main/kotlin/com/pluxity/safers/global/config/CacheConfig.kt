@@ -32,6 +32,7 @@ class CacheConfig {
                                         .builder()
                                         .allowIfSubType("com.pluxity.")
                                         .allowIfSubType("java.")
+                                        .allowIfSubType("kotlin.")
                                         .build(),
                                 ).build(),
                         ),
