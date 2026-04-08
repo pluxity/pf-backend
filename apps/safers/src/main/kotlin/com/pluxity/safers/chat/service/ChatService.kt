@@ -1,5 +1,7 @@
 package com.pluxity.safers.chat.service
 
+import com.pluxity.safers.cctv.dto.CctvResponse
+import com.pluxity.safers.cctv.service.CctvService
 import com.pluxity.safers.chat.dto.A2uiMessage
 import com.pluxity.safers.chat.dto.BeginRenderingMessage
 import com.pluxity.safers.chat.dto.ChatResponse
@@ -11,7 +13,10 @@ import com.pluxity.safers.chat.dto.SurfaceUpdateMessage
 import com.pluxity.safers.chat.prompt.ChatPromptBuilder
 import com.pluxity.safers.llm.ChatLlmClient
 import com.pluxity.safers.llm.dto.Message
+import com.pluxity.safers.site.entity.Site
+import com.pluxity.safers.site.repository.SiteRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Service
 
 private val log = KotlinLogging.logger {}
@@ -22,17 +27,21 @@ class ChatService(
     private val actionExecutor: ChatActionExecutor,
     private val promptBuilder: ChatPromptBuilder,
     private val chatHistoryStore: ChatHistoryStore,
+    private val siteRepository: SiteRepository,
+    private val cctvService: CctvService,
 ) {
-    suspend fun chat(
+    fun chat(
         userId: String,
         message: String,
     ): ChatResponse =
         try {
             val history = chatHistoryStore.load(userId)
             val screenMetaList = chatHistoryStore.loadScreenMetaList(userId)
+            val sites = siteRepository.findAll()
+            val cctvs = cctvService.findAll()
 
             // 1차 LLM: 의도 파악
-            val intentPrompt = promptBuilder.buildIntentPrompt(history, screenMetaList)
+            val intentPrompt = promptBuilder.buildIntentPrompt(sites, history, screenMetaList)
             val intentMessages =
                 listOf(
                     Message(role = "system", content = intentPrompt),
@@ -44,8 +53,8 @@ class ChatService(
             val response =
                 when (intentResult.mode) {
                     IntentMode.RECALL -> handleRecall(userId, intentResult, message)
-                    IntentMode.MODIFY -> handleModify(userId, intentResult, message, turnNumber)
-                    IntentMode.NEW -> handleNew(userId, intentResult, message, turnNumber)
+                    IntentMode.MODIFY -> handleModify(userId, intentResult, message, turnNumber, sites, cctvs)
+                    IntentMode.NEW -> handleNew(userId, intentResult, message, turnNumber, sites, cctvs)
                 }
 
             // 히스토리 저장
@@ -61,15 +70,17 @@ class ChatService(
             buildFallbackResponse(message)
         }
 
-    private suspend fun handleNew(
+    private fun handleNew(
         userId: String,
         intentResult: IntentResult,
         message: String,
         turnNumber: Long,
+        sites: List<Site>,
+        cctvs: List<CctvResponse>,
     ): ChatResponse {
         val actions = intentResult.actions
-        val dataModel = actionExecutor.execute(actions)
-        val response = generateLayout(message, dataModel)
+        val dataModel = runBlocking { actionExecutor.execute(actions) }
+        val response = generateLayout(message, dataModel, sites, cctvs)
 
         // 화면 캐시 저장 (actions가 있을 때만)
         if (actions.isNotEmpty()) {
@@ -79,7 +90,7 @@ class ChatService(
         return response
     }
 
-    private suspend fun handleRecall(
+    private fun handleRecall(
         userId: String,
         intentResult: IntentResult,
         message: String,
@@ -102,15 +113,17 @@ class ChatService(
         val cachedSurfaceUpdate =
             cached.response.messages.firstNotNullOfOrNull { it.surfaceUpdate }
                 ?: return buildFallbackResponse("이전 화면의 레이아웃을 복원할 수 없습니다.")
-        val dataModel = actionExecutor.execute(cached.actions)
+        val dataModel = runBlocking { actionExecutor.execute(cached.actions) }
         return buildResponse(cachedSurfaceUpdate, dataModel)
     }
 
-    private suspend fun handleModify(
+    private fun handleModify(
         userId: String,
         intentResult: IntentResult,
         message: String,
         turnNumber: Long,
+        sites: List<Site>,
+        cctvs: List<CctvResponse>,
     ): ChatResponse {
         val ref = intentResult.ref
         val patch = intentResult.patch
@@ -131,8 +144,8 @@ class ChatService(
         val mergedActions: List<QueryAction> =
             cached.actions.filter { it.id !in removeIds } + patch.add
 
-        val dataModel = actionExecutor.execute(mergedActions)
-        val response = generateLayout(message, dataModel)
+        val dataModel = runBlocking { actionExecutor.execute(mergedActions) }
+        val response = generateLayout(message, dataModel, sites, cctvs)
 
         // 수정된 화면도 새 ref로 캐시
         chatHistoryStore.saveScreen(userId, "h$turnNumber", intentResult.summary, mergedActions, response)
@@ -143,11 +156,13 @@ class ChatService(
     private fun generateLayout(
         message: String,
         dataModel: Map<String, Any>,
+        sites: List<Site>,
+        cctvs: List<CctvResponse>,
     ): ChatResponse {
         val dataSummary = promptBuilder.buildDataSummary(message, dataModel)
         val layoutMessages =
             listOf(
-                Message(role = "system", content = promptBuilder.buildLayoutPrompt()),
+                Message(role = "system", content = promptBuilder.buildLayoutPrompt(sites, cctvs)),
                 Message(role = "user", content = dataSummary),
             )
         val surfaceUpdate = chatLlmClient.generateLayout(layoutMessages)

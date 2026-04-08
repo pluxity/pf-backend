@@ -1,18 +1,15 @@
 package com.pluxity.safers.chat.prompt
 
-import com.pluxity.safers.cctv.service.CctvService
+import com.pluxity.safers.cctv.dto.CctvResponse
 import com.pluxity.safers.chat.dto.ScreenMeta
 import com.pluxity.safers.llm.dto.Message
-import com.pluxity.safers.site.repository.SiteRepository
+import com.pluxity.safers.site.entity.Site
 import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
 @Component
-class ChatPromptBuilder(
-    private val siteRepository: SiteRepository,
-    private val cctvService: CctvService,
-) {
+class ChatPromptBuilder {
     private val intentPrompt: String by lazy {
         ClassPathResource("prompts/chat-intent-system.txt").getContentAsString(Charsets.UTF_8)
     }
@@ -25,11 +22,11 @@ class ChatPromptBuilder(
      * 1차 호출용: 의도 파악 시스템 프롬프트 (히스토리 + 캐시 메타데이터 포함)
      */
     fun buildIntentPrompt(
+        sites: List<Site>,
         history: List<Message>,
         screenMetaList: List<ScreenMeta> = emptyList(),
     ): String =
         buildString {
-            val sites = siteRepository.findAll()
             val now = LocalDateTime.now()
 
             append(intentPrompt.replace("{{now}}", now.toString()))
@@ -66,10 +63,11 @@ class ChatPromptBuilder(
     /**
      * 2차 호출용: UI 배치 시스템 프롬프트
      */
-    fun buildLayoutPrompt(): String =
+    fun buildLayoutPrompt(
+        sites: List<Site>,
+        cctvs: List<CctvResponse>,
+    ): String =
         buildString {
-            val sites = siteRepository.findAll()
-
             append(layoutPrompt)
             appendLine()
             appendLine()
@@ -78,7 +76,7 @@ class ChatPromptBuilder(
                 appendLine("- id=${site.requiredId}, ${site.name}")
             }
             appendLine()
-            appendCameras()
+            appendCameras(cctvs)
         }
 
     /**
@@ -110,8 +108,7 @@ class ChatPromptBuilder(
             appendLine("위 데이터를 기반으로 적절한 UI를 배치해주세요.")
         }
 
-    private fun StringBuilder.appendCameras() {
-        val cctvs = cctvService.findAll()
+    private fun StringBuilder.appendCameras(cctvs: List<CctvResponse>) {
         if (cctvs.isEmpty()) return
         appendLine("## AVAILABLE_CAMERAS")
         cctvs.groupBy { it.site.name }.forEach { (siteName, cameras) ->

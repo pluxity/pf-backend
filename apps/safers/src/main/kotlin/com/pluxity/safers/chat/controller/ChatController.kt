@@ -22,7 +22,7 @@ class ChatController(
 ) {
     @PostMapping
     @Operation(summary = "자연어 질문으로 데이터 조회 및 A2UI 응답 생성")
-    suspend fun chat(
+    fun chat(
         principal: Principal,
         @Valid @RequestBody request: ChatRequest,
     ): ResponseEntity<DataResponseBody<ChatResponse>> =
