@@ -1,9 +1,9 @@
 package com.pluxity.safers.chat.prompt
 
-import com.pluxity.safers.cctv.dto.CctvResponse
+import com.pluxity.safers.cctv.dto.CctvSummary
 import com.pluxity.safers.chat.dto.ScreenMeta
 import com.pluxity.safers.llm.dto.Message
-import com.pluxity.safers.site.entity.Site
+import com.pluxity.safers.site.dto.SiteSummary
 import org.springframework.core.io.ClassPathResource
 import java.time.LocalDateTime
 
@@ -20,7 +20,7 @@ class ChatPromptBuilder {
      * 1차 호출용: 의도 파악 시스템 프롬프트 (히스토리 + 캐시 메타데이터 포함)
      */
     fun buildIntentPrompt(
-        sites: List<Site>,
+        sites: List<SiteSummary>,
         history: List<Message>,
         screenMetaList: List<ScreenMeta> = emptyList(),
     ): String =
@@ -32,7 +32,7 @@ class ChatPromptBuilder {
             appendLine()
             appendLine("## SITES (${sites.size}개 현장)")
             sites.forEach { site ->
-                appendLine("- id=${site.requiredId}, ${site.name}")
+                appendLine("- id=${site.id}, ${site.name}")
             }
 
             // 캐시된 화면 목록 (recall/modify에서 ref 매칭용)
@@ -62,8 +62,8 @@ class ChatPromptBuilder {
      * 2차 호출용: UI 배치 시스템 프롬프트
      */
     fun buildLayoutPrompt(
-        sites: List<Site>,
-        cctvs: List<CctvResponse>,
+        sites: List<SiteSummary>,
+        cctvs: List<CctvSummary>,
     ): String =
         buildString {
             append(layoutPrompt)
@@ -71,7 +71,7 @@ class ChatPromptBuilder {
             appendLine()
             appendLine("## SITES")
             sites.forEach { site ->
-                appendLine("- id=${site.requiredId}, ${site.name}")
+                appendLine("- id=${site.id}, ${site.name}")
             }
             appendLine()
             appendCameras(cctvs)
@@ -106,10 +106,10 @@ class ChatPromptBuilder {
             appendLine("위 데이터를 기반으로 적절한 UI를 배치해주세요.")
         }
 
-    private fun StringBuilder.appendCameras(cctvs: List<CctvResponse>) {
+    private fun StringBuilder.appendCameras(cctvs: List<CctvSummary>) {
         if (cctvs.isEmpty()) return
         appendLine("## AVAILABLE_CAMERAS")
-        cctvs.groupBy { it.site.name }.forEach { (siteName, cameras) ->
+        cctvs.groupBy { it.siteName }.forEach { (siteName, cameras) ->
             appendLine("$siteName:")
             cameras.forEach { appendLine("  - ${it.name}") }
         }

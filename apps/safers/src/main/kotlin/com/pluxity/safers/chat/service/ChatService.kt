@@ -12,8 +12,8 @@ import com.pluxity.safers.chat.dto.SurfaceUpdateMessage
 import com.pluxity.safers.chat.prompt.ChatPromptBuilder
 import com.pluxity.safers.llm.ChatLlmClient
 import com.pluxity.safers.llm.dto.Message
-import com.pluxity.safers.site.entity.Site
-import com.pluxity.safers.site.repository.SiteRepository
+import com.pluxity.safers.site.dto.SiteSummary
+import com.pluxity.safers.site.service.SiteService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Service
@@ -25,7 +25,7 @@ class ChatService(
     private val chatLlmClient: ChatLlmClient,
     private val actionExecutor: ChatActionExecutor,
     private val chatHistoryStore: ChatHistoryStore,
-    private val siteRepository: SiteRepository,
+    private val siteService: SiteService,
     private val cctvService: CctvService,
 ) {
     private val promptBuilder = ChatPromptBuilder()
@@ -37,7 +37,7 @@ class ChatService(
         try {
             val history = chatHistoryStore.load(userId)
             val screenMetaList = chatHistoryStore.loadScreenMetaList(userId)
-            val sites = siteRepository.findAll()
+            val sites = siteService.findAllSites()
 
             // 1차 LLM: 의도 파악
             val intentPrompt = promptBuilder.buildIntentPrompt(sites, history, screenMetaList)
@@ -74,7 +74,7 @@ class ChatService(
         intentResult: IntentResult,
         message: String,
         turnNumber: Long,
-        sites: List<Site>,
+        sites: List<SiteSummary>,
     ): ChatResponse {
         val actions = intentResult.actions
         val dataModel = runBlocking { actionExecutor.execute(actions) }
@@ -120,7 +120,7 @@ class ChatService(
         intentResult: IntentResult,
         message: String,
         turnNumber: Long,
-        sites: List<Site>,
+        sites: List<SiteSummary>,
     ): ChatResponse {
         val ref = intentResult.ref
         val patch = intentResult.patch
@@ -153,9 +153,9 @@ class ChatService(
     private fun generateLayout(
         message: String,
         dataModel: Map<String, Any>,
-        sites: List<Site>,
+        sites: List<SiteSummary>,
     ): ChatResponse {
-        val cctvs = cctvService.findAll()
+        val cctvs = cctvService.findAllSummaries()
         val dataSummary = promptBuilder.buildDataSummary(message, dataModel)
         val layoutMessages =
             listOf(

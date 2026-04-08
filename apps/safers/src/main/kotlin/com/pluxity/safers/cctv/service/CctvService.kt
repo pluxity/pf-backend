@@ -4,6 +4,7 @@ import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.file.extensions.getFileMapById
 import com.pluxity.common.file.service.FileService
 import com.pluxity.safers.cctv.dto.CctvResponse
+import com.pluxity.safers.cctv.dto.CctvSummary
 import com.pluxity.safers.cctv.dto.CctvUpdateRequest
 import com.pluxity.safers.cctv.dto.MediaServerPathItem
 import com.pluxity.safers.cctv.dto.toResponse
@@ -12,12 +13,11 @@ import com.pluxity.safers.cctv.repository.CctvRepository
 import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.llm.dto.CctvFilterCriteria
 import com.pluxity.safers.site.entity.Site
-import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-
-private val log = KotlinLogging.logger {}
 
 @Service
 @Transactional(readOnly = true)
@@ -25,6 +25,7 @@ class CctvService(
     private val repository: CctvRepository,
     private val fileService: FileService,
 ) {
+    @CacheEvict("cctvs", allEntries = true)
     @Transactional
     fun syncAll(sitePathsMap: List<Pair<Site, List<MediaServerPathItem>>>) {
         sitePathsMap.forEach { (site, externalPaths) ->
@@ -71,6 +72,12 @@ class CctvService(
         }
     }
 
+    @Cacheable("cctvs")
+    fun findAllSummaries(): List<CctvSummary> =
+        repository.findAllWithSite(null).map {
+            CctvSummary(name = it.name, siteName = it.site.name)
+        }
+
     fun findAll(criteria: CctvFilterCriteria? = null): List<CctvResponse> {
         val cctvList = repository.findAllWithSite(criteria)
 
@@ -79,6 +86,7 @@ class CctvService(
         return cctvList.map { it.toResponse(thumbnailFileMap) }
     }
 
+    @CacheEvict("cctvs", allEntries = true)
     @Transactional
     fun update(
         id: Long,
