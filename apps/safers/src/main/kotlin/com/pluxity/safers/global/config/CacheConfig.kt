@@ -8,6 +8,7 @@ import org.springframework.data.redis.cache.RedisCacheManager
 import org.springframework.data.redis.connection.RedisConnectionFactory
 import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer
 import org.springframework.data.redis.serializer.RedisSerializationContext
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import java.time.Duration
 
 @Configuration
@@ -24,7 +25,15 @@ class CacheConfig {
                     .entryTtl(Duration.ofHours(6))
                     .serializeValuesWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(
-                            GenericJacksonJsonRedisSerializer.builder().build(),
+                            GenericJacksonJsonRedisSerializer
+                                .builder()
+                                .enableDefaultTyping(
+                                    BasicPolymorphicTypeValidator
+                                        .builder()
+                                        .allowIfSubType("com.pluxity.")
+                                        .allowIfSubType("java.")
+                                        .build(),
+                                ).build(),
                         ),
                     ),
             ).build()
