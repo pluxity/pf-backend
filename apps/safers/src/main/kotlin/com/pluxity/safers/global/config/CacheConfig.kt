@@ -2,6 +2,9 @@
 
 package com.pluxity.safers.global.config
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -16,8 +19,19 @@ import java.time.Duration
 @EnableCaching
 class CacheConfig {
     @Bean
-    fun cacheManager(connectionFactory: RedisConnectionFactory): RedisCacheManager =
-        RedisCacheManager
+    fun cacheManager(connectionFactory: RedisConnectionFactory): RedisCacheManager {
+        val objectMapper =
+            ObjectMapper()
+                .findAndRegisterModules()
+                .activateDefaultTyping(
+                    BasicPolymorphicTypeValidator
+                        .builder()
+                        .allowIfBaseType(Any::class.java)
+                        .build(),
+                    DefaultTyping.EVERYTHING,
+                )
+
+        return RedisCacheManager
             .builder(connectionFactory)
             .cacheDefaults(
                 RedisCacheConfiguration
@@ -26,8 +40,9 @@ class CacheConfig {
                     .entryTtl(Duration.ofHours(6))
                     .serializeValuesWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(
-                            GenericJackson2JsonRedisSerializer(),
+                            GenericJackson2JsonRedisSerializer(objectMapper),
                         ),
                     ),
             ).build()
+    }
 }
