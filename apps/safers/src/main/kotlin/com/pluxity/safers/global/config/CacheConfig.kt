@@ -1,17 +1,12 @@
-@file:Suppress("DEPRECATION")
-
 package com.pluxity.safers.global.config
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.cache.RedisCacheConfiguration
 import org.springframework.data.redis.cache.RedisCacheManager
 import org.springframework.data.redis.connection.RedisConnectionFactory
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer
+import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer
 import org.springframework.data.redis.serializer.RedisSerializationContext
 import java.time.Duration
 
@@ -19,19 +14,8 @@ import java.time.Duration
 @EnableCaching
 class CacheConfig {
     @Bean
-    fun cacheManager(connectionFactory: RedisConnectionFactory): RedisCacheManager {
-        val objectMapper =
-            ObjectMapper()
-                .findAndRegisterModules()
-                .activateDefaultTyping(
-                    BasicPolymorphicTypeValidator
-                        .builder()
-                        .allowIfBaseType(Any::class.java)
-                        .build(),
-                    DefaultTyping.EVERYTHING,
-                )
-
-        return RedisCacheManager
+    fun cacheManager(connectionFactory: RedisConnectionFactory): RedisCacheManager =
+        RedisCacheManager
             .builder(connectionFactory)
             .cacheDefaults(
                 RedisCacheConfiguration
@@ -40,9 +24,8 @@ class CacheConfig {
                     .entryTtl(Duration.ofHours(6))
                     .serializeValuesWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(
-                            GenericJackson2JsonRedisSerializer(objectMapper),
+                            GenericJacksonJsonRedisSerializer.builder().build(),
                         ),
                     ),
             ).build()
-    }
 }
