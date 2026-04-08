@@ -11,7 +11,6 @@ import com.pluxity.safers.site.dto.SiteRequest
 import com.pluxity.safers.site.dto.SiteResponse
 import com.pluxity.safers.site.dto.SiteSummary
 import com.pluxity.safers.site.dto.toResponse
-import com.pluxity.safers.site.dto.toSummary
 import com.pluxity.safers.site.entity.Site
 import com.pluxity.safers.site.repository.SiteRepository
 import com.pluxity.safers.weather.util.GridConverter
@@ -70,7 +69,7 @@ class SiteService(
     }
 
     @Cacheable("sites")
-    fun findAllSites(): List<SiteSummary> = siteRepository.findAll().map { it.toSummary() }
+    fun findAllSites(): List<SiteSummary> = siteRepository.findAllSummaries()
 
     fun findAll(request: PageSearchRequest): PageResponse<SiteResponse> {
         val pageable = PageRequest.of(request.page - 1, request.size)

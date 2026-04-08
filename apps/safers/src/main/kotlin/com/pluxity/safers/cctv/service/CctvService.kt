@@ -73,10 +73,7 @@ class CctvService(
     }
 
     @Cacheable("cctvs")
-    fun findAllSummaries(): List<CctvSummary> =
-        repository.findAllWithSite(null).map {
-            CctvSummary(name = it.name, siteName = it.site.name)
-        }
+    fun findAllSummaries(): List<CctvSummary> = repository.findAllSummaries()
 
     fun findAll(criteria: CctvFilterCriteria? = null): List<CctvResponse> {
         val cctvList = repository.findAllWithSite(criteria)
