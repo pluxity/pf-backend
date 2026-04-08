@@ -5,10 +5,8 @@ import com.pluxity.safers.chat.dto.ScreenMeta
 import com.pluxity.safers.llm.dto.Message
 import com.pluxity.safers.site.entity.Site
 import org.springframework.core.io.ClassPathResource
-import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
-@Component
 class ChatPromptBuilder {
     private val intentPrompt: String by lazy {
         ClassPathResource("prompts/chat-intent-system.txt").getContentAsString(Charsets.UTF_8)
