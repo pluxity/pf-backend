@@ -1,7 +1,7 @@
 package com.pluxity.safers.chat.prompt
 
 import com.pluxity.safers.cctv.service.CctvService
-import com.pluxity.safers.chat.service.ScreenMeta
+import com.pluxity.safers.chat.dto.ScreenMeta
 import com.pluxity.safers.llm.dto.Message
 import com.pluxity.safers.site.repository.SiteRepository
 import org.springframework.core.io.ClassPathResource

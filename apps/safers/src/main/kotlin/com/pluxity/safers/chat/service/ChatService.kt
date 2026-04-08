@@ -12,7 +12,6 @@ import com.pluxity.safers.chat.prompt.ChatPromptBuilder
 import com.pluxity.safers.llm.ChatLlmClient
 import com.pluxity.safers.llm.dto.Message
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Service
 
 private val log = KotlinLogging.logger {}
@@ -24,7 +23,7 @@ class ChatService(
     private val promptBuilder: ChatPromptBuilder,
     private val chatHistoryStore: ChatHistoryStore,
 ) {
-    fun chat(
+    suspend fun chat(
         userId: String,
         message: String,
     ): ChatResponse =
@@ -62,14 +61,14 @@ class ChatService(
             buildFallbackResponse(message)
         }
 
-    private fun handleNew(
+    private suspend fun handleNew(
         userId: String,
         intentResult: IntentResult,
         message: String,
         turnNumber: Long,
     ): ChatResponse {
         val actions = intentResult.actions
-        val dataModel = runBlocking { actionExecutor.execute(actions) }
+        val dataModel = actionExecutor.execute(actions)
         val response = generateLayout(message, dataModel)
 
         // 화면 캐시 저장 (actions가 있을 때만)
@@ -80,7 +79,7 @@ class ChatService(
         return response
     }
 
-    private fun handleRecall(
+    private suspend fun handleRecall(
         userId: String,
         intentResult: IntentResult,
         message: String,
@@ -103,11 +102,11 @@ class ChatService(
         val cachedSurfaceUpdate =
             cached.response.messages.firstNotNullOfOrNull { it.surfaceUpdate }
                 ?: return buildFallbackResponse("이전 화면의 레이아웃을 복원할 수 없습니다.")
-        val dataModel = runBlocking { actionExecutor.execute(cached.actions) }
+        val dataModel = actionExecutor.execute(cached.actions)
         return buildResponse(cachedSurfaceUpdate, dataModel)
     }
 
-    private fun handleModify(
+    private suspend fun handleModify(
         userId: String,
         intentResult: IntentResult,
         message: String,
@@ -132,7 +131,7 @@ class ChatService(
         val mergedActions: List<QueryAction> =
             cached.actions.filter { it.id !in removeIds } + patch.add
 
-        val dataModel = runBlocking { actionExecutor.execute(mergedActions) }
+        val dataModel = actionExecutor.execute(mergedActions)
         val response = generateLayout(message, dataModel)
 
         // 수정된 화면도 새 ref로 캐시

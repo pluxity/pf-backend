@@ -6,6 +6,7 @@ import com.pluxity.safers.chat.dto.ChatResponse
 import com.pluxity.safers.chat.service.ChatService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -21,9 +22,9 @@ class ChatController(
 ) {
     @PostMapping
     @Operation(summary = "자연어 질문으로 데이터 조회 및 A2UI 응답 생성")
-    fun chat(
+    suspend fun chat(
         principal: Principal,
-        @RequestBody request: ChatRequest,
+        @Valid @RequestBody request: ChatRequest,
     ): ResponseEntity<DataResponseBody<ChatResponse>> =
         ResponseEntity.ok(DataResponseBody(chatService.chat(principal.name, request.message)))
 }

@@ -1,6 +1,7 @@
 package com.pluxity.safers.chat.service
 
 import com.pluxity.common.core.dto.PageSearchRequest
+import com.pluxity.common.core.exception.CustomException
 import com.pluxity.common.core.response.PageResponse
 import com.pluxity.safers.cctv.dto.CctvResponse
 import com.pluxity.safers.cctv.service.CctvService
@@ -9,6 +10,7 @@ import com.pluxity.safers.chat.dto.QueryTarget
 import com.pluxity.safers.event.dto.EventResponse
 import com.pluxity.safers.event.entity.EventType
 import com.pluxity.safers.event.service.EventService
+import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.llm.dto.CctvFilterCriteria
 import com.pluxity.safers.llm.dto.EventFilterCriteria
 import com.pluxity.safers.site.dto.SiteResponse
@@ -129,7 +131,7 @@ class ChatActionExecutor(
         if (siteId != null) {
             val site =
                 siteRepository.findByIdOrNull(siteId)
-                    ?: throw IllegalArgumentException("ID가 ${siteId}인 현장을 찾을 수 없습니다")
+                    ?: throw CustomException(SafersErrorCode.NOT_FOUND_SITE, siteId)
             return listOf(site.toResponse(null))
         }
         return siteRepository.findAll().map { it.toResponse(null) }
