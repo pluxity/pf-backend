@@ -1,11 +1,13 @@
 package com.pluxity.safers.llm
 
+import com.pluxity.safers.chat.dto.ActionFilter
 import com.pluxity.safers.chat.dto.IntentMode
 import com.pluxity.safers.chat.dto.IntentResult
 import com.pluxity.safers.chat.dto.PatchAction
 import com.pluxity.safers.chat.dto.QueryAction
 import com.pluxity.safers.chat.dto.QueryTarget
 import com.pluxity.safers.chat.dto.SurfaceUpdateMessage
+import com.pluxity.safers.event.entity.EventType
 import com.pluxity.safers.llm.dto.Message
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
@@ -88,10 +90,14 @@ class ChatLlmClient(
         return actionsNode.mapNotNull { actionNode ->
             try {
                 val targetStr = actionNode["target"].asString().uppercase()
+                val target = QueryTarget.valueOf(targetStr)
+                val filtersNode = actionNode["filters"]
                 QueryAction(
                     id = actionNode["id"].asString(),
-                    target = QueryTarget.valueOf(targetStr),
-                    filters = parseFilters(actionNode["filters"]),
+                    target = target,
+                    filters = parseActionFilter(target, filtersNode),
+                    page = actionNode["page"]?.asInt() ?: 1,
+                    size = actionNode["size"]?.asInt() ?: 50,
                 )
             } catch (e: Exception) {
                 log.warn(e) { "chat action 파싱 실패: $actionNode" }
@@ -100,24 +106,35 @@ class ChatLlmClient(
         }
     }
 
-    private fun parseFilters(filtersNode: JsonNode?): Map<String, Any?> {
-        if (filtersNode == null || filtersNode.isNull) return emptyMap()
-
-        val filters = mutableMapOf<String, Any?>()
-        filtersNode.propertyNames().forEach { fieldName ->
-            val value = filtersNode[fieldName]
-            filters[fieldName] =
-                when {
-                    value.isNull -> null
-                    value.isString -> value.asString()
-                    value.isNumber -> if (value.isInt || value.isLong) value.asLong() else value.asDouble()
-                    value.isBoolean -> value.asBoolean()
-                    value.isArray -> value.map { it.asString() }
-                    else -> value.toString()
-                }
+    private fun parseActionFilter(
+        target: QueryTarget,
+        filtersNode: JsonNode?,
+    ): ActionFilter =
+        when (target) {
+            QueryTarget.EVENT ->
+                ActionFilter.Event(
+                    siteId = filtersNode?.get("siteId")?.asLong(),
+                    types =
+                        filtersNode?.get("types")?.mapNotNull { typeNode ->
+                            runCatching { EventType.valueOf(typeNode.asString()) }.getOrNull()
+                        },
+                    startDate = filtersNode?.get("startDate")?.asString(),
+                    endDate = filtersNode?.get("endDate")?.asString(),
+                )
+            QueryTarget.CCTV ->
+                ActionFilter.Cctv(
+                    name = filtersNode?.get("name")?.asString(),
+                    siteId = filtersNode?.get("siteId")?.asLong(),
+                )
+            QueryTarget.WEATHER ->
+                ActionFilter.Weather(
+                    siteId = filtersNode?.get("siteId")?.asLong(),
+                )
+            QueryTarget.SITE ->
+                ActionFilter.Site(
+                    siteId = filtersNode?.get("siteId")?.asLong(),
+                )
         }
-        return filters
-    }
 
     private fun nodeToMap(node: JsonNode): Map<String, Any> {
         val map = mutableMapOf<String, Any>()

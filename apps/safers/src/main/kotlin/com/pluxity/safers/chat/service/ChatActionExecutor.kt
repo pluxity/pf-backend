@@ -2,18 +2,16 @@ package com.pluxity.safers.chat.service
 
 import com.pluxity.common.core.dto.PageSearchRequest
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.common.core.response.PageResponse
-import com.pluxity.safers.cctv.dto.CctvResponse
 import com.pluxity.safers.cctv.service.CctvService
+import com.pluxity.safers.chat.dto.ActionFilter
+import com.pluxity.safers.chat.dto.ActionResult
+import com.pluxity.safers.chat.dto.ChatActionRequest
 import com.pluxity.safers.chat.dto.QueryAction
+import com.pluxity.safers.chat.dto.QueryContext
 import com.pluxity.safers.chat.dto.QueryTarget
-import com.pluxity.safers.event.dto.EventResponse
-import com.pluxity.safers.event.entity.EventType
+import com.pluxity.safers.chat.dto.toPaginatedEvent
 import com.pluxity.safers.event.service.EventService
 import com.pluxity.safers.global.constant.SafersErrorCode
-import com.pluxity.safers.llm.dto.CctvFilterCriteria
-import com.pluxity.safers.llm.dto.EventFilterCriteria
-import com.pluxity.safers.site.dto.SiteResponse
 import com.pluxity.safers.site.dto.toResponse
 import com.pluxity.safers.site.repository.SiteRepository
 import com.pluxity.safers.weather.service.WeatherService
@@ -24,8 +22,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 private val log = KotlinLogging.logger {}
 
@@ -37,11 +33,10 @@ class ChatActionExecutor(
     private val siteRepository: SiteRepository,
 ) {
     companion object {
-        private const val DEFAULT_PAGE_SIZE = 50
         private const val MAX_PAGE_SIZE = 200
     }
 
-    suspend fun execute(actions: List<QueryAction>): Map<String, Any> =
+    suspend fun execute(actions: List<QueryAction>): Map<String, ActionResult> =
         coroutineScope {
             actions
                 .map { action ->
@@ -50,14 +45,26 @@ class ChatActionExecutor(
                             action.id to executeOne(action)
                         } catch (e: Exception) {
                             log.error(e) { "액션 실행 실패: ${action.id} (${action.target})" }
-                            action.id to mapOf("error" to "데이터 조회에 실패했습니다")
+                            action.id to ActionResult.SingleResult(data = mapOf("error" to "데이터 조회에 실패했습니다"))
                         }
                     }
                 }.awaitAll()
                 .toMap()
         }
 
-    private fun executeOne(action: QueryAction): Any =
+    fun executeAction(request: ChatActionRequest): ActionResult {
+        val action =
+            QueryAction(
+                id = request.actionId,
+                target = request.target,
+                filters = request.filters,
+                page = request.page,
+                size = request.size,
+            )
+        return executeOne(action)
+    }
+
+    private fun executeOne(action: QueryAction): ActionResult =
         when (action.target) {
             QueryTarget.EVENT -> executeEventQuery(action)
             QueryTarget.CCTV -> executeCctvQuery(action)
@@ -65,75 +72,43 @@ class ChatActionExecutor(
             QueryTarget.SITE -> executeSiteQuery(action)
         }
 
-    private fun parseDateTime(value: String): LocalDateTime {
-        val today = java.time.LocalDate.now()
-        return when (value.lowercase().trim()) {
-            "today" -> today.atStartOfDay()
-            "yesterday" -> today.minusDays(1).atStartOfDay()
-            "tomorrow" -> today.plusDays(1).atStartOfDay()
-            else ->
-                if (value.contains("T")) {
-                    LocalDateTime.parse(value, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-                } else {
-                    java.time.LocalDate
-                        .parse(value)
-                        .atStartOfDay()
-                }
-        }
-    }
+    private fun executeEventQuery(action: QueryAction): ActionResult.PaginatedEvent {
+        val filter = action.filters as ActionFilter.Event
+        val size = action.size.coerceAtMost(MAX_PAGE_SIZE)
 
-    private fun executeEventQuery(action: QueryAction): PageResponse<EventResponse> {
-        val filters = action.filters
-        val page = filters["page"]?.toString()?.toIntOrNull() ?: 1
-        val size =
-            (filters["size"]?.toString()?.toIntOrNull() ?: DEFAULT_PAGE_SIZE)
-                .coerceAtMost(MAX_PAGE_SIZE)
+        val pageResponse = eventService.findAll(PageSearchRequest(page = action.page, size = size), filter.toCriteria())
 
-        val criteria =
-            EventFilterCriteria(
-                startDate = filters["startDate"]?.toString()?.let { parseDateTime(it) },
-                endDate = filters["endDate"]?.toString()?.let { parseDateTime(it) },
-                types =
-                    (filters["types"] as? List<*>)?.mapNotNull { typeName ->
-                        runCatching { EventType.valueOf(typeName.toString()) }.getOrNull()
-                    },
-                siteId = filters["siteId"]?.toString()?.toLongOrNull(),
-            )
-
-        return eventService.findAll(
-            PageSearchRequest(page = page, size = size),
-            criteria,
+        return pageResponse.toPaginatedEvent(
+            QueryContext(actionId = action.id, target = action.target, filters = filter),
         )
     }
 
-    private fun executeCctvQuery(action: QueryAction): List<CctvResponse> {
-        val filters = action.filters
-        val criteria =
-            CctvFilterCriteria(
-                name = filters["name"] as? String,
-                siteIds = filters["siteId"]?.let { listOf(it.toString().toLong()) },
-            )
-        return cctvService.findAll(criteria)
+    private fun executeCctvQuery(action: QueryAction): ActionResult.ListResult<*> {
+        val filter = action.filters as ActionFilter.Cctv
+        return ActionResult.ListResult(data = cctvService.findAll(filter.toCriteria()))
     }
 
-    private fun executeWeatherQuery(action: QueryAction): Any {
-        val siteId = action.filters["siteId"]?.toString()?.toLongOrNull()
-        if (siteId != null) {
-            return weatherService.findDashboard(siteId)
+    private fun executeWeatherQuery(action: QueryAction): ActionResult {
+        val filter = action.filters as ActionFilter.Weather
+        if (filter.siteId != null) {
+            return ActionResult.SingleResult(data = weatherService.findDashboard(filter.siteId))
         }
-        return siteRepository.findAll().associate { site ->
-            site.name to weatherService.findDashboard(site.requiredId)
-        }
+        return ActionResult.SingleResult(
+            data =
+                siteRepository.findAll().associate { site ->
+                    site.name to weatherService.findDashboard(site.requiredId)
+                },
+        )
     }
 
-    private fun executeSiteQuery(action: QueryAction): List<SiteResponse> {
-        val siteId = action.filters["siteId"]?.toString()?.toLongOrNull()
-        if (siteId != null) {
+    private fun executeSiteQuery(action: QueryAction): ActionResult.ListResult<*> {
+        val filter = action.filters as ActionFilter.Site
+        if (filter.siteId != null) {
             val site =
-                siteRepository.findByIdOrNull(siteId)
-                    ?: throw CustomException(SafersErrorCode.NOT_FOUND_SITE, siteId)
-            return listOf(site.toResponse(null))
+                siteRepository.findByIdOrNull(filter.siteId)
+                    ?: throw CustomException(SafersErrorCode.NOT_FOUND_SITE, filter.siteId)
+            return ActionResult.ListResult(data = listOf(site.toResponse(null)))
         }
-        return siteRepository.findAll().map { it.toResponse(null) }
+        return ActionResult.ListResult(data = siteRepository.findAll().map { it.toResponse(null) })
     }
 }

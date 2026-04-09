@@ -1,6 +1,7 @@
 package com.pluxity.safers.chat.controller
 
 import com.pluxity.common.core.response.DataResponseBody
+import com.pluxity.safers.chat.dto.ChatActionRequest
 import com.pluxity.safers.chat.dto.ChatRequest
 import com.pluxity.safers.chat.dto.ChatResponse
 import com.pluxity.safers.chat.service.ChatService
@@ -27,4 +28,10 @@ class ChatController(
         @Valid @RequestBody request: ChatRequest,
     ): ResponseEntity<DataResponseBody<ChatResponse>> =
         ResponseEntity.ok(DataResponseBody(chatService.chat(principal.name, request.message)))
+
+    @PostMapping("/action")
+    @Operation(summary = "페이지 이동 등 데이터만 재조회 (LLM 미사용)")
+    fun action(
+        @Valid @RequestBody request: ChatActionRequest,
+    ): ResponseEntity<DataResponseBody<ChatResponse>> = ResponseEntity.ok(DataResponseBody(chatService.handleAction(request)))
 }

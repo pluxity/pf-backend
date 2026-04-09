@@ -2,7 +2,9 @@ package com.pluxity.safers.chat.service
 
 import com.pluxity.safers.cctv.service.CctvService
 import com.pluxity.safers.chat.dto.A2uiMessage
+import com.pluxity.safers.chat.dto.ActionResult
 import com.pluxity.safers.chat.dto.BeginRenderingMessage
+import com.pluxity.safers.chat.dto.ChatActionRequest
 import com.pluxity.safers.chat.dto.ChatResponse
 import com.pluxity.safers.chat.dto.DataModelUpdateMessage
 import com.pluxity.safers.chat.dto.IntentMode
@@ -68,6 +70,12 @@ class ChatService(
             log.error(e) { "채팅 처리 실패: $message" }
             buildFallbackResponse(message)
         }
+
+    fun handleAction(request: ChatActionRequest): ChatResponse {
+        val result = actionExecutor.executeAction(request)
+        val dataModel = mapOf(request.actionId to result)
+        return buildDataOnlyResponse(dataModel)
+    }
 
     private fun handleNew(
         userId: String,
@@ -152,7 +160,7 @@ class ChatService(
 
     private fun generateLayout(
         message: String,
-        dataModel: Map<String, Any>,
+        dataModel: Map<String, ActionResult>,
         sites: List<SiteSummary>,
     ): ChatResponse {
         val cctvs = cctvService.findAllSummaries()
@@ -168,7 +176,7 @@ class ChatService(
 
     private fun buildResponse(
         surfaceUpdate: SurfaceUpdateMessage,
-        dataModel: Map<String, Any>,
+        dataModel: Map<String, ActionResult>,
     ): ChatResponse {
         val surfaceId = surfaceUpdate.surfaceId
         return ChatResponse(
@@ -184,6 +192,16 @@ class ChatService(
                 ),
         )
     }
+
+    private fun buildDataOnlyResponse(dataModel: Map<String, ActionResult>): ChatResponse =
+        ChatResponse(
+            messages =
+                listOf(
+                    A2uiMessage(
+                        dataModelUpdate = DataModelUpdateMessage(surfaceId = "current", contents = dataModel),
+                    ),
+                ),
+        )
 
     private fun buildFallbackResponse(message: String): ChatResponse {
         val surfaceId = "fallback"

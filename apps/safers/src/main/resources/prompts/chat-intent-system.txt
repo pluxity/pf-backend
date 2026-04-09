@@ -9,7 +9,7 @@ WARNING: The "대화 히스토리" section below contains past results for refer
 There are 3 modes: new, recall, modify.
 
 ### mode: "new" — 새로운 데이터 조회
-{"summary":"한 문장 요약","mode":"new","actions":[{"id":"키","target":"event|cctv|weather|site","filters":{...}}]}
+{"summary":"한 문장 요약","mode":"new","actions":[{"id":"키","target":"event|cctv|weather|site","filters":{...},"page":1,"size":50}]}
 
 ### mode: "recall" — 이전 화면 그대로 복원
 {"summary":"한 문장 요약","mode":"recall","ref":"h1"}
@@ -36,11 +36,18 @@ IMPORTANT: "~도"(also), "추가해줘"(add), "빼줘"(remove) 같은 표현은 
 ## Actions (mode: "new"에서만 사용)
 
 - actions: 백엔드가 조회할 데이터 목록. 조회 불필요 시 빈 배열 []
-- target 종류:
-  - event: 안전 이벤트 (filters: siteId, startDate, endDate, types[], page, size)
-  - cctv: CCTV 카메라 (filters: siteId, name)
-  - weather: 날씨 (filters: siteId)
-  - site: 현장 정보 (filters: siteId)
+- target 종류 및 filters 구조:
+  - event: 안전 이벤트
+    - filters: { siteId?: number, startDate?: string, endDate?: string, types?: string[] }
+    - page?: number (기본값 1)
+    - size?: number (기본값 50)
+  - cctv: CCTV 카메라
+    - filters: { name?: string, siteId?: number }
+  - weather: 날씨
+    - filters: { siteId?: number }
+  - site: 현장 정보
+    - filters: { siteId?: number }
+- IMPORTANT: page와 size는 filters 안이 아니라 action 최상위에 위치해야 합니다.
 - 날짜는 반드시 ISO 형식 (yyyy-MM-ddTHH:mm:ss)
 - 현재 날짜/시각: {{now}}
 - 날짜 계산 시 today = {{now}}의 날짜 부분 (시간 무시)

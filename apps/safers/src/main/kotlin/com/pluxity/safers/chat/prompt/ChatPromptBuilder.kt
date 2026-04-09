@@ -1,6 +1,7 @@
 package com.pluxity.safers.chat.prompt
 
 import com.pluxity.safers.cctv.dto.CctvSummary
+import com.pluxity.safers.chat.dto.ActionResult
 import com.pluxity.safers.chat.dto.ScreenMeta
 import com.pluxity.safers.llm.dto.Message
 import com.pluxity.safers.site.dto.SiteSummary
@@ -82,24 +83,20 @@ class ChatPromptBuilder {
      */
     fun buildDataSummary(
         userQuery: String,
-        dataModel: Map<String, Any>,
+        dataModel: Map<String, ActionResult>,
     ): String =
         buildString {
             appendLine("사용자 질문: $userQuery")
             appendLine()
             appendLine("조회된 데이터:")
-            dataModel.forEach { (key, value) ->
-                when (value) {
-                    is Collection<*> -> appendLine("- $key: ${value.size}건")
-                    is Map<*, *> -> {
-                        val content = value["content"]
-                        if (content is Collection<*>) {
-                            appendLine("- $key: ${content.size}건 (총 ${value["totalElements"] ?: "?"}건)")
-                        } else {
-                            appendLine("- $key: 데이터 있음")
-                        }
-                    }
-                    else -> appendLine("- $key: 데이터 있음")
+            dataModel.forEach { (key, result) ->
+                when (result) {
+                    is ActionResult.PaginatedEvent ->
+                        appendLine("- $key: ${result.content.size}건 (총 ${result.totalElements}건)")
+                    is ActionResult.ListResult<*> ->
+                        appendLine("- $key: ${result.data.size}건")
+                    is ActionResult.SingleResult ->
+                        appendLine("- $key: 데이터 있음")
                 }
             }
             appendLine()

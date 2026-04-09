@@ -1,5 +1,6 @@
 package com.pluxity.safers.chat.service
 
+import com.pluxity.safers.chat.dto.ActionFilter
 import com.pluxity.safers.chat.dto.ChatResponse
 import com.pluxity.safers.chat.dto.QueryAction
 import com.pluxity.safers.chat.dto.ScreenCache
@@ -72,8 +73,14 @@ class ChatHistoryStore(
 
         val siteIds =
             actions
-                .mapNotNull { it.filters["siteId"]?.toString()?.toLongOrNull() }
-                .distinct()
+                .mapNotNull { action ->
+                    when (val filter = action.filters) {
+                        is ActionFilter.Event -> filter.siteId
+                        is ActionFilter.Cctv -> filter.siteId
+                        is ActionFilter.Weather -> filter.siteId
+                        is ActionFilter.Site -> filter.siteId
+                    }
+                }.distinct()
         val targets =
             actions
                 .map { it.target.name.lowercase() }

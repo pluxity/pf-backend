@@ -25,7 +25,9 @@ data class PatchAction(
 data class QueryAction(
     val id: String,
     val target: QueryTarget,
-    val filters: Map<String, Any?>,
+    val filters: ActionFilter,
+    val page: Int = 1,
+    val size: Int = 50,
 )
 
 enum class QueryTarget {
