@@ -5,14 +5,17 @@ import com.fasterxml.jackson.annotation.JsonTypeName
 import com.pluxity.safers.event.entity.EventType
 import com.pluxity.safers.llm.dto.CctvFilterCriteria
 import com.pluxity.safers.llm.dto.EventFilterCriteria
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "target")
 sealed class ActionFilter {
+    abstract val siteId: Long?
+
     @JsonTypeName("EVENT")
     data class Event(
-        val siteId: Long? = null,
+        override val siteId: Long? = null,
         val types: List<EventType>? = null,
         val startDate: String? = null,
         val endDate: String? = null,
@@ -26,7 +29,7 @@ sealed class ActionFilter {
             )
 
         private fun parseDateTime(value: String): LocalDateTime {
-            val today = java.time.LocalDate.now()
+            val today = LocalDate.now()
             return when (value.lowercase().trim()) {
                 "today" -> today.atStartOfDay()
                 "yesterday" -> today.minusDays(1).atStartOfDay()
@@ -35,9 +38,7 @@ sealed class ActionFilter {
                     if (value.contains("T")) {
                         LocalDateTime.parse(value, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                     } else {
-                        java.time.LocalDate
-                            .parse(value)
-                            .atStartOfDay()
+                        LocalDate.parse(value).atStartOfDay()
                     }
             }
         }
@@ -46,7 +47,7 @@ sealed class ActionFilter {
     @JsonTypeName("CCTV")
     data class Cctv(
         val name: String? = null,
-        val siteId: Long? = null,
+        override val siteId: Long? = null,
     ) : ActionFilter() {
         fun toCriteria(): CctvFilterCriteria =
             CctvFilterCriteria(
@@ -57,11 +58,11 @@ sealed class ActionFilter {
 
     @JsonTypeName("WEATHER")
     data class Weather(
-        val siteId: Long? = null,
+        override val siteId: Long? = null,
     ) : ActionFilter()
 
     @JsonTypeName("SITE")
     data class Site(
-        val siteId: Long? = null,
+        override val siteId: Long? = null,
     ) : ActionFilter()
 }
