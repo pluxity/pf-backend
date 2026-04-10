@@ -1,17 +1,14 @@
 package com.pluxity.safers.chat.prompt
 
-import com.pluxity.safers.cctv.service.CctvService
+import com.pluxity.safers.cctv.dto.CctvSummary
+import com.pluxity.safers.chat.dto.ActionResult
+import com.pluxity.safers.chat.dto.ScreenMeta
 import com.pluxity.safers.llm.dto.Message
-import com.pluxity.safers.site.repository.SiteRepository
+import com.pluxity.safers.site.dto.SiteSummary
 import org.springframework.core.io.ClassPathResource
-import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
-@Component
-class ChatPromptBuilder(
-    private val siteRepository: SiteRepository,
-    private val cctvService: CctvService,
-) {
+class ChatPromptBuilder {
     private val intentPrompt: String by lazy {
         ClassPathResource("prompts/chat-intent-system.txt").getContentAsString(Charsets.UTF_8)
     }
@@ -21,11 +18,14 @@ class ChatPromptBuilder(
     }
 
     /**
-     * 1차 호출용: 의도 파악 시스템 프롬프트 (히스토리를 시스템 프롬프트에 포함)
+     * 1차 호출용: 의도 파악 시스템 프롬프트 (히스토리 + 캐시 메타데이터 포함)
      */
-    fun buildIntentPrompt(history: List<Message>): String =
+    fun buildIntentPrompt(
+        sites: List<SiteSummary>,
+        history: List<Message>,
+        screenMetaList: List<ScreenMeta> = emptyList(),
+    ): String =
         buildString {
-            val sites = siteRepository.findAll()
             val now = LocalDateTime.now()
 
             append(intentPrompt.replace("{{now}}", now.toString()))
@@ -33,7 +33,21 @@ class ChatPromptBuilder(
             appendLine()
             appendLine("## SITES (${sites.size}개 현장)")
             sites.forEach { site ->
-                appendLine("- id=${site.requiredId}, ${site.name}")
+                appendLine("- id=${site.id}, ${site.name}")
+            }
+
+            // 캐시된 화면 목록 (recall/modify에서 ref 매칭용)
+            if (screenMetaList.isNotEmpty()) {
+                appendLine()
+                appendLine("## 캐시된 화면 목록 (recall/modify 시 ref로 참조)")
+                screenMetaList.forEach { meta ->
+                    val siteIdsCsv = meta.siteIds.joinToString(",")
+                    val targetsCsv = meta.targets.joinToString(",")
+                    val actionIdsCsv = meta.actionIds.joinToString(",")
+                    appendLine(
+                        "- ref=${meta.ref}, summary=${meta.summary}, siteIds=[$siteIdsCsv], targets=[$targetsCsv], actionIds=[$actionIdsCsv]",
+                    )
+                }
             }
 
             // 히스토리를 시스템 프롬프트 내 별도 블록으로 포함
@@ -48,19 +62,20 @@ class ChatPromptBuilder(
     /**
      * 2차 호출용: UI 배치 시스템 프롬프트
      */
-    fun buildLayoutPrompt(): String =
+    fun buildLayoutPrompt(
+        sites: List<SiteSummary>,
+        cctvs: List<CctvSummary>,
+    ): String =
         buildString {
-            val sites = siteRepository.findAll()
-
             append(layoutPrompt)
             appendLine()
             appendLine()
             appendLine("## SITES")
             sites.forEach { site ->
-                appendLine("- id=${site.requiredId}, ${site.name}")
+                appendLine("- id=${site.id}, ${site.name}")
             }
             appendLine()
-            appendCameras()
+            appendCameras(cctvs)
         }
 
     /**
@@ -68,35 +83,30 @@ class ChatPromptBuilder(
      */
     fun buildDataSummary(
         userQuery: String,
-        dataModel: Map<String, Any>,
+        dataModel: Map<String, ActionResult>,
     ): String =
         buildString {
             appendLine("사용자 질문: $userQuery")
             appendLine()
             appendLine("조회된 데이터:")
-            dataModel.forEach { (key, value) ->
-                when (value) {
-                    is Collection<*> -> appendLine("- $key: ${value.size}건")
-                    is Map<*, *> -> {
-                        val content = value["content"]
-                        if (content is Collection<*>) {
-                            appendLine("- $key: ${content.size}건 (총 ${value["totalElements"] ?: "?"}건)")
-                        } else {
-                            appendLine("- $key: 데이터 있음")
-                        }
-                    }
-                    else -> appendLine("- $key: 데이터 있음")
+            dataModel.forEach { (key, result) ->
+                when (result) {
+                    is ActionResult.PaginatedEvent ->
+                        appendLine("- $key: ${result.content.size}건 (총 ${result.totalElements}건)")
+                    is ActionResult.ListResult<*> ->
+                        appendLine("- $key: ${result.data.size}건")
+                    is ActionResult.SingleResult ->
+                        appendLine("- $key: 데이터 있음")
                 }
             }
             appendLine()
             appendLine("위 데이터를 기반으로 적절한 UI를 배치해주세요.")
         }
 
-    private fun StringBuilder.appendCameras() {
-        val cctvs = cctvService.findAll()
+    private fun StringBuilder.appendCameras(cctvs: List<CctvSummary>) {
         if (cctvs.isEmpty()) return
         appendLine("## AVAILABLE_CAMERAS")
-        cctvs.groupBy { it.site.name }.forEach { (siteName, cameras) ->
+        cctvs.groupBy { it.siteName }.forEach { (siteName, cameras) ->
             appendLine("$siteName:")
             cameras.forEach { appendLine("  - ${it.name}") }
         }

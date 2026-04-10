@@ -9,6 +9,7 @@ import com.pluxity.common.file.service.FileService
 import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.site.dto.SiteRequest
 import com.pluxity.safers.site.dto.SiteResponse
+import com.pluxity.safers.site.dto.SiteSummary
 import com.pluxity.safers.site.dto.toResponse
 import com.pluxity.safers.site.entity.Site
 import com.pluxity.safers.site.repository.SiteRepository
@@ -18,6 +19,8 @@ import org.locationtech.jts.geom.Polygon
 import org.locationtech.jts.geom.PrecisionModel
 import org.locationtech.jts.io.ParseException
 import org.locationtech.jts.io.WKTReader
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -34,6 +37,7 @@ class SiteService(
         private val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
     }
 
+    @CacheEvict("sites", allEntries = true)
     @Transactional
     fun create(request: SiteRequest): Long {
         val polygon = parsePolygon(request.location)
@@ -64,6 +68,9 @@ class SiteService(
         return savedSite.requiredId
     }
 
+    @Cacheable("sites")
+    fun findAllSites(): List<SiteSummary> = siteRepository.findAllSummaries()
+
     fun findAll(request: PageSearchRequest): PageResponse<SiteResponse> {
         val pageable = PageRequest.of(request.page - 1, request.size)
         val page = siteRepository.findAllOrderByIdDesc(pageable)
@@ -81,6 +88,7 @@ class SiteService(
         return site.toResponse(thumbnailFileResponse)
     }
 
+    @CacheEvict("sites", allEntries = true)
     @Transactional
     fun update(
         id: Long,
@@ -113,6 +121,7 @@ class SiteService(
         }
     }
 
+    @CacheEvict("sites", allEntries = true)
     @Transactional
     fun delete(id: Long) {
         val site = getSiteById(id)

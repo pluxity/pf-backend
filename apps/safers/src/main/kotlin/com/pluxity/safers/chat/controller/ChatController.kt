@@ -1,16 +1,19 @@
 package com.pluxity.safers.chat.controller
 
 import com.pluxity.common.core.response.DataResponseBody
+import com.pluxity.safers.chat.dto.ChatActionRequest
 import com.pluxity.safers.chat.dto.ChatRequest
 import com.pluxity.safers.chat.dto.ChatResponse
 import com.pluxity.safers.chat.service.ChatService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.security.Principal
 
 @RestController
 @RequestMapping("/chat")
@@ -21,6 +24,14 @@ class ChatController(
     @PostMapping
     @Operation(summary = "자연어 질문으로 데이터 조회 및 A2UI 응답 생성")
     fun chat(
-        @RequestBody request: ChatRequest,
-    ): ResponseEntity<DataResponseBody<ChatResponse>> = ResponseEntity.ok(DataResponseBody(chatService.chat(request.message)))
+        principal: Principal,
+        @Valid @RequestBody request: ChatRequest,
+    ): ResponseEntity<DataResponseBody<ChatResponse>> =
+        ResponseEntity.ok(DataResponseBody(chatService.chat(principal.name, request.message)))
+
+    @PostMapping("/action")
+    @Operation(summary = "페이지 이동 등 데이터만 재조회 (LLM 미사용)")
+    fun action(
+        @Valid @RequestBody request: ChatActionRequest,
+    ): ResponseEntity<DataResponseBody<ChatResponse>> = ResponseEntity.ok(DataResponseBody(chatService.handleAction(request)))
 }

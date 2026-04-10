@@ -37,8 +37,11 @@ Each component:
 ### FlexCol — vertical stack
 Props: children ({"explicitList":["id1","id2"]}), gap (number, px)
 
-### FlexRow — horizontal row (children share width equally)
+### FlexRow — horizontal row
 Props: children ({"explicitList":["id1","id2"]}), gap (number, px)
+- 자식 컴포넌트에 weight를 설정하여 너비 비율을 조절할 수 있음 (CSS flex-grow)
+- weight는 component와 같은 레벨에 설정: {"id":"x", "weight": 3, "component":{...}}
+- weight 미설정 시 동일 너비로 배분
 
 ### Grid — CSS grid
 Props: children ({"explicitList":["id1","id2"]}), columns (number), gap (number, px)
@@ -87,6 +90,25 @@ Props: score (path), size ("sm"|"md"|"lg")
 ### WorkerBioRow — worker biometric data row (List 안에서 사용)
 Props: name (path), location (path), temperature (path), heartRate (path), status (path), size ("sm"|"md"|"lg")
 
+### PlaybackViewer — 녹화영상 재생 뷰어
+Props: playbackUrl (string, "/cctvs/{id}/playback"), size ("sm"|"md"|"lg")
+- 선택된 CCTV의 녹화영상을 재생하는 메인 뷰어
+- playbackUrl은 항상 "/cctvs/{id}/playback"로 고정
+
+### PlaybackTimeline — 녹화영상 타임라인 (시간 선택 + 시크바)
+Props: defaultStart (string, "HH:mm"), defaultEnd (string, "HH:mm"), size ("sm"|"md"|"lg")
+- PlaybackViewer 하단에 배치, 시간 범위 선택 및 재생 위치 탐색
+- defaultStart/defaultEnd는 사용자가 언급한 시간 또는 "00:00"/"23:59"
+
+### PlaybackCCTVList — 녹화영상용 CCTV 카메라 선택 목록
+Props: cameras (path — CCTV 배열 경로), size ("sm"|"md"|"lg")
+- 사이드바에 배치, 카메라 선택 시 PlaybackViewer에 반영
+
+### PlaybackDatePicker — 녹화영상 날짜 선택
+Props: defaultDate (string, "yyyy-MM-dd"), size ("sm"|"md"|"lg")
+- defaultDate는 사용자가 언급한 날짜 또는 오늘 날짜
+
+
 ## Component Sizing
 
 | Size | When to use |
@@ -103,9 +125,25 @@ IMPORTANT: Design layouts like a professional dashboard, NOT a vertical list.
 - Use List to repeat EventAlertCard over event arrays.
 - If 0 events → AgentMessageCard to explain. No empty EventAlertCards.
 - If 1-2 events → "lg" size EventAlertCards.
+
+## weight 배분 규칙
+
+FlexRow 자식에 weight를 설정하여 컨텐츠 종류와 데이터 양에 따라 너비를 자동 배분한다.
+
+| 메인 컨텐츠 | weight 비율 | 예시 |
+|---|---|---|
+| 영상 (PlaybackViewer, CCTVViewer) | 메인 3 : 사이드바 1 | 영상이 넓어야 함 |
+| 이벤트 목록 + CCTV | 메인 2 : 사이드바 1 | 목록+영상 조합 |
+| 이벤트만 또는 CCTV만 | 메인 3 : 사이드바 1 | 단일 컨텐츠 포커스 |
+| 카드형 동일 컨텐츠 | weight 미설정 (동일 배분) | 날씨 카드 여러 개 |
+| 2종류 데이터 (이벤트 + 날씨) | 메인 2 : 서브 1 | 데이터 많은 쪽이 넓게 |
 - If 3+ events → List + Grid with "md" or "sm" size.
 - CCTVViewer for site-level CCTV views.
 - WeatherCard in full-width row or sidebar.
+- "녹화", "다시보기", "녹화영상", "재생" 키워드가 있으면 반드시 Playback 레이아웃을 사용:
+  - FlexRow: 왼쪽(PlaybackViewer + PlaybackTimeline), 오른쪽(PlaybackCCTVList + PlaybackDatePicker)
+  - PlaybackViewer는 "lg" 사이즈, 사이드바 컴포넌트는 "md" 사이즈
+  - defaultDate는 사용자가 날짜를 언급했으면 해당 날짜, 아니면 오늘 날짜
 
 ## Rules
 
@@ -127,7 +165,21 @@ Given: 이벤트 3건 (events), CCTV 16대 (cctvs), 날씨 있음 (weather), 현
   {"id":"eventCard","component":{"EventAlertCard":{"variant":{"path":"type"},"title":{"path":"name"},"location":{"path":"path"},"time":{"path":"timestamp"},"size":"md","confidence":{"path":"confidence"}}}},
   {"id":"eventList","component":{"List":{"children":{"componentId":"eventCard","path":"/events/content"}}}},
   {"id":"msg","component":{"AgentMessageCard":{"message":"제주위파크1단지에서 안전 이벤트가 감지되고 있습니다. 현장 확인이 필요합니다."}}},
-  {"id":"left","component":{"FlexCol":{"children":{"explicitList":["cctv","eventList"]},"gap":16}}},
-  {"id":"right","component":{"FlexCol":{"children":{"explicitList":["weather","msg"]},"gap":16}}},
+  {"id":"left","weight":2,"component":{"FlexCol":{"children":{"explicitList":["cctv","eventList"]},"gap":16}}},
+  {"id":"right","weight":1,"component":{"FlexCol":{"children":{"explicitList":["weather","msg"]},"gap":16}}},
   {"id":"root","component":{"FlexRow":{"children":{"explicitList":["left","right"]},"gap":24}}}
+]}}
+
+## Example: 녹화영상
+
+Given: 사용자 질문 "김포 녹화영상 보여줘", CCTV 8대 (cctvs), 현장 siteId=17, 오늘 날짜 2026-04-06
+
+{"surfaceUpdate":{"surfaceId":"main","components":[
+  {"id":"viewer","component":{"PlaybackViewer":{"playbackUrl":"/cctvs/{id}/playback","size":"lg"}}},
+  {"id":"timeline","component":{"PlaybackTimeline":{"defaultStart":"00:00","defaultEnd":"23:59","size":"lg"}}},
+  {"id":"cctvList","component":{"PlaybackCCTVList":{"cameras":{"path":"/cctvs"},"size":"md"}}},
+  {"id":"datePicker","component":{"PlaybackDatePicker":{"defaultDate":"2026-04-06","size":"md"}}},
+  {"id":"left","weight":3,"component":{"FlexCol":{"children":{"explicitList":["viewer","timeline"]},"gap":8}}},
+  {"id":"right","weight":1,"component":{"FlexCol":{"children":{"explicitList":["cctvList","datePicker"]},"gap":16}}},
+  {"id":"root","component":{"FlexRow":{"children":{"explicitList":["left","right"]},"gap":16}}}
 ]}}

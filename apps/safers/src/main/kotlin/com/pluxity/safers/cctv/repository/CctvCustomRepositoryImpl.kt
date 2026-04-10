@@ -2,6 +2,7 @@ package com.pluxity.safers.cctv.repository
 
 import com.linecorp.kotlinjdsl.support.spring.data.jpa.repository.KotlinJdslJpqlExecutor
 import com.pluxity.common.core.utils.findAllNotNull
+import com.pluxity.safers.cctv.dto.CctvSummary
 import com.pluxity.safers.cctv.entity.Cctv
 import com.pluxity.safers.llm.dto.CctvFilterCriteria
 import com.pluxity.safers.site.entity.Site
@@ -19,6 +20,17 @@ class CctvCustomRepositoryImpl(
                     criteria?.name?.let { upper(path(Cctv::name)).like("%${escapeLike(it.uppercase())}%") },
                     criteria?.siteIds?.takeIf { it.isNotEmpty() }?.let { path(Cctv::site)(Site::id).`in`(it) },
                 ).orderBy(path(Cctv::name).asc())
+        }
+
+    override fun findAllSummaries(): List<CctvSummary> =
+        executor.findAllNotNull {
+            selectNew<CctvSummary>(
+                path(Cctv::name),
+                path(Cctv::site)(Site::name),
+            ).from(
+                entity(Cctv::class),
+                join(Cctv::site),
+            ).orderBy(path(Cctv::name).asc())
         }
 
     private fun escapeLike(value: String): String = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")

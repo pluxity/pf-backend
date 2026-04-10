@@ -105,7 +105,8 @@ class CommonSecurityConfig(
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
-        configuration.allowedOriginPatterns = mutableListOf("http://localhost:*", "http://192.168.*.*:*", "https://*.pluxity.com")
+        configuration.allowedOriginPatterns =
+            mutableListOf("http://localhost:*", "http://192.168.*.*:*", "https://*.pluxity.com", "http://kaineus86.iptime.org:*")
         configuration.allowedMethods = mutableListOf("GET", "PATCH", "POST", "PUT", "DELETE", "OPTIONS")
         configuration.allowedHeaders = mutableListOf("*")
         configuration.allowCredentials = true
