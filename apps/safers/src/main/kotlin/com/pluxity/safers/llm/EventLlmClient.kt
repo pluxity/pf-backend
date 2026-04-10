@@ -3,6 +3,7 @@ package com.pluxity.safers.llm
 import com.pluxity.safers.event.entity.EventType
 import com.pluxity.safers.llm.dto.EventFilterCriteria
 import com.pluxity.safers.llm.dto.Message
+import com.pluxity.safers.site.service.SiteService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Component
@@ -14,6 +15,7 @@ private val log = KotlinLogging.logger {}
 @Component
 class EventLlmClient(
     private val llmClient: LlmClient,
+    private val siteService: SiteService,
 ) {
     private val objectMapper = LlmClient.objectMapper
 
@@ -28,10 +30,16 @@ class EventLlmClient(
 
     fun parseEventFilter(query: String): EventFilterCriteria? {
         val now = LocalDateTime.now()
+        val sitesDesc =
+            siteService
+                .findAllSites()
+                .joinToString("\n") { "- id=${it.id}, ${it.name}" }
+                .ifEmpty { "- (등록된 현장 없음)" }
         val systemPrompt =
             promptTemplate
                 .replace("{{now}}", now.toString())
                 .replace("{{eventTypes}}", EVENT_TYPES_DESC)
+                .replace("{{sites}}", sitesDesc)
 
         val messages =
             listOf(
@@ -78,6 +86,11 @@ class EventLlmClient(
                         .get("types")
                         ?.takeIf { !it.isNull && it.isArray }
                         ?.mapNotNull { runCatching { EventType.valueOf(it.asString()) }.getOrNull() },
+                siteIds =
+                    node
+                        .get("siteIds")
+                        ?.takeIf { !it.isNull && it.isArray }
+                        ?.mapNotNull { it.takeIf { n -> n.isNumber }?.asLong() },
             )
         } catch (e: Exception) {
             log.error(e) { "LLM 이벤트 응답 JSON 파싱 실패 - content: $json" }

@@ -25,7 +25,7 @@ sealed class ActionFilter {
                 startDate = startDate?.let { parseDateTime(it) },
                 endDate = endDate?.let { parseDateTime(it) },
                 types = types,
-                siteId = siteId,
+                siteIds = siteId?.let { listOf(it) },
             )
 
         private fun parseDateTime(value: String): LocalDateTime {

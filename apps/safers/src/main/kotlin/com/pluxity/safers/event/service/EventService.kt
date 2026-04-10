@@ -104,6 +104,17 @@ class EventService(
         request: PageSearchRequest,
         criteria: EventFilterCriteria? = null,
     ): PageResponse<EventResponse> {
+        // siteIds가 명시적으로 빈 배열이면 "현장 언급 + 매칭 실패"를 의미 → 빈 결과 반환
+        if (criteria?.siteIds?.isEmpty() == true) {
+            return PageResponse(
+                content = emptyList(),
+                pageNumber = request.page,
+                pageSize = request.size,
+                totalElements = 0,
+                last = true,
+                first = true,
+            )
+        }
         val pageable = PageRequest.of(request.page - 1, request.size)
         val page = eventRepository.findAllByFilter(pageable, criteria)
 
