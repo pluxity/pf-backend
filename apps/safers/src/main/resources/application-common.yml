@@ -45,3 +45,7 @@ springdoc:
 
 user:
   init-password: qwer1234
+
+cors:
+  additional-origin-patterns:
+    - "http://kaineus86.iptime.org:*"

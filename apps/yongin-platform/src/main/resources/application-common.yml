@@ -46,3 +46,7 @@ pluxity:
   logbook:
     exclude-paths:
       - /weather/webhook
+
+cors:
+  additional-origin-patterns:
+    - "https://yongin1.ebminsight.co.kr"

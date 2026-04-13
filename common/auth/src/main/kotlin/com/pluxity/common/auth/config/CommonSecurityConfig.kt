@@ -1,8 +1,10 @@
 package com.pluxity.common.auth.config
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import com.pluxity.common.auth.authentication.security.CustomUserDetails
 import com.pluxity.common.auth.authentication.security.JwtAuthenticationFilter
 import com.pluxity.common.auth.authentication.security.JwtProvider
+import com.pluxity.common.auth.properties.CorsProperties
 import com.pluxity.common.auth.properties.JwtProperties
 import com.pluxity.common.auth.properties.UserProperties
 import com.pluxity.common.auth.user.repository.UserRepository
@@ -28,13 +30,16 @@ import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
+private val log = KotlinLogging.logger {}
+
 @Configuration
 @EnableWebSecurity
-@EnableConfigurationProperties(JwtProperties::class, UserProperties::class)
+@EnableConfigurationProperties(JwtProperties::class, UserProperties::class, CorsProperties::class)
 class CommonSecurityConfig(
     private val repository: UserRepository,
     private val jwtProvider: JwtProvider,
     private val securityPermitConfigurer: SecurityPermitConfigurer?,
+    private val corsProperties: CorsProperties,
 ) {
     @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
@@ -104,9 +109,17 @@ class CommonSecurityConfig(
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
+        val defaultPatterns = listOf(
+            "http://localhost:*",
+            "http://192.168.*.*:*",
+            "https://*.pluxity.com",
+        )
+
+        val allPatterns = defaultPatterns + corsProperties.additionalOriginPatterns
+        log.info { "CORS allowedOriginPatterns: $allPatterns" }
+
         val configuration = CorsConfiguration()
-        configuration.allowedOriginPatterns =
-            mutableListOf("http://localhost:*", "http://192.168.*.*:*", "https://*.pluxity.com", "http://kaineus86.iptime.org:*")
+        configuration.allowedOriginPatterns = allPatterns.toMutableList()
         configuration.allowedMethods = mutableListOf("GET", "PATCH", "POST", "PUT", "DELETE", "OPTIONS")
         configuration.allowedHeaders = mutableListOf("*")
         configuration.allowCredentials = true
