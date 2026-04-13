@@ -83,11 +83,12 @@ dependencies {
 각 common 모듈은 `@EnableConfigurationProperties`로 자체 Properties를 등록하므로,
 앱에서는 `application.yml`에 설정값만 제공하면 됩니다:
 
-| 모듈          | 등록 위치                  | Properties                                |
-|-------------|------------------------|-------------------------------------------|
-| common/auth | `CommonSecurityConfig` | `JwtProperties`, `UserProperties`         |
-| common/auth | `CommonRedisConfig`    | `RedisProperties`                         |
-| common/file | `FileStorageConfig`    | `FileProperties`, `S3Properties`          |
+| 모듈          | 등록 위치                  | Properties                                          |
+|-------------|------------------------|-----------------------------------------------------|
+| common/auth | `CommonSecurityConfig` | `JwtProperties`, `UserProperties`, `CorsProperties` |
+| common/auth | `CommonRedisConfig`    | `RedisProperties`                                   |
+| common/core | `LogbookConfig`        | `LogbookProperties`                                 |
+| common/file | `FileStorageConfig`    | `FileProperties`, `S3Properties`                    |
 
 ## 빌드 & 실행
 
@@ -410,6 +411,60 @@ class YonginSecurityPermitConfigurer : SecurityPermitConfigurer {
 
 - 구현하지 않으면 기본 경로만 적용 (actuator, swagger, docs 등)
 - 구현하면 `기본 경로 + 앱 경로`가 합쳐져 `permitAll` 처리
+
+#### 커스텀 필터 등록
+
+`SecurityPermitConfigurer.customFilters()`로 Security 필터 체인에 커스텀 필터를 추가할 수 있습니다:
+
+```kotlin
+@Configuration
+class MySecurityPermitConfigurer : SecurityPermitConfigurer {
+    override fun customFilters(): List<SecurityFilterRegistration> =
+        listOf(
+            SecurityFilterRegistration(
+                filter = MyCustomFilter(),
+                beforeFilter = UsernamePasswordAuthenticationFilter::class.java,
+            ),
+        )
+}
+```
+
+### CORS 설정
+
+기본 허용 origin 패턴 (코드에 내장):
+- `http://localhost:*`
+- `http://192.168.*.*:*`
+- `https://*.pluxity.com`
+
+모듈별로 추가 origin 패턴이 필요하면 `application.yml`에 설정:
+
+```yaml
+cors:
+  additional-origin-patterns:
+    - "https://custom.example.com"
+```
+
+- 설정하지 않으면 기본 3개 패턴만 적용
+- 설정하면 `기본 패턴 + 추가 패턴`이 합산
+- profile별로 다르게 설정 가능 (`application-prod.yml` 등)
+
+### ResourceDataProvider
+
+권한 시스템에서 리소스 목록을 제공하는 확장 인터페이스. `PermissionService`가 리소스별 데이터를 조회할 때 사용합니다:
+
+```kotlin
+@Component
+class SiteResourceDataProvider(
+    private val siteRepository: SiteRepository,
+) : ResourceDataProvider {
+    override val resourceType: String = "SITE"
+
+    override fun findAllResources(): List<ResourceItemResponse> =
+        siteRepository.findAll().map {
+            ResourceItemResponse(id = it.id.toString(), name = it.name)
+        }
+}
+```
 
 ### 설정 (application.yml)
 
