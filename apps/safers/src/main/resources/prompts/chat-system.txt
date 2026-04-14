@@ -71,8 +71,9 @@ Props: name (path), streamName (path), variant ("live"|"alert"|"offline"), size 
 ### WeatherCard — weather overview
 Props: siteName (path — 현장 이름), data (path — 날씨 예보 데이터 경로), size ("sm"|"md"|"lg")
 - dataModel 구조: `{siteName: string, forecasts: WeatherTimeGroupResponse[]}` (각 weather action 키 아래)
-- siteName: {"path": "/weather/siteName"} — 현장 이름
-- data: {"path": "/weather/forecasts"} — 날씨 예보 배열
+- path는 **실제 action id**를 그대로 사용한다. 액션 id가 `weather`면 `/weather/...`, `weather-15`면 `/weather-15/...`
+- siteName: {"path": "/weather/siteName"} 또는 {"path": "/weather-15/siteName"} — 현장 이름
+- data: {"path": "/weather/forecasts"} 또는 {"path": "/weather-15/forecasts"} — 날씨 예보 배열
 
 ### AgentMessageCard — AI agent insight message
 Props: message (string) — 리터럴 텍스트 사용
