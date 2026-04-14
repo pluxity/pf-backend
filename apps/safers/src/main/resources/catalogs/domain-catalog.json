@@ -25,12 +25,13 @@
       "required": ["name", "streamName"]
     },
     "WeatherCard": {
-      "description": "날씨 카드. data path로 날씨 데이터 참조",
+      "description": "날씨 카드. siteName은 현장 이름, data는 날씨 예보 경로",
       "properties": {
-        "data": { "$ref": "#/$defs/PathBinding", "description": "날씨 데이터 경로" },
+        "siteName": { "$ref": "#/$defs/PathBinding", "description": "현장 이름" },
+        "data": { "$ref": "#/$defs/PathBinding", "description": "날씨 예보(forecasts) 데이터 경로" },
         "size": { "type": "string", "enum": ["sm", "md", "lg"], "default": "md" }
       },
-      "required": ["data"]
+      "required": ["siteName", "data"]
     },
     "EventAlertCard": {
       "description": "이벤트 알림 카드 (List 안에서 path 바인딩 사용)",

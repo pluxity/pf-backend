@@ -44,7 +44,7 @@ IMPORTANT: "~도"(also), "추가해줘"(add), "빼줘"(remove) 같은 표현은 
   - cctv: CCTV 카메라
     - filters: { name?: string, siteId?: number }
   - weather: 날씨
-    - filters: { siteId?: number }
+    - filters: { siteId: number }   // siteId 필수
   - site: 현장 정보
     - filters: { siteId?: number }
 - IMPORTANT: page와 size는 filters 안이 아니라 action 최상위에 위치해야 합니다.

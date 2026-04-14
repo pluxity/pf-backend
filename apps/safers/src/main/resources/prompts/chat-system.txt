@@ -69,8 +69,10 @@ Props: cameras (path — CCTV 배열 경로), siteId (number), columns (number, 
 Props: name (path), streamName (path), variant ("live"|"alert"|"offline"), size ("sm"|"md"|"lg")
 
 ### WeatherCard — weather overview
-Props: data (path — 날씨 데이터 경로), size ("sm"|"md"|"lg")
-- data: {"path": "/weather"} — updateDataModel의 날씨 데이터 참조
+Props: siteName (path — 현장 이름), data (path — 날씨 예보 데이터 경로), size ("sm"|"md"|"lg")
+- dataModel 구조: `{siteName: string, forecasts: WeatherTimeGroupResponse[]}` (각 weather action 키 아래)
+- siteName: {"path": "/weather/siteName"} — 현장 이름
+- data: {"path": "/weather/forecasts"} — 날씨 예보 배열
 
 ### AgentMessageCard — AI agent insight message
 Props: message (string) — 리터럴 텍스트 사용
@@ -160,7 +162,7 @@ FlexRow 자식에 weight를 설정하여 컨텐츠 종류와 데이터 양에 �
 Given: 이벤트 3건 (events), CCTV 16대 (cctvs), 날씨 있음 (weather), 현장 siteId=15
 
 {"surfaceUpdate":{"surfaceId":"main","components":[
-  {"id":"weather","component":{"WeatherCard":{"data":{"path":"/weather"},"size":"md"}}},
+  {"id":"weather","component":{"WeatherCard":{"siteName":{"path":"/weather/siteName"},"data":{"path":"/weather/forecasts"},"size":"md"}}},
   {"id":"cctv","component":{"CCTVViewer":{"cameras":{"path":"/cctvs"},"siteId":15,"columns":2,"pageSize":4,"size":"md"}}},
   {"id":"eventCard","component":{"EventAlertCard":{"variant":{"path":"type"},"title":{"path":"name"},"location":{"path":"path"},"time":{"path":"timestamp"},"size":"md","confidence":{"path":"confidence"}}}},
   {"id":"eventList","component":{"List":{"children":{"componentId":"eventCard","path":"/events/content"}}}},
