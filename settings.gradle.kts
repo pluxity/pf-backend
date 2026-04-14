@@ -10,5 +10,4 @@ include(":common:test-support")
 // ── Application Modules ──
 include(":apps:safers")
 include(":apps:yongin-platform")
-include(":apps:weekly-report")
 
