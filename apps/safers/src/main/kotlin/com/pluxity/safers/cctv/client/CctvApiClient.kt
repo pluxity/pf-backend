@@ -34,6 +34,7 @@ class CctvApiClient(
             12L to 9907,
             15L to 9908,
             14L to 9909,
+            18L to 9911,
         )
 
     fun requestPlayback(
