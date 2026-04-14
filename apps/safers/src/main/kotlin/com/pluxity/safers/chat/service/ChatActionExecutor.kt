@@ -6,6 +6,7 @@ import com.pluxity.safers.cctv.service.CctvService
 import com.pluxity.safers.chat.dto.ActionFilter
 import com.pluxity.safers.chat.dto.ActionResult
 import com.pluxity.safers.chat.dto.ChatActionRequest
+import com.pluxity.safers.chat.dto.ChatWeatherResponse
 import com.pluxity.safers.chat.dto.QueryAction
 import com.pluxity.safers.chat.dto.QueryContext
 import com.pluxity.safers.chat.dto.QueryTarget
@@ -14,6 +15,7 @@ import com.pluxity.safers.event.service.EventService
 import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.site.dto.toResponse
 import com.pluxity.safers.site.repository.SiteRepository
+import com.pluxity.safers.site.service.SiteService
 import com.pluxity.safers.weather.service.WeatherService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +32,7 @@ class ChatActionExecutor(
     private val eventService: EventService,
     private val cctvService: CctvService,
     private val weatherService: WeatherService,
+    private val siteService: SiteService,
     private val siteRepository: SiteRepository,
 ) {
     companion object {
@@ -90,14 +93,16 @@ class ChatActionExecutor(
 
     private fun executeWeatherQuery(action: QueryAction): ActionResult {
         val filter = action.filters as ActionFilter.Weather
-        if (filter.siteId != null) {
-            return ActionResult.SingleResult(data = weatherService.findDashboard(filter.siteId))
-        }
+        val siteName =
+            siteService.findAllSites().find { it.id == filter.siteId }?.name
+                ?: throw CustomException(SafersErrorCode.NOT_FOUND_SITE, filter.siteId)
+
         return ActionResult.SingleResult(
             data =
-                siteRepository.findAll().associate { site ->
-                    site.name to weatherService.findDashboard(site.requiredId)
-                },
+                ChatWeatherResponse(
+                    siteName = siteName,
+                    forecasts = weatherService.findDashboard(filter.siteId),
+                ),
         )
     }
 

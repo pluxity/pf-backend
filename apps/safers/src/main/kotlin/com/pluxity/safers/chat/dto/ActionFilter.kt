@@ -58,7 +58,7 @@ sealed class ActionFilter {
 
     @JsonTypeName("WEATHER")
     data class Weather(
-        override val siteId: Long? = null,
+        override val siteId: Long,
     ) : ActionFilter()
 
     @JsonTypeName("SITE")

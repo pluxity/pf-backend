@@ -128,7 +128,8 @@ class ChatLlmClient(
                 )
             QueryTarget.WEATHER ->
                 ActionFilter.Weather(
-                    siteId = filtersNode?.get("siteId")?.asLong(),
+                    siteId = filtersNode?.get("siteId")?.asLong()
+                        ?: throw IllegalArgumentException("weather action은 siteId가 필수입니다"),
                 )
             QueryTarget.SITE ->
                 ActionFilter.Site(
