@@ -1,6 +1,7 @@
 package com.pluxity.safers.chat.service
 
 import com.pluxity.safers.cctv.service.CctvService
+import com.pluxity.safers.chat.A2uiConstants
 import com.pluxity.safers.chat.dto.A2uiMessage
 import com.pluxity.safers.chat.dto.ActionResult
 import com.pluxity.safers.chat.dto.BeginRenderingMessage
@@ -187,7 +188,12 @@ class ChatService(
                         dataModelUpdate = DataModelUpdateMessage(surfaceId = surfaceId, contents = dataModel),
                     ),
                     A2uiMessage(
-                        beginRendering = BeginRenderingMessage(surfaceId = surfaceId, root = "root", catalogId = "safers"),
+                        beginRendering =
+                            BeginRenderingMessage(
+                                surfaceId = surfaceId,
+                                root = A2uiConstants.ROOT_ID,
+                                catalogId = A2uiConstants.CATALOG_ID,
+                            ),
                     ),
                 ),
         )
@@ -198,17 +204,18 @@ class ChatService(
             messages =
                 listOf(
                     A2uiMessage(
-                        dataModelUpdate = DataModelUpdateMessage(surfaceId = "current", contents = dataModel),
+                        dataModelUpdate =
+                            DataModelUpdateMessage(surfaceId = A2uiConstants.SURFACE_CURRENT, contents = dataModel),
                     ),
                 ),
         )
 
     private fun buildFallbackResponse(message: String): ChatResponse {
-        val surfaceId = "fallback"
+        val surfaceId = A2uiConstants.SURFACE_FALLBACK
         val components =
             listOf(
                 mapOf(
-                    "id" to "msg",
+                    "id" to A2uiConstants.FALLBACK_MESSAGE_ID,
                     "component" to
                         mapOf(
                             "AgentMessageCard" to
@@ -216,12 +223,12 @@ class ChatService(
                         ),
                 ),
                 mapOf(
-                    "id" to "root",
+                    "id" to A2uiConstants.ROOT_ID,
                     "component" to
                         mapOf(
                             "FlexCol" to
                                 mapOf(
-                                    "children" to mapOf("explicitList" to listOf("msg")),
+                                    "children" to mapOf("explicitList" to listOf(A2uiConstants.FALLBACK_MESSAGE_ID)),
                                     "gap" to 0,
                                 ),
                         ),
@@ -234,7 +241,12 @@ class ChatService(
                         surfaceUpdate = SurfaceUpdateMessage(surfaceId = surfaceId, components = components),
                     ),
                     A2uiMessage(
-                        beginRendering = BeginRenderingMessage(surfaceId = surfaceId, root = "root", catalogId = "safers"),
+                        beginRendering =
+                            BeginRenderingMessage(
+                                surfaceId = surfaceId,
+                                root = A2uiConstants.ROOT_ID,
+                                catalogId = A2uiConstants.CATALOG_ID,
+                            ),
                     ),
                 ),
         )
