@@ -44,16 +44,41 @@ class ChatActionExecutor(
             actions
                 .map { action ->
                     async(Dispatchers.IO) {
-                        try {
-                            action.id to executeOne(action)
-                        } catch (e: Exception) {
-                            log.error(e) { "액션 실행 실패: ${action.id} (${action.target})" }
-                            action.id to ActionResult.SingleResult(data = mapOf("error" to "데이터 조회에 실패했습니다"))
-                        }
+                        action.id to runCatching { executeOne(action) }.getOrElse { toFailure(action, it) }
                     }
                 }.awaitAll()
                 .toMap()
         }
+
+    private fun toFailure(
+        action: QueryAction,
+        e: Throwable,
+    ): ActionResult.Failure {
+        log.error(e) { "액션 실행 실패: ${action.id} (${action.target})" }
+        return when (e) {
+            is CustomException ->
+                ActionResult.Failure(
+                    actionId = action.id,
+                    target = action.target,
+                    errorCode = e.code.getCodeName(),
+                    message = e.message ?: e.code.getMessage(),
+                )
+            is ClassCastException, is IllegalArgumentException ->
+                ActionResult.Failure(
+                    actionId = action.id,
+                    target = action.target,
+                    errorCode = "BAD_FILTER",
+                    message = "요청 필터가 올바르지 않습니다: ${e.message ?: e::class.simpleName}",
+                )
+            else ->
+                ActionResult.Failure(
+                    actionId = action.id,
+                    target = action.target,
+                    errorCode = "INTERNAL",
+                    message = "데이터 조회 중 오류가 발생했습니다",
+                )
+        }
+    }
 
     fun executeAction(request: ChatActionRequest): ActionResult {
         val action =

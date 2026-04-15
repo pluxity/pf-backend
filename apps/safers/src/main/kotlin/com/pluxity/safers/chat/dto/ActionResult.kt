@@ -24,6 +24,13 @@ sealed class ActionResult {
         @JsonValue
         val data: Any,
     ) : ActionResult()
+
+    data class Failure(
+        val actionId: String,
+        val target: QueryTarget,
+        val errorCode: String,
+        val message: String,
+    ) : ActionResult()
 }
 
 data class QueryContext(

@@ -1,6 +1,5 @@
 package com.pluxity.common.auth.config
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import com.pluxity.common.auth.authentication.security.CustomUserDetails
 import com.pluxity.common.auth.authentication.security.JwtAuthenticationFilter
 import com.pluxity.common.auth.authentication.security.JwtProvider
@@ -10,6 +9,7 @@ import com.pluxity.common.auth.properties.UserProperties
 import com.pluxity.common.auth.user.repository.UserRepository
 import com.pluxity.common.core.constant.ErrorCode
 import com.pluxity.common.core.exception.CustomException
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -109,11 +109,12 @@ class CommonSecurityConfig(
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
-        val defaultPatterns = listOf(
-            "http://localhost:*",
-            "http://192.168.*.*:*",
-            "https://*.pluxity.com",
-        )
+        val defaultPatterns =
+            listOf(
+                "http://localhost:*",
+                "http://192.168.*.*:*",
+                "https://*.pluxity.com",
+            )
 
         val allPatterns = defaultPatterns + corsProperties.additionalOriginPatterns
         log.info { "CORS allowedOriginPatterns: $allPatterns" }
