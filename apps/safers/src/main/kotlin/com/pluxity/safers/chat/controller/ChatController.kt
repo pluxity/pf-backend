@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.security.Principal
-import io.swagger.v3.oas.annotations.parameters.RequestBody as SwaggerRequestBody
 
 @RestController
 @RequestMapping("/chat")
@@ -52,13 +51,7 @@ class ChatController(
     )
     fun chat(
         principal: Principal,
-        @SwaggerRequestBody(
-            description = "사용자 자연어 질문",
-            required = true,
-        )
-        @Valid
-        @RequestBody
-        request: ChatRequest,
+        @Valid @RequestBody request: ChatRequest,
     ): ResponseEntity<DataResponseBody<ChatResponse>> =
         ResponseEntity.ok(DataResponseBody(chatService.chat(principal.name, request.message)))
 
@@ -90,12 +83,6 @@ class ChatController(
         ],
     )
     fun action(
-        @SwaggerRequestBody(
-            description = "재조회 액션 요청 (actionId + target + filters)",
-            required = true,
-        )
-        @Valid
-        @RequestBody
-        request: ChatActionRequest,
+        @Valid @RequestBody request: ChatActionRequest,
     ): ResponseEntity<DataResponseBody<ChatResponse>> = ResponseEntity.ok(DataResponseBody(chatService.handleAction(request)))
 }
