@@ -1,6 +1,7 @@
 package com.pluxity.safers.chat.service
 
 import com.pluxity.safers.cctv.service.CctvService
+import com.pluxity.safers.chat.A2uiConstants
 import com.pluxity.safers.chat.dto.A2uiMessage
 import com.pluxity.safers.chat.dto.ActionResult
 import com.pluxity.safers.chat.dto.BeginRenderingMessage
@@ -120,6 +121,13 @@ class ChatService(
             cached.response.messages.firstNotNullOfOrNull { it.surfaceUpdate }
                 ?: return buildFallbackResponse("이전 화면의 레이아웃을 복원할 수 없습니다.")
         val dataModel = runBlocking { actionExecutor.execute(cached.actions) }
+
+        // 캐시된 레이아웃은 정상 도메인 컴포넌트에 데이터 바인딩을 기대하므로,
+        // 재조회 중 실패가 생기면 AgentMessageCard로 대체하도록 레이아웃을 재생성한다.
+        if (dataModel.values.any { it is ActionResult.Failure }) {
+            log.warn { "recall 중 일부 액션 실패 — 레이아웃 재생성: ref=$ref" }
+            return generateLayout(message, dataModel, siteService.findAllSites())
+        }
         return buildResponse(cachedSurfaceUpdate, dataModel)
     }
 
@@ -187,7 +195,12 @@ class ChatService(
                         dataModelUpdate = DataModelUpdateMessage(surfaceId = surfaceId, contents = dataModel),
                     ),
                     A2uiMessage(
-                        beginRendering = BeginRenderingMessage(surfaceId = surfaceId, root = "root", catalogId = "safers"),
+                        beginRendering =
+                            BeginRenderingMessage(
+                                surfaceId = surfaceId,
+                                root = A2uiConstants.ROOT_ID,
+                                catalogId = A2uiConstants.CATALOG_ID,
+                            ),
                     ),
                 ),
         )
@@ -198,17 +211,18 @@ class ChatService(
             messages =
                 listOf(
                     A2uiMessage(
-                        dataModelUpdate = DataModelUpdateMessage(surfaceId = "current", contents = dataModel),
+                        dataModelUpdate =
+                            DataModelUpdateMessage(surfaceId = A2uiConstants.SURFACE_CURRENT, contents = dataModel),
                     ),
                 ),
         )
 
     private fun buildFallbackResponse(message: String): ChatResponse {
-        val surfaceId = "fallback"
+        val surfaceId = A2uiConstants.SURFACE_FALLBACK
         val components =
             listOf(
                 mapOf(
-                    "id" to "msg",
+                    "id" to A2uiConstants.FALLBACK_MESSAGE_ID,
                     "component" to
                         mapOf(
                             "AgentMessageCard" to
@@ -216,12 +230,12 @@ class ChatService(
                         ),
                 ),
                 mapOf(
-                    "id" to "root",
+                    "id" to A2uiConstants.ROOT_ID,
                     "component" to
                         mapOf(
                             "FlexCol" to
                                 mapOf(
-                                    "children" to mapOf("explicitList" to listOf("msg")),
+                                    "children" to mapOf("explicitList" to listOf(A2uiConstants.FALLBACK_MESSAGE_ID)),
                                     "gap" to 0,
                                 ),
                         ),
@@ -234,7 +248,12 @@ class ChatService(
                         surfaceUpdate = SurfaceUpdateMessage(surfaceId = surfaceId, components = components),
                     ),
                     A2uiMessage(
-                        beginRendering = BeginRenderingMessage(surfaceId = surfaceId, root = "root", catalogId = "safers"),
+                        beginRendering =
+                            BeginRenderingMessage(
+                                surfaceId = surfaceId,
+                                root = A2uiConstants.ROOT_ID,
+                                catalogId = A2uiConstants.CATALOG_ID,
+                            ),
                     ),
                 ),
         )

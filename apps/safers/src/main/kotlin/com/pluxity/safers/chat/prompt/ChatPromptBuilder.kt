@@ -97,6 +97,8 @@ class ChatPromptBuilder {
                         appendLine("- $key: ${result.data.size}건")
                     is ActionResult.SingleResult ->
                         appendLine("- $key: 데이터 있음")
+                    is ActionResult.Failure ->
+                        appendLine("- $key: 조회 실패 (${result.errorCode}) - ${result.message}")
                 }
             }
             appendLine()

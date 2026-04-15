@@ -11,9 +11,13 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.WebClientRequestException
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.reactive.function.client.bodyToMono
+import reactor.util.retry.Retry
 import tools.jackson.databind.DeserializationFeature
 import tools.jackson.databind.json.JsonMapper
+import java.time.Duration
 import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicReference
 
@@ -101,6 +105,7 @@ class LlmClient(
                 .bodyValue(request)
                 .retrieve()
                 .bodyToMono<OllamaChatResponse>()
+                .retryWhen(retrySpec("Ollama"))
                 .block()
 
         return response?.message?.content
@@ -127,11 +132,8 @@ class LlmClient(
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()
-                .onStatus({ it.isError }) { resp ->
-                    resp.bodyToMono<String>().map { body ->
-                        RuntimeException("OpenRouter API 오류 (${resp.statusCode()}): $body")
-                    }
-                }.bodyToMono<OpenRouterChatResponse>()
+                .bodyToMono<OpenRouterChatResponse>()
+                .retryWhen(retrySpec("OpenRouter"))
                 .block()
 
         return response
@@ -140,6 +142,17 @@ class LlmClient(
             ?.message
             ?.content
     }
+
+    private fun retrySpec(provider: String): Retry =
+        Retry
+            .fixedDelay(1, Duration.ofMillis(500))
+            .filter { e ->
+                e is WebClientRequestException ||
+                    (e is WebClientResponseException && e.statusCode.is5xxServerError)
+            }.doBeforeRetry { sig ->
+                val cause = sig.failure()
+                log.warn { "$provider LLM 재시도 (attempt=${sig.totalRetries() + 1}): ${cause::class.simpleName} - ${cause.message}" }
+            }
 
     companion object {
         val objectMapper: JsonMapper =
