@@ -121,6 +121,13 @@ class ChatService(
             cached.response.messages.firstNotNullOfOrNull { it.surfaceUpdate }
                 ?: return buildFallbackResponse("이전 화면의 레이아웃을 복원할 수 없습니다.")
         val dataModel = runBlocking { actionExecutor.execute(cached.actions) }
+
+        // 캐시된 레이아웃은 정상 도메인 컴포넌트에 데이터 바인딩을 기대하므로,
+        // 재조회 중 실패가 생기면 AgentMessageCard로 대체하도록 레이아웃을 재생성한다.
+        if (dataModel.values.any { it is ActionResult.Failure }) {
+            log.warn { "recall 중 일부 액션 실패 — 레이아웃 재생성: ref=$ref" }
+            return generateLayout(message, dataModel, siteService.findAllSites())
+        }
         return buildResponse(cachedSurfaceUpdate, dataModel)
     }
 

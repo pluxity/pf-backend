@@ -132,11 +132,7 @@ class LlmClient(
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()
-                .onStatus({ it.isError }) { resp ->
-                    resp.bodyToMono<String>().map { body ->
-                        RuntimeException("OpenRouter API 오류 (${resp.statusCode()}): $body")
-                    }
-                }.bodyToMono<OpenRouterChatResponse>()
+                .bodyToMono<OpenRouterChatResponse>()
                 .retryWhen(retrySpec("OpenRouter"))
                 .block()
 
