@@ -1,7 +1,7 @@
 package com.pluxity.safers.weather.client
 
 import com.pluxity.common.core.exception.CustomException
-import com.pluxity.safers.configuration.repository.ConfigurationRepository
+import com.pluxity.safers.configuration.service.ConfigurationService
 import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.weather.dto.WeatherApiResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -25,7 +25,7 @@ private val log = KotlinLogging.logger {}
 
 @Component
 class WeatherApiClient(
-    private val configurationRepository: ConfigurationRepository,
+    private val configurationService: ConfigurationService,
 ) {
     private val webClient = buildWebClient()
 
@@ -153,8 +153,6 @@ class WeatherApiClient(
     }
 
     private fun getAuthKey(): String =
-        (
-            configurationRepository.findByKey(WEATHER_API_KEY)
-                ?: throw CustomException(SafersErrorCode.NOT_FOUND_CONFIGURATION, WEATHER_API_KEY)
-        ).value
+        configurationService.findValue(WEATHER_API_KEY)
+            ?: throw CustomException(SafersErrorCode.NOT_FOUND_CONFIGURATION, WEATHER_API_KEY)
 }
