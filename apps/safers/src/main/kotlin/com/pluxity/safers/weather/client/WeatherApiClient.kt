@@ -17,7 +17,8 @@ import reactor.netty.http.client.HttpClient
 import reactor.netty.http.client.PrematureCloseException
 import reactor.netty.resources.ConnectionProvider
 import reactor.util.retry.Retry
-import java.io.IOException
+import java.net.ConnectException
+import java.net.SocketException
 import java.time.Duration
 
 private val log = KotlinLogging.logger {}
@@ -33,9 +34,15 @@ class WeatherApiClient(
         private const val BASE_URL = "https://apihub.kma.go.kr"
         private const val MAX_IN_MEMORY_SIZE = 50 * 1024 * 1024
         private const val CONNECT_TIMEOUT_MS = 5000
-        private const val RESPONSE_TIMEOUT_SEC = 60L
-        private const val IO_TIMEOUT_SEC = 60
+        private const val RESPONSE_TIMEOUT_SEC = 20L
+        private const val IO_TIMEOUT_SEC = 20
         private const val MAX_RETRY_ATTEMPTS = 3L
+        private val OVERALL_TIMEOUT = Duration.ofSeconds(90)
+        private val POOL_MAX_IDLE = Duration.ofSeconds(15)
+        private val POOL_MAX_LIFE = Duration.ofSeconds(120)
+        private val POOL_PENDING_ACQUIRE = Duration.ofSeconds(30)
+        private val POOL_EVICT_INTERVAL = Duration.ofSeconds(30)
+        private const val POOL_MAX_CONNECTIONS = 50
     }
 
     fun fetchUltraSrtFcst(
@@ -88,7 +95,8 @@ class WeatherApiClient(
                                 "nx: $nx, ny: $ny, cause: ${signal.failure().rootMessage()}"
                         }
                     },
-            ).onErrorResume { e ->
+            ).timeout(OVERALL_TIMEOUT)
+            .onErrorResume { e ->
                 log.error(e) { "$label API 호출 실패 - baseDate: $baseDate, baseTime: $baseTime, nx: $nx, ny: $ny" }
                 Mono.empty()
             }
@@ -97,7 +105,12 @@ class WeatherApiClient(
     private fun isRetryable(throwable: Throwable): Boolean {
         var cur: Throwable? = throwable
         while (cur != null) {
-            if (cur is PrematureCloseException || cur is IOException) return true
+            when (cur) {
+                is PrematureCloseException -> return true
+                is ConnectException -> return true
+                is SocketException ->
+                    if (cur.message?.contains("reset", ignoreCase = true) == true) return true
+            }
             cur = cur.cause
         }
         return false
@@ -113,11 +126,11 @@ class WeatherApiClient(
         val connectionProvider =
             ConnectionProvider
                 .builder("kma-weather-pool")
-                .maxConnections(50)
-                .maxIdleTime(Duration.ofSeconds(15))
-                .maxLifeTime(Duration.ofSeconds(60))
-                .pendingAcquireTimeout(Duration.ofSeconds(60))
-                .evictInBackground(Duration.ofSeconds(30))
+                .maxConnections(POOL_MAX_CONNECTIONS)
+                .maxIdleTime(POOL_MAX_IDLE)
+                .maxLifeTime(POOL_MAX_LIFE)
+                .pendingAcquireTimeout(POOL_PENDING_ACQUIRE)
+                .evictInBackground(POOL_EVICT_INTERVAL)
                 .build()
 
         val httpClient =
