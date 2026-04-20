@@ -30,7 +30,6 @@ class WeatherApiClient(
     private val webClient = buildWebClient()
 
     companion object {
-        private const val WEATHER_API_KEY = "WEATHER_API"
         private const val BASE_URL = "https://apihub.kma.go.kr"
         private const val MAX_IN_MEMORY_SIZE = 1 * 1024 * 1024
         private const val CONNECT_TIMEOUT_MS = 5000
@@ -153,6 +152,6 @@ class WeatherApiClient(
     }
 
     private fun getAuthKey(): String =
-        configurationService.findValue(WEATHER_API_KEY)
-            ?: throw CustomException(SafersErrorCode.NOT_FOUND_CONFIGURATION, WEATHER_API_KEY)
+        configurationService.findWeatherApiKey()
+            ?: throw CustomException(SafersErrorCode.NOT_FOUND_CONFIGURATION, "WEATHER_API")
 }
