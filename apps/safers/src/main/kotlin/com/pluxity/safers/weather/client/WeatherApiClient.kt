@@ -32,7 +32,7 @@ class WeatherApiClient(
     companion object {
         private const val WEATHER_API_KEY = "WEATHER_API"
         private const val BASE_URL = "https://apihub.kma.go.kr"
-        private const val MAX_IN_MEMORY_SIZE = 50 * 1024 * 1024
+        private const val MAX_IN_MEMORY_SIZE = 1 * 1024 * 1024
         private const val CONNECT_TIMEOUT_MS = 5000
         private const val RESPONSE_TIMEOUT_SEC = 20L
         private const val IO_TIMEOUT_SEC = 20
