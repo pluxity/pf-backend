@@ -8,13 +8,10 @@ import org.springframework.stereotype.Service
 class ConfigurationService(
     private val configurationRepository: ConfigurationRepository,
 ) {
+    @Cacheable(value = [CONFIGURATIONS_CACHE], key = "#key", unless = "#result == null")
     fun findValue(key: String): String? = configurationRepository.findByKey(key)?.value
 
-    @Cacheable(value = [WEATHER_API_KEY_CACHE], unless = "#result == null")
-    fun findWeatherApiKey(): String? = configurationRepository.findByKey(WEATHER_API_KEY)?.value
-
     companion object {
-        const val WEATHER_API_KEY_CACHE = "weather-api-key"
-        private const val WEATHER_API_KEY = "WEATHER_API"
+        const val CONFIGURATIONS_CACHE = "configurations"
     }
 }
