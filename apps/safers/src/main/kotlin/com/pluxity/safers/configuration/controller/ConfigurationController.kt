@@ -52,7 +52,7 @@ class ConfigurationController(
         @RequestBody
         @Valid
         request: ConfigurationRequest,
-    ): ResponseEntity<Long> = ResponseEntity.ok(configurationService.create(request))
+    ): ResponseEntity<String> = ResponseEntity.ok(configurationService.create(request))
 
     @Operation(summary = "설정 목록 조회", description = "모든 설정 목록을 페이지네이션으로 조회합니다")
     @ApiResponses(
@@ -71,7 +71,7 @@ class ConfigurationController(
     ): ResponseEntity<DataResponseBody<PageResponse<ConfigurationResponse>>> =
         ResponseEntity.ok(DataResponseBody(configurationService.findAll(PageSearchRequest(page, size))))
 
-    @Operation(summary = "설정 상세 조회", description = "ID로 특정 설정의 상세 정보를 조회합니다")
+    @Operation(summary = "설정 상세 조회", description = "키로 특정 설정의 상세 정보를 조회합니다")
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "설정 조회 성공"),
@@ -82,12 +82,12 @@ class ConfigurationController(
             ),
         ],
     )
-    @GetMapping("/{id}")
+    @GetMapping("/{key}")
     fun getConfiguration(
         @PathVariable
-        @Parameter(description = "설정 ID", required = true)
-        id: Long,
-    ): ResponseEntity<DataResponseBody<ConfigurationResponse>> = ResponseEntity.ok(DataResponseBody(configurationService.findById(id)))
+        @Parameter(description = "설정 키", required = true)
+        key: String,
+    ): ResponseEntity<DataResponseBody<ConfigurationResponse>> = ResponseEntity.ok(DataResponseBody(configurationService.findByKey(key)))
 
     @Operation(summary = "설정 수정", description = "설정 값을 수정합니다. 키는 불변입니다.")
     @ApiResponses(
@@ -100,17 +100,17 @@ class ConfigurationController(
             ),
         ],
     )
-    @PutMapping("/{id}")
+    @PutMapping("/{key}")
     fun updateConfiguration(
         @PathVariable
-        @Parameter(description = "설정 ID", required = true)
-        id: Long,
+        @Parameter(description = "설정 키", required = true)
+        key: String,
         @Parameter(description = "설정 수정 정보", required = true)
         @RequestBody
         @Valid
         request: ConfigurationUpdateRequest,
     ): ResponseEntity<Void> {
-        configurationService.update(id, request)
+        configurationService.update(key, request)
         return ResponseEntity.noContent().build()
     }
 
@@ -125,13 +125,13 @@ class ConfigurationController(
             ),
         ],
     )
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{key}")
     fun deleteConfiguration(
         @PathVariable
-        @Parameter(description = "설정 ID", required = true)
-        id: Long,
+        @Parameter(description = "설정 키", required = true)
+        key: String,
     ): ResponseEntity<Void> {
-        configurationService.delete(id)
+        configurationService.delete(key)
         return ResponseEntity.noContent().build()
     }
 }

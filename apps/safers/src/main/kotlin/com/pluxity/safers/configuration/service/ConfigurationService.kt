@@ -14,7 +14,6 @@ import com.pluxity.safers.global.constant.SafersErrorCode
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.PageRequest
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionSynchronization
@@ -34,13 +33,13 @@ class ConfigurationService(
     fun findValue(key: String): String? = configurationRepository.findByKey(key)?.value
 
     @Transactional
-    fun create(request: ConfigurationRequest): Long {
+    fun create(request: ConfigurationRequest): String {
         if (configurationRepository.findByKey(request.key) != null) {
             throw CustomException(SafersErrorCode.DUPLICATE_CONFIGURATION, request.key)
         }
         val saved = configurationRepository.save(Configuration(key = request.key, value = request.value))
         evictCache(saved.key)
-        return saved.requiredId
+        return saved.key
     }
 
     fun findAll(request: PageSearchRequest): PageResponse<ConfigurationResponse> {
@@ -48,28 +47,28 @@ class ConfigurationService(
         return configurationRepository.findAll(pageable).toPageResponse { it.toResponse() }
     }
 
-    fun findById(id: Long): ConfigurationResponse = getConfigurationById(id).toResponse()
+    fun findByKey(key: String): ConfigurationResponse = getConfigurationByKey(key).toResponse()
 
     @Transactional
     fun update(
-        id: Long,
+        key: String,
         request: ConfigurationUpdateRequest,
     ) {
-        val configuration = getConfigurationById(id)
+        val configuration = getConfigurationByKey(key)
         configuration.update(request.value)
-        evictCache(configuration.key)
+        evictCache(key)
     }
 
     @Transactional
-    fun delete(id: Long) {
-        val configuration = getConfigurationById(id)
+    fun delete(key: String) {
+        val configuration = getConfigurationByKey(key)
         configurationRepository.delete(configuration)
-        evictCache(configuration.key)
+        evictCache(key)
     }
 
-    private fun getConfigurationById(id: Long): Configuration =
-        configurationRepository.findByIdOrNull(id)
-            ?: throw CustomException(SafersErrorCode.NOT_FOUND_CONFIGURATION_BY_ID, id)
+    private fun getConfigurationByKey(key: String): Configuration =
+        configurationRepository.findByKey(key)
+            ?: throw CustomException(SafersErrorCode.NOT_FOUND_CONFIGURATION, key)
 
     private fun evictCache(key: String) {
         if (TransactionSynchronizationManager.isSynchronizationActive()) {

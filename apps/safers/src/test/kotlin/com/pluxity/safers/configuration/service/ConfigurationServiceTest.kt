@@ -18,7 +18,6 @@ import org.springframework.cache.Cache
 import org.springframework.cache.CacheManager
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
-import org.springframework.data.repository.findByIdOrNull
 
 class ConfigurationServiceTest :
     BehaviorSpec({
@@ -66,8 +65,8 @@ class ConfigurationServiceTest :
 
                 val result = service.create(request)
 
-                Then("설정 ID가 반환된다") {
-                    result shouldBe 5L
+                Then("설정 키가 반환된다") {
+                    result shouldBe "NEW_KEY"
                 }
 
                 Then("해당 키의 캐시가 무효화된다") {
@@ -89,13 +88,13 @@ class ConfigurationServiceTest :
             }
         }
 
-        Given("설정 단건 조회 (findById)") {
+        Given("설정 단건 조회 (findByKey)") {
 
-            When("존재하는 ID를 조회하면") {
+            When("존재하는 키를 조회하면") {
                 val configuration = dummyConfiguration(id = 1L, key = "WEATHER_API", value = "key-1")
-                every { configurationRepository.findByIdOrNull(1L) } returns configuration
+                every { configurationRepository.findByKey("WEATHER_API") } returns configuration
 
-                val result = service.findById(1L)
+                val result = service.findByKey("WEATHER_API")
 
                 Then("설정 정보가 반환된다") {
                     result.id shouldBe 1L
@@ -104,15 +103,15 @@ class ConfigurationServiceTest :
                 }
             }
 
-            When("존재하지 않는 ID를 조회하면") {
-                every { configurationRepository.findByIdOrNull(999L) } returns null
+            When("존재하지 않는 키를 조회하면") {
+                every { configurationRepository.findByKey("UNKNOWN") } returns null
 
-                Then("NOT_FOUND_CONFIGURATION_BY_ID 예외가 발생한다") {
+                Then("NOT_FOUND_CONFIGURATION 예외가 발생한다") {
                     val exception =
                         shouldThrow<CustomException> {
-                            service.findById(999L)
+                            service.findByKey("UNKNOWN")
                         }
-                    exception.code shouldBe SafersErrorCode.NOT_FOUND_CONFIGURATION_BY_ID
+                    exception.code shouldBe SafersErrorCode.NOT_FOUND_CONFIGURATION
                 }
             }
         }
@@ -150,12 +149,12 @@ class ConfigurationServiceTest :
 
         Given("설정 수정") {
 
-            When("존재하는 ID의 값을 수정하면") {
+            When("존재하는 키의 값을 수정하면") {
                 val configuration = dummyConfiguration(id = 1L, key = "WEATHER_API", value = "old")
                 val request = dummyConfigurationUpdateRequest(value = "new")
-                every { configurationRepository.findByIdOrNull(1L) } returns configuration
+                every { configurationRepository.findByKey("WEATHER_API") } returns configuration
 
-                service.update(1L, request)
+                service.update("WEATHER_API", request)
 
                 Then("값이 갱신된다") {
                     configuration.value shouldBe "new"
@@ -166,27 +165,27 @@ class ConfigurationServiceTest :
                 }
             }
 
-            When("존재하지 않는 ID를 수정하면") {
+            When("존재하지 않는 키를 수정하면") {
                 val request = dummyConfigurationUpdateRequest()
-                every { configurationRepository.findByIdOrNull(999L) } returns null
+                every { configurationRepository.findByKey("UNKNOWN") } returns null
 
-                Then("NOT_FOUND_CONFIGURATION_BY_ID 예외가 발생한다") {
+                Then("NOT_FOUND_CONFIGURATION 예외가 발생한다") {
                     val exception =
                         shouldThrow<CustomException> {
-                            service.update(999L, request)
+                            service.update("UNKNOWN", request)
                         }
-                    exception.code shouldBe SafersErrorCode.NOT_FOUND_CONFIGURATION_BY_ID
+                    exception.code shouldBe SafersErrorCode.NOT_FOUND_CONFIGURATION
                 }
             }
         }
 
         Given("설정 삭제") {
 
-            When("존재하는 ID를 삭제하면") {
+            When("존재하는 키를 삭제하면") {
                 val configuration = dummyConfiguration(id = 1L, key = "WEATHER_API")
-                every { configurationRepository.findByIdOrNull(1L) } returns configuration
+                every { configurationRepository.findByKey("WEATHER_API") } returns configuration
 
-                service.delete(1L)
+                service.delete("WEATHER_API")
 
                 Then("설정이 삭제된다") {
                     verify { configurationRepository.delete(configuration) }
@@ -197,15 +196,15 @@ class ConfigurationServiceTest :
                 }
             }
 
-            When("존재하지 않는 ID를 삭제하면") {
-                every { configurationRepository.findByIdOrNull(999L) } returns null
+            When("존재하지 않는 키를 삭제하면") {
+                every { configurationRepository.findByKey("UNKNOWN") } returns null
 
-                Then("NOT_FOUND_CONFIGURATION_BY_ID 예외가 발생한다") {
+                Then("NOT_FOUND_CONFIGURATION 예외가 발생한다") {
                     val exception =
                         shouldThrow<CustomException> {
-                            service.delete(999L)
+                            service.delete("UNKNOWN")
                         }
-                    exception.code shouldBe SafersErrorCode.NOT_FOUND_CONFIGURATION_BY_ID
+                    exception.code shouldBe SafersErrorCode.NOT_FOUND_CONFIGURATION
                 }
             }
         }
