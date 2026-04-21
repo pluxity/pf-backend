@@ -19,7 +19,9 @@ import reactor.netty.resources.ConnectionProvider
 import reactor.util.retry.Retry
 import java.net.ConnectException
 import java.net.SocketException
+import java.net.SocketTimeoutException
 import java.time.Duration
+import io.netty.handler.timeout.TimeoutException as NettyTimeoutException
 
 private val log = KotlinLogging.logger {}
 
@@ -36,7 +38,7 @@ class WeatherApiClient(
         private const val CONNECT_TIMEOUT_MS = 5000
         private const val RESPONSE_TIMEOUT_SEC = 20L
         private const val IO_TIMEOUT_SEC = 20
-        private const val MAX_RETRY_ATTEMPTS = 3L
+        private const val MAX_RETRY_ATTEMPTS = 2L
         private const val SUCCESS_RESULT_CODE = "00"
         private val OVERALL_TIMEOUT = Duration.ofSeconds(90)
         private val POOL_MAX_IDLE = Duration.ofSeconds(15)
@@ -122,6 +124,8 @@ class WeatherApiClient(
                 is ConnectException -> return true
                 is SocketException ->
                     if (cur.message?.contains("reset", ignoreCase = true) == true) return true
+                is NettyTimeoutException -> return true
+                is SocketTimeoutException -> return true
             }
             cur = cur.cause
         }
