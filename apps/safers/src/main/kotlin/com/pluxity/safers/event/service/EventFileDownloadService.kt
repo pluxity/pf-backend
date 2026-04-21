@@ -1,10 +1,8 @@
 package com.pluxity.safers.event.service
 
-import com.pluxity.common.core.config.WebClientFactory
 import com.pluxity.common.file.service.FileService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Service
-import org.springframework.web.reactive.function.client.bodyToMono
 import java.net.URI
 
 private val log = KotlinLogging.logger {}
@@ -12,8 +10,12 @@ private val log = KotlinLogging.logger {}
 @Service
 class EventFileDownloadService(
     private val fileService: FileService,
-    private val webClientFactory: WebClientFactory,
 ) {
+    companion object {
+        private const val CONNECT_TIMEOUT_MS = 5_000
+        private const val READ_TIMEOUT_MS = 30_000
+    }
+
     fun downloadAndInitiateUpload(fileUrl: String): Long? =
         try {
             val uri = URI.create(fileUrl)
@@ -22,16 +24,15 @@ class EventFileDownloadService(
                 return null
             }
             val fileName = uri.path.substringAfterLast('/')
-            val baseUrl = "${uri.scheme}://${uri.authority}"
             val fileBytes =
-                webClientFactory
-                    .createClient(baseUrl)
-                    .get()
-                    .uri(uri.path)
-                    .retrieve()
-                    .bodyToMono<ByteArray>()
-                    .block()
-                    ?: error("파일 다운로드에 실패했습니다: $fileUrl")
+                uri
+                    .toURL()
+                    .openConnection()
+                    .apply {
+                        connectTimeout = CONNECT_TIMEOUT_MS
+                        readTimeout = READ_TIMEOUT_MS
+                    }.getInputStream()
+                    .use { it.readAllBytes() }
 
             val contentType = determineContentType(fileName)
             fileService.initiateUpload(fileBytes, fileName, contentType)
