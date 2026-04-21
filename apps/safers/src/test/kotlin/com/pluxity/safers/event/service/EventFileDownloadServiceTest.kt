@@ -75,8 +75,16 @@ class EventFileDownloadServiceTest :
                 }
             }
 
-            When("유효하지 않은 URL을 전달하면") {
+            When("스킴 또는 authority가 없는 URL을 전달하면") {
                 val result = service.downloadAndInitiateUpload("not-a-valid-url")
+
+                Then("null이 반환된다") {
+                    result.shouldBeNull()
+                }
+            }
+
+            When("허용되지 않는 스킴(file)의 URL을 전달하면") {
+                val result = service.downloadAndInitiateUpload("file:///etc/passwd")
 
                 Then("null이 반환된다") {
                     result.shouldBeNull()
