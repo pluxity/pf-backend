@@ -1,65 +1,90 @@
 package com.pluxity.safers.event.service
 
-import com.pluxity.common.core.config.WebClientFactory
 import com.pluxity.common.file.service.FileService
+import com.sun.net.httpserver.HttpServer
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.springframework.core.ParameterizedTypeReference
-import org.springframework.web.reactive.function.client.WebClient
-import reactor.core.publisher.Mono
+import java.net.InetSocketAddress
 
 class EventFileDownloadServiceTest :
     BehaviorSpec({
 
         val fileService: FileService = mockk(relaxed = true)
-        val webClientFactory: WebClientFactory = mockk()
-        val service = EventFileDownloadService(fileService, webClientFactory)
+        val service = EventFileDownloadService(fileService)
+
+        lateinit var server: HttpServer
+        var port = 0
+
+        beforeSpec {
+            server =
+                HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0).apply {
+                    createContext("/path/image.jpg") { exchange ->
+                        val body = "test-content".toByteArray()
+                        exchange.sendResponseHeaders(200, body.size.toLong())
+                        exchange.responseBody.use { it.write(body) }
+                    }
+                    createContext("/videos/clip.mp4") { exchange ->
+                        val body = "video-content".toByteArray()
+                        exchange.sendResponseHeaders(200, body.size.toLong())
+                        exchange.responseBody.use { it.write(body) }
+                    }
+                    createContext("/error/file.png") { exchange ->
+                        exchange.sendResponseHeaders(500, -1)
+                        exchange.close()
+                    }
+                    start()
+                }
+            port = server.address.port
+        }
+
+        afterSpec {
+            server.stop(0)
+        }
 
         Given("파일 다운로드 및 업로드") {
 
             When("정상적인 URL로 파일을 다운로드하면") {
-                val fileBytes = "test-content".toByteArray()
-                val requestHeadersUriSpec: WebClient.RequestHeadersUriSpec<*> = mockk()
-                val requestHeadersSpec: WebClient.RequestHeadersSpec<*> = mockk()
-                val responseSpec: WebClient.ResponseSpec = mockk()
-                val webClient: WebClient = mockk()
+                every { fileService.initiateUpload(any(), "image.jpg", "image/jpeg") } returns 10L
 
-                every { webClientFactory.createClient("https://example.com") } returns webClient
-                every { webClient.get() } returns requestHeadersUriSpec
-                every { requestHeadersUriSpec.uri("/path/image.jpg") } returns requestHeadersSpec
-                every { requestHeadersSpec.retrieve() } returns responseSpec
-                every { responseSpec.bodyToMono(any<ParameterizedTypeReference<ByteArray>>()) } returns Mono.just(fileBytes)
-                every { fileService.initiateUpload(fileBytes, "image.jpg", "image/jpeg") } returns 10L
-
-                val result = service.downloadAndInitiateUpload("https://example.com/path/image.jpg")
+                val result = service.downloadAndInitiateUpload("http://127.0.0.1:$port/path/image.jpg")
 
                 Then("파일 ID가 반환된다") {
                     result shouldBe 10L
                 }
 
                 Then("올바른 content type으로 업로드된다") {
-                    verify { fileService.initiateUpload(fileBytes, "image.jpg", "image/jpeg") }
+                    verify {
+                        fileService.initiateUpload(
+                            match { String(it) == "test-content" },
+                            "image.jpg",
+                            "image/jpeg",
+                        )
+                    }
                 }
             }
 
             When("다운로드 중 예외가 발생하면") {
-                val webClient: WebClient = mockk()
-                val requestHeadersUriSpec: WebClient.RequestHeadersUriSpec<*> = mockk()
-                val requestHeadersSpec: WebClient.RequestHeadersSpec<*> = mockk()
-                val responseSpec: WebClient.ResponseSpec = mockk()
+                val result = service.downloadAndInitiateUpload("http://127.0.0.1:$port/error/file.png")
 
-                every { webClientFactory.createClient("https://fail.com") } returns webClient
-                every { webClient.get() } returns requestHeadersUriSpec
-                every { requestHeadersUriSpec.uri("/error/file.png") } returns requestHeadersSpec
-                every { requestHeadersSpec.retrieve() } returns responseSpec
-                every { responseSpec.bodyToMono(any<ParameterizedTypeReference<ByteArray>>()) } returns
-                    Mono.error(RuntimeException("connection failed"))
+                Then("null이 반환된다") {
+                    result.shouldBeNull()
+                }
+            }
 
-                val result = service.downloadAndInitiateUpload("https://fail.com/error/file.png")
+            When("스킴 또는 authority가 없는 URL을 전달하면") {
+                val result = service.downloadAndInitiateUpload("not-a-valid-url")
+
+                Then("null이 반환된다") {
+                    result.shouldBeNull()
+                }
+            }
+
+            When("허용되지 않는 스킴(file)의 URL을 전달하면") {
+                val result = service.downloadAndInitiateUpload("file:///etc/passwd")
 
                 Then("null이 반환된다") {
                     result.shouldBeNull()
@@ -67,24 +92,19 @@ class EventFileDownloadServiceTest :
             }
 
             When("mp4 파일을 다운로드하면") {
-                val fileBytes = "video-content".toByteArray()
-                val webClient: WebClient = mockk()
-                val requestHeadersUriSpec: WebClient.RequestHeadersUriSpec<*> = mockk()
-                val requestHeadersSpec: WebClient.RequestHeadersSpec<*> = mockk()
-                val responseSpec: WebClient.ResponseSpec = mockk()
+                every { fileService.initiateUpload(any(), "clip.mp4", "video/mp4") } returns 20L
 
-                every { webClientFactory.createClient("https://example.com") } returns webClient
-                every { webClient.get() } returns requestHeadersUriSpec
-                every { requestHeadersUriSpec.uri("/videos/clip.mp4") } returns requestHeadersSpec
-                every { requestHeadersSpec.retrieve() } returns responseSpec
-                every { responseSpec.bodyToMono(any<ParameterizedTypeReference<ByteArray>>()) } returns Mono.just(fileBytes)
-                every { fileService.initiateUpload(fileBytes, "clip.mp4", "video/mp4") } returns 20L
-
-                val result = service.downloadAndInitiateUpload("https://example.com/videos/clip.mp4")
+                val result = service.downloadAndInitiateUpload("http://127.0.0.1:$port/videos/clip.mp4")
 
                 Then("video/mp4 content type으로 업로드된다") {
                     result shouldBe 20L
-                    verify { fileService.initiateUpload(fileBytes, "clip.mp4", "video/mp4") }
+                    verify {
+                        fileService.initiateUpload(
+                            match { String(it) == "video-content" },
+                            "clip.mp4",
+                            "video/mp4",
+                        )
+                    }
                 }
             }
         }
