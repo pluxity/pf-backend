@@ -12,4 +12,8 @@ class Configuration(
     val key: String,
     @Column(name = "config_value", nullable = false)
     var value: String,
-) : IdentityIdEntity()
+) : IdentityIdEntity() {
+    fun update(value: String) {
+        this.value = value
+    }
+}
