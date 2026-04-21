@@ -26,4 +26,7 @@ class SafersApiConfigurer : ApiConfigurer {
 
     @Bean
     fun collectApi(): GroupedOpenApi = apiGroup("8. 수집", "/collect/**")
+
+    @Bean
+    fun configurationApi(): GroupedOpenApi = apiGroup("9. 설정", "/configurations/**")
 }
