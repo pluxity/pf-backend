@@ -17,6 +17,8 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 
 @Service
 @Transactional(readOnly = true)
@@ -70,6 +72,16 @@ class ConfigurationService(
             ?: throw CustomException(SafersErrorCode.NOT_FOUND_CONFIGURATION_BY_ID, id)
 
     private fun evictCache(key: String) {
-        cacheManager.getCache(CONFIGURATIONS_CACHE)?.evict(key)
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                object : TransactionSynchronization {
+                    override fun afterCommit() {
+                        cacheManager.getCache(CONFIGURATIONS_CACHE)?.evict(key)
+                    }
+                },
+            )
+        } else {
+            cacheManager.getCache(CONFIGURATIONS_CACHE)?.evict(key)
+        }
     }
 }

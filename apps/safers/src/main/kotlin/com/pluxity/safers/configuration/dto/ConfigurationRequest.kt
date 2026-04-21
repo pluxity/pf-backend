@@ -2,13 +2,16 @@ package com.pluxity.safers.configuration.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Size
 
 @Schema(description = "설정 등록 요청")
 data class ConfigurationRequest(
     @field:NotBlank(message = "설정 키는 필수입니다.")
+    @field:Size(max = 255, message = "설정 키는 255자 이하여야 합니다.")
     @field:Schema(description = "설정 키", example = "WEATHER_API")
     val key: String,
     @field:NotBlank(message = "설정 값은 필수입니다.")
+    @field:Size(max = 255, message = "설정 값은 255자 이하여야 합니다.")
     @field:Schema(description = "설정 값", example = "your-api-key")
     val value: String,
 )
@@ -16,6 +19,7 @@ data class ConfigurationRequest(
 @Schema(description = "설정 수정 요청")
 data class ConfigurationUpdateRequest(
     @field:NotBlank(message = "설정 값은 필수입니다.")
+    @field:Size(max = 255, message = "설정 값은 255자 이하여야 합니다.")
     @field:Schema(description = "설정 값", example = "your-api-key")
     val value: String,
 )
