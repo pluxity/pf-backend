@@ -14,8 +14,6 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.springframework.cache.Cache
-import org.springframework.cache.CacheManager
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 
@@ -23,12 +21,7 @@ class ConfigurationServiceTest :
     BehaviorSpec({
 
         val configurationRepository: ConfigurationRepository = mockk(relaxed = true)
-        val cache: Cache = mockk(relaxed = true)
-        val cacheManager: CacheManager =
-            mockk {
-                every { getCache("configurations") } returns cache
-            }
-        val service = ConfigurationService(configurationRepository, cacheManager)
+        val service = ConfigurationService(configurationRepository)
 
         Given("설정 값 조회 (findValue)") {
 
@@ -68,10 +61,6 @@ class ConfigurationServiceTest :
                 Then("설정 키가 반환된다") {
                     result shouldBe "NEW_KEY"
                 }
-
-                Then("해당 키의 캐시가 무효화된다") {
-                    verify { cache.evict("NEW_KEY") }
-                }
             }
 
             When("이미 존재하는 키로 생성하면") {
@@ -97,7 +86,6 @@ class ConfigurationServiceTest :
                 val result = service.findByKey("WEATHER_API")
 
                 Then("설정 정보가 반환된다") {
-                    result.id shouldBe 1L
                     result.key shouldBe "WEATHER_API"
                     result.value shouldBe "key-1"
                 }
@@ -159,10 +147,6 @@ class ConfigurationServiceTest :
                 Then("값이 갱신된다") {
                     configuration.value shouldBe "new"
                 }
-
-                Then("해당 키의 캐시가 무효화된다") {
-                    verify { cache.evict("WEATHER_API") }
-                }
             }
 
             When("존재하지 않는 키를 수정하면") {
@@ -189,10 +173,6 @@ class ConfigurationServiceTest :
 
                 Then("설정이 삭제된다") {
                     verify { configurationRepository.delete(configuration) }
-                }
-
-                Then("해당 키의 캐시가 무효화된다") {
-                    verify { cache.evict("WEATHER_API") }
                 }
             }
 

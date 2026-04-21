@@ -18,6 +18,7 @@ class CacheConfig {
     fun cacheManager(connectionFactory: RedisConnectionFactory): RedisCacheManager =
         RedisCacheManager
             .builder(connectionFactory)
+            .transactionAware()
             .cacheDefaults(
                 RedisCacheConfiguration
                     .defaultCacheConfig()

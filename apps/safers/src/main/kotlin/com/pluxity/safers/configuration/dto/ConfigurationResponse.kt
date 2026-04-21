@@ -8,8 +8,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(description = "설정 응답")
 data class ConfigurationResponse(
-    @field:Schema(description = "설정 ID")
-    val id: Long,
     @field:Schema(description = "설정 키")
     val key: String,
     @field:Schema(description = "설정 값")
@@ -20,7 +18,6 @@ data class ConfigurationResponse(
 
 fun Configuration.toResponse(): ConfigurationResponse =
     ConfigurationResponse(
-        id = requiredId,
         key = key,
         value = value,
         baseResponse = toBaseResponse(),
