@@ -8,12 +8,12 @@ import org.springframework.stereotype.Component
 class WeatherScheduler(
     private val weatherFacade: WeatherFacade,
 ) {
-    @Scheduled(cron = "0 45 * * * *")
+    @Scheduled(cron = "0 50 * * * *")
     fun collectForecast() {
         weatherFacade.collectForecast()
     }
 
-    @Scheduled(cron = "0 10 * * * *")
+    @Scheduled(cron = "0 15 * * * *")
     fun collectObservation() {
         weatherFacade.collectObservation()
     }
