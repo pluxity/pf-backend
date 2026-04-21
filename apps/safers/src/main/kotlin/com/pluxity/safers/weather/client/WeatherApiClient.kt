@@ -36,6 +36,7 @@ class WeatherApiClient(
         private const val RESPONSE_TIMEOUT_SEC = 20L
         private const val IO_TIMEOUT_SEC = 20
         private const val MAX_RETRY_ATTEMPTS = 3L
+        private const val SUCCESS_RESULT_CODE = "00"
         private val OVERALL_TIMEOUT = Duration.ofSeconds(90)
         private val POOL_MAX_IDLE = Duration.ofSeconds(15)
         private val POOL_MAX_LIFE = Duration.ofSeconds(120)
@@ -83,7 +84,18 @@ class WeatherApiClient(
                     .build()
             }.retrieve()
             .bodyToMono<WeatherApiResponse>()
-            .retryWhen(
+            .flatMap { response ->
+                val header = response.response.header
+                if (header.resultCode == SUCCESS_RESULT_CODE) {
+                    Mono.just(response)
+                } else {
+                    log.warn {
+                        "$label API 비정상 응답 - resultCode: ${header.resultCode}, resultMsg: ${header.resultMsg}, " +
+                            "baseDate: $baseDate, baseTime: $baseTime, nx: $nx, ny: $ny"
+                    }
+                    Mono.empty()
+                }
+            }.retryWhen(
                 Retry
                     .backoff(MAX_RETRY_ATTEMPTS, Duration.ofMillis(500))
                     .maxBackoff(Duration.ofSeconds(3))
