@@ -9,5 +9,6 @@ include(":common:test-support")
 
 // ── Application Modules ──
 include(":apps:safers")
+include(":apps:safers-collect")
 include(":apps:yongin-platform")
 
