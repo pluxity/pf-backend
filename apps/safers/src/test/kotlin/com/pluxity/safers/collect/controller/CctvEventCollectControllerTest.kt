@@ -25,7 +25,7 @@ class CctvEventCollectControllerTest(
 
         val baseUrl = "/collect/cctv/events"
 
-        Given("이벤트 수집 API (Kafka)") {
+        Given("이벤트 수집 API (ApplicationEvent)") {
 
             When("POST $baseUrl - 유효한 요청") {
                 every { cctvEventCollector.collect(any()) } just runs
@@ -69,7 +69,7 @@ class CctvEventCollectControllerTest(
             }
         }
 
-        Given("영상 수집 API (Kafka)") {
+        Given("영상 수집 API (ApplicationEvent)") {
 
             When("POST $baseUrl/video - 유효한 요청") {
                 every { cctvEventCollector.collectVideo(any()) } just runs

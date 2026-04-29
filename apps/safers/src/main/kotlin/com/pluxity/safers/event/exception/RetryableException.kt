@@ -1,4 +1,4 @@
-package com.pluxity.safers.event.kafka
+package com.pluxity.safers.event.exception
 
 class RetryableException(
     message: String,

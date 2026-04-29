@@ -5,7 +5,7 @@ import com.pluxity.common.core.response.PageResponse
 import com.pluxity.safers.cctv.service.CctvSiteCache
 import com.pluxity.safers.event.dto.EventCreateRequest
 import com.pluxity.safers.event.dto.EventResponse
-import com.pluxity.safers.event.kafka.RetryableException
+import com.pluxity.safers.event.exception.RetryableException
 import com.pluxity.safers.event.repository.EventRepository
 import com.pluxity.safers.llm.EventLlmClient
 import org.springframework.stereotype.Component
