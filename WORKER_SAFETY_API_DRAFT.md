@@ -13,7 +13,7 @@
 │ 스마트밴드    │──HTTP (인증 없음)─┤                        │                                 │
 │ SOS 디바이스  │──HTTP (인증 없음)─┤    수집모듈            │  POST /v1/sites/{siteId}/       │──▶ InfluxDB
 │ (벤더 GW)     │                  ├──▶ /collect/gas        │       telemetry                  │
-└───────────────┘                  │   /collect/band        │  POST /v1/sites/{siteId}/        │──▶ PostgreSQL
+└───────────────┘                  │   /collect/band        │  POST /v1/sites/{siteId}/        │──▶ events (PG, CCTV+SAFETY 통합)
                                     │   /collect/sos/events │       events                     │
                                     │   /devices/gas  CRUD  │  CRUD /v1/sites/{siteId}/        │──▶ device (PG)
                                     │   /devices/bands CRUD │       devices                    │
@@ -462,6 +462,7 @@
 - 페이로드 구조는 §5 와 동일하되, 식별자(`deviceId`, `bandId`)가 평탄화(top-level)되어 PostgreSQL 컬럼으로 직접 매핑.
 - **`site_id` 는 body 에 두지 않음** — INSERT 시 path `{siteId}` 를 컬럼에 직접 사용 (telemetry 와 동일한 정책).
 - `payload` 는 종류별 상세를 그대로 JSONB 로 저장.
+- **적재 위치**: 별도 `safety_event` 테이블이 아니라 **기존 `events` 테이블에 `category=SAFETY` 로 INSERT** (§9.2). 운영자 UI 의 `GET /events` 가 CCTV 와 안전 이벤트를 한 화면에서 보여주는 게 목적. 안전 이벤트도 `snapshot_file_id` / `video_file_id` 를 채워 CCTV 영상을 attach 가능.
 
 ### 7.3 디바이스 관리 — `/v1/sites/{siteId}/devices`
 
@@ -506,7 +507,7 @@
 | --- | --- |
 | `id` | 디바이스 ID (`bandId`/`deviceId` 그대로) — 사이트 내 유일 |
 | `type` | `GAS`, `BAND`, `SOS` — 디스크리미네이터 |
-| `status` | `ACTIVE`, `OFFLINE`, `RETIRED` |
+| `status` | `ACTIVE`, `OFFLINE` (영구 폐기는 `DELETE` 엔드포인트로 hard delete) |
 | `lastSeenAt` | telemetry/events 수신 시 자동 갱신 |
 | `metadata` | type 별 자유 필드 (JSONB). 필수 필드는 type 별로 검증 |
 
@@ -526,18 +527,27 @@ SOS  : { ownerWorkerId? }
 ```text
 SourceType     : GAS, BAND, SOS                     (ingest 라우팅 키)
 DeviceType     : GAS, BAND, SOS                     (디바이스 마스터)
-DeviceStatus   : ACTIVE, OFFLINE, RETIRED
+DeviceStatus   : ACTIVE, OFFLINE
 GasType        : O2, H2S, CO, CO2, CH4, LEL
 GasUnit        : PPM, PERCENT
 WearState      : WORN, OFF, UNKNOWN
-EventType      : GAS_THRESHOLD_EXCEEDED, SOS_TRIGGERED,
+
+# 통합 events 테이블 enum — 기존 CCTV enum 에 SAFETY 항목을 추가하는 형태
+EventCategory  : DETECTION (CCTV), SAFETY (가스/SOS/밴드)
+EventType      : # CCTV (기존)
+                 NO_HELMET, NO_VEST, FIRE, SMOKE, FALLING, ...,
+                 # SAFETY (신규 추가)
+                 GAS_THRESHOLD_EXCEEDED, SOS_TRIGGERED,
                  BAND_VITAL_ABNORMAL, BAND_FALL_DETECTED, BAND_OFFLINE
-EventSeverity  : INFO, WARNING, CRITICAL
-EventSource    : GAS_SENSOR, SOS_DEVICE, SMART_BAND
+EventSeverity  : INFO, WARNING, CRITICAL                  (안전 이벤트만 사용)
+EventSource    : GAS_SENSOR, SOS_DEVICE, SMART_BAND       (안전 이벤트만 사용)
+
 SosTrigger     : BUTTON_LONG_PRESS, MOBILE_APP, MANUAL_DISPATCH
 ThresholdLevel : WARNING, DANGER
 VitalMetric    : HEART_RATE, BODY_TEMP, SPO2
 ```
+
+> `FIRE`, `SMOKE` 는 이미 CCTV `EventType` 에 있고, 안전 이벤트의 가스 감지(`GAS_THRESHOLD_EXCEEDED`)와는 `category` 디스크리미네이터로 구분되므로 충돌 없음.
 
 ---
 
@@ -555,33 +565,51 @@ VitalMetric    : HEART_RATE, BODY_TEMP, SPO2
 - `measurement` 는 envelope 에서 결정. writer 코드는 1개. 새 센서는 새 measurement 이름만 추가하면 끝.
 - 권장 retention: 원본 30~90일 + 1분/5분 다운샘플링 버킷.
 
-### 9.2 PostgreSQL (이벤트 — events)
+### 9.2 PostgreSQL (이벤트 — 통합 `events` 테이블)
+
+> **결정사항**: 안전 이벤트(가스/SOS/밴드)는 **별도 `safety_event` 테이블을 만들지 않고 기존 `events` 테이블을 확장** 해서 한 곳에 적재. 이유는 ① 운영자 UI 가 CCTV 이벤트와 안전 이벤트를 한 화면에서 보고 ② STOMP 단일 토픽으로 브로드캐스트 ③ `GET /events` 한 번에 통합 조회가 가능하기 때문. 안전 이벤트도 필요 시 CCTV 스냅샷/영상을 attach 할 수 있다는 부수 효과도 있음.
+
+**기존 컬럼 (CCTV 이벤트 — 그대로 유지)**
+- `id`, `event_id`, `event_timestamp`, `category`, `type`, `track_id`, `name`, `bbox`, `center_x/y`, `confidence`, `path`, `site_id`, `snapshot_file_id`, `video_file_id`, audit 컬럼
+
+**확장 컬럼 (안전 이벤트용 — 모두 nullable)**
 
 ```sql
-CREATE TABLE safety_event (
-  id              BIGSERIAL PRIMARY KEY,
-  event_id        VARCHAR(64)  NOT NULL,
-  event_type      VARCHAR(32)  NOT NULL,
-  severity        VARCHAR(16)  NOT NULL,
-  source          VARCHAR(16)  NOT NULL,
-  occurred_at     TIMESTAMPTZ  NOT NULL,
-  received_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
-  site_id         BIGINT       NOT NULL,
-  device_id       VARCHAR(64),
-  band_id         VARCHAR(64),
-  lat             DOUBLE PRECISION,
-  lng             DOUBLE PRECISION,
-  accuracy_m      DOUBLE PRECISION,
-  payload         JSONB        NOT NULL,
-  acknowledged_at TIMESTAMPTZ
-);
+-- V20260430_001__extend_events_for_safety.sql (예시)
 
-CREATE INDEX ix_event_occurred_at ON safety_event (occurred_at DESC);
-CREATE INDEX ix_event_type_time   ON safety_event (event_type, occurred_at DESC);
-CREATE INDEX ix_event_site_time   ON safety_event (site_id, occurred_at DESC);
-CREATE INDEX ix_event_device      ON safety_event (device_id, occurred_at DESC);
-CREATE INDEX ix_event_band        ON safety_event (band_id, occurred_at DESC);
+-- 안전 이벤트는 trackId 가 없으므로 nullable 로 완화
+ALTER TABLE events ALTER COLUMN track_id DROP NOT NULL;
+
+-- 안전 이벤트 전용 컬럼 추가 (CCTV 이벤트는 모두 NULL)
+ALTER TABLE events
+    ADD COLUMN severity     VARCHAR(16),                    -- INFO | WARNING | CRITICAL
+    ADD COLUMN source       VARCHAR(16),                    -- GAS_SENSOR | SOS_DEVICE | SMART_BAND
+    ADD COLUMN device_id    VARCHAR(64),
+    ADD COLUMN band_id      VARCHAR(64),
+    ADD COLUMN lat          DOUBLE PRECISION,
+    ADD COLUMN lng          DOUBLE PRECISION,
+    ADD COLUMN accuracy_m   DOUBLE PRECISION,
+    ADD COLUMN payload      JSONB;                           -- 이벤트 종류별 상세 (triggered/abnormal 등)
+
+-- 인덱스 (안전 이벤트 조회용 — partial index 로 CCTV 행 제외해 인덱스 크기 절약)
+CREATE INDEX idx_events_device   ON events (device_id) WHERE device_id IS NOT NULL;
+CREATE INDEX idx_events_band     ON events (band_id)   WHERE band_id   IS NOT NULL;
+CREATE INDEX idx_events_severity ON events (severity, event_timestamp DESC) WHERE severity IS NOT NULL;
+CREATE INDEX idx_events_payload  ON events USING GIN (payload jsonb_path_ops) WHERE payload IS NOT NULL;
 ```
+
+**`category` 디스크리미네이터로 두 종류 구분**
+
+| `category` | 의미 | 사용되는 컬럼 묶음 |
+| --- | --- | --- |
+| `DETECTION` | CCTV AI 감지 | `track_id`, `bbox`, `center_x/y`, `confidence`, `path`, `name`, `snapshot_file_id`, `video_file_id` |
+| `SAFETY` | 가스/SOS/밴드 사건 | `severity`, `source`, `device_id` 또는 `band_id`, `lat/lng/accuracy_m`, `payload jsonb` |
+
+> 양쪽 모두 `event_id`, `event_timestamp`, `site_id`, `category`, `type`, `name` 은 공통 사용. 안전 이벤트도 `snapshot_file_id` / `video_file_id` 첨부 가능 (예: SOS 발생 시 인근 CCTV 스냅샷 자동 연결).
+
+**조회 / 알림**
+- `GET /events` (기존) 엔드포인트가 자동으로 둘 다 반환 — `category` 필터 추가만 운영자 UI 에서 처리
+- `LISTEN/NOTIFY events` 단일 채널로 실시간 알림
 
 ### 9.3 PostgreSQL (디바이스 마스터 — devices)
 
@@ -633,11 +661,11 @@ CREATE INDEX idx_device_metadata    ON device USING GIN (metadata jsonb_path_ops
 ### 10.2 보강 흐름
 
 ```text
-raw event   (PG safety_event)  ─┐
-raw reading (Influx)            ─┤  pf-backend 조회 시
-                                  ├─→ device.id 로 device join
-device (gas/band/sos 통합)     ─┤      ├─ GAS:  metadata.facilityId, installLocal 사용
-worker_master                  ─┤      ├─ BAND: rawPosition → site_coord_transform → local{x,y,z}, floor
+raw event   (PG events, category=SAFETY) ─┐
+raw reading (Influx)                       ─┤  pf-backend 조회 시
+                                            ├─→ device.id 로 device join
+device (gas/band/sos 통합)                ─┤      ├─ GAS:  metadata.facilityId, installLocal 사용
+worker_master                             ─┤      ├─ BAND: rawPosition → site_coord_transform → local{x,y,z}, floor
 site_coord_transform           ─┘      └─ SOS:  rawPosition 우선, 없으면 직전 band_reading 위치
                                        ↓
                                 3D 표출용 enriched 모델 → STOMP 브로드캐스트
@@ -647,7 +675,7 @@ site_coord_transform           ─┘      └─ SOS:  rawPosition 우선, 없�
 
 | 방식 | 비고 |
 | --- | --- |
-| pf-backend 가 PostgreSQL `LISTEN/NOTIFY` 구독 | 가장 단순. ingest 가 INSERT 후 `NOTIFY safety_event` |
+| pf-backend 가 PostgreSQL `LISTEN/NOTIFY` 구독 | 가장 단순. ingest 가 INSERT 후 `NOTIFY events` (CCTV 와 안전 이벤트 단일 채널) |
 | pf-backend 폴링 | `received_at > last_seen` 조건으로 N초 간격 조회 |
 
 ### 10.4 미등록 디바이스 처리 정책
@@ -763,7 +791,7 @@ apps/safers/.../ingest/
 
 **핸들러 흐름 (중앙)**
 - `/v1/telemetry`: 검증 → InfluxDB 배치 큐 enqueue → 즉시 `200`
-- `/v1/events`: 검증 → PG 동기 INSERT → `200` (필요 시 `NOTIFY safety_event`)
+- `/v1/events`: 검증 → PG `events` 테이블에 동기 INSERT (`category=SAFETY`) → `200` (필요 시 `NOTIFY events`)
 - `/v1/devices`: JPA CRUD → `device.last_seen_at` 은 telemetry/events 핸들러가 별도 갱신
 - 컨트롤러는 분리 (인증/모니터링/Rate-limit 정책 분리 용이)
 
@@ -933,6 +961,12 @@ class TelemetryController { ... }
 - [ ] 키 → `site.id` 매핑 보관 위치: `sites` 테이블 컬럼 추가 vs 별도 `site_ingest_credential` 테이블 (회전 윈도우 지원)
 - [ ] 키 회전 정책 (구키/신키 동시 유효 기간)
 - [ ] 추가 방어선으로 IP allowlist 적용 여부 (도입 시 `sites.base_url` 또는 별도 컬럼 활용)
+
+**이벤트 통합 운영 (§9.2 결정사항 후속)**
+- [ ] CCTV 이벤트의 `track_id NOT NULL` 제약 완화 마이그레이션 시점 / 운영 영향 확인
+- [ ] 안전 이벤트의 `name` 컬럼 자동 생성 규칙 (예: "유해가스 임계 초과 — H2S 25.4 PPM")
+- [ ] 안전 이벤트에 CCTV 영상 자동 attach 정책 — 가까운 CCTV 매칭 룰 (`device_master.facility_id` ↔ `cctv.site_id` ↔ 거리 기준 등)
+- [ ] STOMP 토픽 분리 여부 — `/topic/events` 단일 vs `/topic/events/safety` 분리
 
 **비즈니스 정책**
 - [ ] 가스 임계값(WARNING/DANGER) 기준 — 송신값 신뢰 vs 중앙에서 판정

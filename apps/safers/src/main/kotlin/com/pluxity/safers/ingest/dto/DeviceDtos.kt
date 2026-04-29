@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 
 enum class DeviceType { GAS, BAND, SOS }
 
-enum class DeviceStatus { ACTIVE, OFFLINE, RETIRED }
+enum class DeviceStatus { ACTIVE, OFFLINE }
 
 @Schema(description = "통합 디바이스 등록 요청 (type 디스크리미네이터 + metadata jsonb). siteId 는 URL path.")
 data class DeviceCreateRequest(

@@ -12,31 +12,31 @@ import java.time.LocalDateTime
 @Table(name = "events")
 class Event(
     @Column(name = "event_id", nullable = false, unique = true)
-    val eventId: String,
+    var eventId: String,
     @Column(name = "event_timestamp", nullable = false)
-    val eventTimestamp: LocalDateTime,
+    var eventTimestamp: LocalDateTime,
     @Enumerated(EnumType.STRING)
     @Column(name = "category", nullable = false)
-    val category: EventCategory,
+    var category: EventCategory,
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
-    val type: EventType,
+    var type: EventType,
     @Column(name = "track_id", nullable = false)
-    val trackId: Long,
+    var trackId: Long,
     @Column(name = "name", nullable = false)
-    val name: String,
+    var name: String,
     @Column(name = "bbox")
-    val bbox: String? = null,
+    var bbox: String? = null,
     @Column(name = "center_x")
-    val centerX: Double? = null,
+    var centerX: Double? = null,
     @Column(name = "center_y")
-    val centerY: Double? = null,
+    var centerY: Double? = null,
     @Column(name = "confidence")
-    val confidence: Double? = null,
+    var confidence: Double? = null,
     @Column(name = "path")
-    val path: String = "",
+    var path: String = "",
     @Column(name = "site_id", nullable = false)
-    val siteId: Long,
+    var siteId: Long,
 ) : IdentityIdEntity() {
     @Column(name = "snapshot_file_id")
     var snapshotFileId: Long? = null
