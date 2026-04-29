@@ -555,15 +555,145 @@ VitalMetric    : HEART_RATE, BODY_TEMP, SPO2
 
 ### 9.1 InfluxDB (시계열 — telemetry)
 
-각 측정값은 **raw 그대로** 적재. 시설/사이트/3D 좌표 등 보강 정보는 저장하지 않음 (조회 시 pf-backend 에서 join).
+각 측정값은 **raw 그대로** 적재. 시설/사이트/3D 좌표 등 보강 정보는 저장하지 않음 (조회 시 pf-backend 에서 마스터 join).
 
-| measurement | tags | fields | timestamp |
+#### 9.1.1 인스턴스 / Bucket 구성
+
+| 항목 | 결정 | 비고 |
+| --- | --- | --- |
+| 버전 | **InfluxDB 2.x** | OSS 권장. Spring 클라이언트(`com.influxdb:influxdb-client-java`) 호환성 가장 검증됨 |
+| Bucket | 단일 — 예: `safety` | 사이트별 분리하지 않음. 사이트는 `site_id` 태그로 구분. 다중 사이트 통합 쿼리가 자연스러움 |
+| Org | `pluxity` (기존) | 기존 인프라 재사용 |
+| Token | telemetry write 전용 + 읽기 전용 2개 | Write token 은 `/v1/sites/{siteId}/telemetry` 핸들러만, Read token 은 pf-backend 보강 path 만 |
+
+> 사이트별 bucket 분리는 운영 부담만 늘리고 (token N개, 백업 N개) 통합 쿼리가 어려워지므로 **단일 bucket + tag 분리** 가 표준.
+
+#### 9.1.2 Schema 모델 — measurement / tag / field 의 역할
+
+| 슬롯 | 무엇이 들어가나 | 카디널리티 한계 | 인덱싱 |
 | --- | --- | --- | --- |
-| `gas_reading` | `site_id`, `device_id`, `gas` | `value`, `unit`, `battery`, `signal_rssi` | `timestamp` |
-| `band_reading` | `site_id`, `band_id` | `heart_rate_bpm`, `body_temp_c`, `spo2`, `step`, `lat`, `lng`, `accuracy_m`, `battery`, `wear_state` | `timestamp` |
+| **measurement** | 센서 종류 (`gas_reading`, `band_reading`, ...) | 작음 (수십) | O — measurement 단위로 SST 분리 |
+| **tag** | 식별자, 분류, 차원 (`site_id`, `device_id`, `gas`) | **수백만 이하** 권장. 폭발 시 시리즈 폭증 → 메모리 ↑ | O — 인덱스됨. WHERE 조건에 적합 |
+| **field** | 실제 측정값 (`value`, `heart_rate_bpm`, `battery`) | 무제한 | X — 집계/정렬엔 가능, 인덱싱 X |
+| **timestamp** | 측정 시각 (장비 측정 시각, 서버 수신 시각 X) | — | 항상 정렬됨 |
 
-- `measurement` 는 envelope 에서 결정. writer 코드는 1개. 새 센서는 새 measurement 이름만 추가하면 끝.
-- 권장 retention: 원본 30~90일 + 1분/5분 다운샘플링 버킷.
+**판단 기준**: "WHERE 조건에 자주 등장 + 값 종류 유한 → tag", "집계 대상 (avg/min/max/last) → field". 햇갈리는 케이스:
+- `unit` (PPM/PERCENT) → tag (`gas` 종류와 1:1 묶임, 종류 적음)
+- `wear_state` (WORN/OFF/UNKNOWN) → tag (3종류)
+- `battery` (0~100 정수) → field (집계 대상 — "평균 배터리 잔량")
+
+#### 9.1.3 카디널리티 (가장 중요한 운영 변수)
+
+InfluxDB 의 시리즈 = `measurement + tag set` 의 unique 조합 수. 이게 메모리/디스크 부담을 직접 결정합니다.
+
+```
+30 사이트 × 1,000 밴드 × 1 measurement (band_reading) = 30,000 시리즈   (안전)
+30 사이트 × 100 가스센서 × 6 GasType = 18,000 시리즈                    (안전)
+```
+
+**금지 패턴**: 절대 tag 로 두면 안 되는 것
+- `event_id`, `request_id` 같은 매번 다른 식별자 (시리즈 무한 폭증)
+- timestamp, sample 일련번호
+- 자유 텍스트 (`memo`, `description`)
+
+→ 위 같은 건 field 로 (또는 PostgreSQL 로).
+
+#### 9.1.4 measurement 정의
+
+| measurement | tags | fields (타입) | 호출 빈도 / 사이트 |
+| --- | --- | --- | --- |
+| `gas_reading` | `site_id`, `device_id`, `gas` (O2/H2S/CO/...) | `value` (float), `unit` 은 tag, `battery` (int), `signal_rssi` (int) | 가스센서 수 × 30s ≈ 100 대 → 3 req/s |
+| `band_reading` | `site_id`, `band_id`, `wear_state` | `heart_rate_bpm` (int), `body_temp_c` (float), `spo2` (int), `step` (int), `lat` (float), `lng` (float), `accuracy_m` (float), `battery` (int) | 밴드 수 × 10s ≈ 1,000 대 → 100 req/s |
+
+> **`gas` 가 tag** 인 이유: 한 디바이스가 여러 가스를 동시 측정 → 가스 종류별로 시계열 분리 필요. 따라서 한 sample 의 N개 측정값은 **N 개 line** 으로 들어감.
+>
+> **`unit` 도 tag 로 권장**: 가스 종류와 단위가 1:1 매핑되니 카디널리티 영향 없고, 쿼리 시 단위 불일치 검출이 쉬움. (제일 좋은 건 단위를 enum 으로 강제하고 쿼리에서 무시)
+
+#### 9.1.5 Line Protocol 예시
+
+가스 sample (한 sample 에 4개 가스 → 4개 line):
+```
+gas_reading,site_id=42,device_id=GAS-MH203-01,gas=O2,unit=PERCENT  value=20.8,battery=87i,signal_rssi=-68i  1714125330000000000
+gas_reading,site_id=42,device_id=GAS-MH203-01,gas=H2S,unit=PPM     value=3.1,battery=87i,signal_rssi=-68i   1714125330000000000
+gas_reading,site_id=42,device_id=GAS-MH203-01,gas=CO,unit=PPM      value=12.0,battery=87i,signal_rssi=-68i  1714125330000000000
+gas_reading,site_id=42,device_id=GAS-MH203-01,gas=LEL,unit=PERCENT value=4.0,battery=87i,signal_rssi=-68i   1714125330000000000
+```
+
+밴드 sample:
+```
+band_reading,site_id=42,band_id=BAND-A1B2C3,wear_state=WORN  heart_rate_bpm=88i,body_temp_c=36.7,spo2=97i,step=4321i,lat=37.501234,lng=127.039876,accuracy_m=4.0,battery=73i  1714125330000000000
+```
+
+> 정수는 `i` 접미사. 문자열 field 는 `"..."` (가능하면 tag 로 승격 권장). 타임스탬프 nanosecond 정밀도가 InfluxDB 기본.
+
+#### 9.1.6 Writer 구현 (중앙 ingest)
+
+```kotlin
+@Service
+class InfluxTelemetryWriter(
+    private val writeApi: WriteApi,                  // 비동기 배치 client
+    @Value("\${influx.bucket}") private val bucket: String,
+    @Value("\${influx.org}")    private val org: String,
+) {
+    fun write(siteId: Long, request: TelemetryRequest) {
+        val point = Point.measurement(request.measurement)
+            .addTags(request.tags)
+            .addTag("site_id", siteId.toString())     // path 값 강제 주입 (위변조 차단)
+            .also { it.fillFields(request.fields) }   // 타입별 분기 (Long/Int/Double/String/Boolean)
+            .time(request.timestamp.toInstant(ZoneOffset.UTC), WritePrecision.MS)
+        writeApi.writePoint(bucket, org, point)       // 즉시 반환, 내부 버퍼링
+    }
+}
+```
+
+**WriteApi 옵션** (Java client):
+- `batchSize`: 1,000 (사이트당 최대 RPS 의 ~10초 분량)
+- `flushInterval`: 1,000 ms (실시간성 ↔ 배치 절충)
+- `bufferLimit`: 10,000 (백프레셔 임계)
+- `retryInterval`: 5,000 ms / `maxRetries`: 3
+- `WriteListener` 로 실패 line 메트릭 수집
+
+> **시간 정밀도는 `MS` 권장**: nanosecond 까지 필요한 정밀도 없음 + InfluxDB 가 내부에서 ns 변환. 디바이스 시각 정밀도가 보통 초 단위라 굳이 ns 보장할 이유 없음.
+
+#### 9.1.7 site_id 강제 주입 (§7.1 정책 재확인)
+
+writer 는 envelope.tags 에 `site_id` 가 있더라도 **무시하고 path 값으로 덮어씀**. 수집모듈이 자기 site 와 다른 값을 보내려는 시도를 차단. 인증 통과한 키의 `site.id` ≠ path `{siteId}` 이면 컨트롤러 단계에서 `403`.
+
+#### 9.1.8 쿼리 패턴 예시 (Flux)
+
+**최근 가스 측정값 (사이트별)**
+```flux
+from(bucket: "safety")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "gas_reading" and r.site_id == "42" and r.gas == "H2S")
+  |> last()
+```
+
+**근로자 심박 평균 (1분 다운샘플)**
+```flux
+from(bucket: "safety")
+  |> range(start: -24h)
+  |> filter(fn: (r) => r._measurement == "band_reading" and r._field == "heart_rate_bpm")
+  |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)
+```
+
+**임계 초과 검출 (단순 — 실 운영은 이벤트 채널을 사용)**
+```flux
+from(bucket: "safety")
+  |> range(start: -5m)
+  |> filter(fn: (r) => r._measurement == "gas_reading" and r._field == "value" and r.gas == "H2S")
+  |> filter(fn: (r) => r._value > 10.0)
+```
+
+> 실시간 임계 판정은 InfluxDB 쿼리가 아니라 **수집모듈/중앙 ingest 가 즉시 판정 후 events 테이블로 보내는 게 맞음** (지연 ↓). InfluxDB 는 사후 분석용.
+
+#### 9.1.9 운영 작업
+
+- **다운샘플링**: Flux task 로 1m / 5m / 1h 평균 사전 계산 → 대시보드 응답 ↓ (필요 시 별도 bucket `safety_downsampled` 분리)
+- **백업**: `influx backup` 일배치
+- **모니터링**: write rate, buffer fill, dropped points, query latency
+
+> retention 정책 / 다운샘플링 주기는 운영 단계에서 결정 (§13).
 
 ### 9.2 PostgreSQL (이벤트 — 통합 `events` 테이블)
 
@@ -943,7 +1073,8 @@ class TelemetryController { ... }
 ## 13. 미정/협의 항목
 
 **인프라**
-- [ ] InfluxDB 인스턴스 — 신규 vs 기존 공용, retention 정책
+- [ ] InfluxDB 인스턴스 — 신규 vs 기존 공용
+- [ ] InfluxDB retention 정책 — 원본 보존 기간, 다운샘플링 버킷 (1m/5m/1h) 도입 시점
 - [ ] PostgreSQL — `safers` DB 별도 스키마 vs 전용 DB
 - [ ] pf-backend 가 이벤트를 가져오는 방식 (LISTEN/NOTIFY vs polling)
 
