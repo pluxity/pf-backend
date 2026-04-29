@@ -17,6 +17,8 @@ enum class SafersErrorCode(
     MISSING_BASE_URL(HttpStatus.BAD_REQUEST, "현장(ID: %s)에 미디어서버 URL이 설정되지 않았습니다."),
     INVALID_DATE_FORMAT(HttpStatus.BAD_REQUEST, "날짜 형식이 올바르지 않습니다. (yyyyMMddHHmmss)"),
     PLAYBACK_REQUEST_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "재생 요청에 대한 응답을 받지 못했습니다."),
+    NOT_FOUND_DEVICE(HttpStatus.NOT_FOUND, "ID가 %s인 디바이스를 찾을 수 없습니다."),
+    DUPLICATE_DEVICE(HttpStatus.CONFLICT, "ID가 %s인 디바이스가 이미 존재합니다."),
     ;
 
     override fun getHttpStatus(): HttpStatus = httpStatus

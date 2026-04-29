@@ -11,14 +11,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/v1/telemetry")
-@Tag(name = "Ingest - Telemetry", description = "수집모듈로부터 정규화된 시계열 측정값 수신 (X-Api-Key 인증)")
+@RequestMapping("/v1/sites/{siteId}/telemetry")
+@Tag(name = "Ingest - Telemetry", description = "수집모듈로부터 정규화된 시계열 측정값 수신 (X-Api-Key 인증). siteId 는 URL path.")
 class TelemetryController {
     @Operation(
         summary = "telemetry 적재",
@@ -41,9 +42,10 @@ class TelemetryController {
     )
     @PostMapping
     fun ingest(
+        @PathVariable siteId: Long,
         @Valid @RequestBody request: TelemetryRequest,
     ): ResponseEntity<DataResponseBody<Unit>> {
-        // TODO: InfluxDB writer enqueue
+        // TODO: InfluxDB writer enqueue (siteId 를 measurement tag 로 부착)
         return ResponseEntity.ok(DataResponseBody(Unit))
     }
 }

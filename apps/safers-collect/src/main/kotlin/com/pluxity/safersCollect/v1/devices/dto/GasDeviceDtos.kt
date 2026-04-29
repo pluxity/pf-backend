@@ -2,7 +2,6 @@ package com.pluxity.safersCollect.v1.devices.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 
 enum class DeviceStatus { ACTIVE, OFFLINE, RETIRED }
 
@@ -25,7 +24,7 @@ data class GasDeviceCreateRequest(
     @field:NotBlank @field:Schema(example = "GAS-MH203-01") val deviceId: String,
     @field:NotBlank @field:Schema(example = "맨홀 203 가스센서") val name: String,
     @field:NotBlank @field:Schema(example = "MH-203") val facilityId: String,
-    @field:NotNull val installLocal: InstallLocal,
+    val installLocal: InstallLocal,
     @field:Schema(example = "B1", nullable = true) val floor: String? = null,
     @field:Schema(nullable = true) val metadata: GasDeviceMetadata? = null,
 )

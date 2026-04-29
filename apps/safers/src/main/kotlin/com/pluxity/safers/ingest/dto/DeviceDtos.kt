@@ -1,24 +1,20 @@
 package com.pluxity.safers.ingest.dto
 
+import com.pluxity.safers.ingest.entity.Device
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 import java.time.LocalDateTime
 
 enum class DeviceType { GAS, BAND, SOS }
 
 enum class DeviceStatus { ACTIVE, OFFLINE, RETIRED }
 
-@Schema(description = "통합 디바이스 등록 요청 (type 디스크리미네이터 + metadata jsonb)")
+@Schema(description = "통합 디바이스 등록 요청 (type 디스크리미네이터 + metadata jsonb). siteId 는 URL path.")
 data class DeviceCreateRequest(
     @field:NotBlank
     @field:Schema(example = "BAND-A1B2C3")
     val id: String,
-    @field:NotNull
     val type: DeviceType,
-    @field:NotNull
-    @field:Schema(example = "42")
-    val siteId: Long,
     @field:Schema(example = "1조 작업자", nullable = true)
     val name: String? = null,
     @field:Schema(description = "type 별 자유 필드 (gas: facilityId/installLocal/floor, band: assignedWorkerId 등)")
@@ -42,3 +38,14 @@ data class DeviceResponse(
     val lastSeenAt: LocalDateTime?,
     val metadata: Map<String, Any>,
 )
+
+fun Device.toResponse(): DeviceResponse =
+    DeviceResponse(
+        id = deviceId,
+        type = type,
+        siteId = siteId,
+        name = name,
+        status = status,
+        lastSeenAt = lastSeenAt,
+        metadata = metadata,
+    )

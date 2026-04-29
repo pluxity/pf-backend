@@ -3,7 +3,6 @@ package com.pluxity.safersCollect.v1.collect.dto
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import java.time.LocalDateTime
 
@@ -19,23 +18,22 @@ data class RawPosition(
 @Schema(description = "가스 측정값 수집 요청")
 data class GasCollectRequest(
     @field:Valid
-    @field:NotNull
     @field:Size(min = 1, max = 500)
     val samples: List<GasSample>,
 )
 
 data class GasSample(
     @field:NotBlank @field:Schema(example = "GAS-MH203-01") val deviceId: String,
-    @field:NotNull @field:Schema(example = "2026-04-24T10:15:30") val timestamp: LocalDateTime,
-    @field:Valid @field:NotNull val measurements: List<GasMeasurement>,
+    @field:Schema(example = "2026-04-24T10:15:30") val timestamp: LocalDateTime,
+    @field:Valid val measurements: List<GasMeasurement>,
     @field:Schema(description = "0~100", example = "87", nullable = true) val battery: Int? = null,
     @field:Schema(description = "신호 세기 (dBm)", example = "-68", nullable = true) val signalRssi: Int? = null,
 )
 
 data class GasMeasurement(
-    @field:NotNull val gas: GasType,
-    @field:NotNull @field:Schema(example = "3.1") val value: Double,
-    @field:NotNull val unit: GasUnit,
+    val gas: GasType,
+    @field:Schema(example = "3.1") val value: Double,
+    val unit: GasUnit,
 )
 
 enum class GasType { O2, H2S, CO, CO2, CH4, LEL }
@@ -47,14 +45,13 @@ enum class GasUnit { PPM, PERCENT }
 @Schema(description = "스마트밴드 측정값 수집 요청")
 data class BandCollectRequest(
     @field:Valid
-    @field:NotNull
     @field:Size(min = 1, max = 500)
     val samples: List<BandSample>,
 )
 
 data class BandSample(
     @field:NotBlank @field:Schema(example = "BAND-A1B2C3") val bandId: String,
-    @field:NotNull @field:Schema(example = "2026-04-24T10:15:30") val timestamp: LocalDateTime,
+    @field:Schema(example = "2026-04-24T10:15:30") val timestamp: LocalDateTime,
     @field:Schema(nullable = true) val rawPosition: RawPosition? = null,
     @field:Schema(nullable = true) val vitals: BandVitals? = null,
     @field:Schema(description = "0~100", example = "73", nullable = true) val battery: Int? = null,

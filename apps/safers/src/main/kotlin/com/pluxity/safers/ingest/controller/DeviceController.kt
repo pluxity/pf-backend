@@ -7,6 +7,7 @@ import com.pluxity.safers.ingest.dto.DeviceResponse
 import com.pluxity.safers.ingest.dto.DeviceStatus
 import com.pluxity.safers.ingest.dto.DeviceType
 import com.pluxity.safers.ingest.dto.DeviceUpdateRequest
+import com.pluxity.safers.ingest.service.DeviceService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
@@ -28,10 +29,12 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/v1/devices")
-@Tag(name = "Ingest - Devices", description = "통합 디바이스 마스터 CRUD — type 디스크리미네이터 + metadata jsonb")
-class DeviceController {
-    @Operation(summary = "디바이스 등록")
+@RequestMapping("/v1/sites/{siteId}/devices")
+@Tag(name = "Ingest - Devices", description = "통합 디바이스 마스터 CRUD — type 디스크리미네이터 + metadata jsonb. (id, siteId) 가 유일 키")
+class DeviceController(
+    private val deviceService: DeviceService,
+) {
+    @Operation(summary = "디바이스 등록", description = "(id, siteId) 가 이미 존재하면 409.")
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "201", description = "등록 성공"),
@@ -40,26 +43,28 @@ class DeviceController {
                 description = "검증 실패",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponseBody::class))],
             ),
+            ApiResponse(
+                responseCode = "409",
+                description = "(id, siteId) 중복",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponseBody::class))],
+            ),
         ],
     )
     @PostMapping
     fun create(
+        @PathVariable siteId: Long,
         @Valid @RequestBody request: DeviceCreateRequest,
-    ): ResponseEntity<DataResponseBody<DeviceResponse>> {
-        // TODO: device 테이블 INSERT
-        return ResponseEntity.status(HttpStatus.CREATED).body(DataResponseBody(null))
-    }
+    ): ResponseEntity<DataResponseBody<DeviceResponse>> =
+        ResponseEntity.status(HttpStatus.CREATED).body(DataResponseBody(deviceService.create(siteId, request)))
 
-    @Operation(summary = "디바이스 목록 조회", description = "siteId / type / status 필터 지원")
+    @Operation(summary = "디바이스 목록 조회", description = "type / status 필터 지원. siteId 는 path.")
     @GetMapping
     fun list(
-        @Parameter(description = "사이트 ID 필터") @RequestParam(required = false) siteId: Long?,
+        @PathVariable siteId: Long,
         @Parameter(description = "디바이스 종류 필터") @RequestParam(required = false) type: DeviceType?,
         @Parameter(description = "상태 필터") @RequestParam(required = false) status: DeviceStatus?,
-    ): ResponseEntity<DataResponseBody<List<DeviceResponse>>> {
-        // TODO: filter + page
-        return ResponseEntity.ok(DataResponseBody(emptyList()))
-    }
+    ): ResponseEntity<DataResponseBody<List<DeviceResponse>>> =
+        ResponseEntity.ok(DataResponseBody(deviceService.list(siteId, type, status)))
 
     @Operation(summary = "디바이스 단건 조회")
     @ApiResponses(
@@ -74,33 +79,35 @@ class DeviceController {
     )
     @GetMapping("/{id}")
     fun get(
+        @PathVariable siteId: Long,
         @PathVariable id: String,
-    ): ResponseEntity<DataResponseBody<DeviceResponse>> {
-        // TODO
-        return ResponseEntity.ok(DataResponseBody(null))
-    }
+    ): ResponseEntity<DataResponseBody<DeviceResponse>> = ResponseEntity.ok(DataResponseBody(deviceService.get(id, siteId)))
 
     @Operation(summary = "디바이스 부분 수정")
     @PatchMapping("/{id}")
     fun update(
+        @PathVariable siteId: Long,
         @PathVariable id: String,
         @Valid @RequestBody request: DeviceUpdateRequest,
-    ): ResponseEntity<DataResponseBody<DeviceResponse>> {
-        // TODO
-        return ResponseEntity.ok(DataResponseBody(null))
-    }
+    ): ResponseEntity<DataResponseBody<DeviceResponse>> = ResponseEntity.ok(DataResponseBody(deviceService.update(id, siteId, request)))
 
     @Operation(summary = "디바이스 폐기/삭제")
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "204", description = "삭제 성공"),
+            ApiResponse(
+                responseCode = "404",
+                description = "디바이스 없음",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponseBody::class))],
+            ),
         ],
     )
     @DeleteMapping("/{id}")
     fun delete(
+        @PathVariable siteId: Long,
         @PathVariable id: String,
     ): ResponseEntity<Void> {
-        // TODO
+        deviceService.delete(id, siteId)
         return ResponseEntity.noContent().build()
     }
 }

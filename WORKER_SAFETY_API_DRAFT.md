@@ -2,23 +2,24 @@
 
 > **수집모듈(외부 현장 배포)** 과 **중앙 ingest(`safers`)** 의 2단계 구조.
 > - **수집모듈** 은 센서 종류별로 데이터 / 이벤트 / 디바이스 CRUD 엔드포인트를 노출 (외부에 다양하게).
-> - **중앙(`safers`)** 은 정규화된 통합 단일 API 3개만 노출: `/v1/telemetry`, `/v1/events`, `/v1/devices` (안쪽은 단일하게).
+> - **중앙(`safers`)** 은 정규화된 통합 단일 API 3개만 노출 (모두 `/v1/sites/{siteId}/...` 하위): `telemetry`, `events`, `devices` (안쪽은 단일하게).
 > - 새 센서 종류 도입 = **수집모듈에 어댑터 1세트 추가**. 중앙 코드 / DB 스키마 / 운영 UI 무변경.
 > - 인증: **센서 ↔ 수집모듈은 인증 없음** (사이트 LAN 격리로 보호), **수집모듈 ↔ 중앙은 `X-Api-Key`**.
 
 ```text
 [현장 — 외부 / 사이트 LAN 내부]                              [중앙 — 사내]
-┌───────────────┐                                            ┌──────────────────────┐
-│ 가스센서      │──HTTP (인증 없음)─┐                        │ pf-backend (safers)  │
-│ 스마트밴드    │──HTTP (인증 없음)─┤                        │                      │
-│ SOS 디바이스  │──HTTP (인증 없음)─┤    수집모듈            │  POST /v1/telemetry  │──▶ InfluxDB
-│ (벤더 GW)     │                  ├──▶ /collect/gas        │  POST /v1/events     │──▶ PostgreSQL
-└───────────────┘                  │   /collect/band        │  /v1/devices  CRUD   │──▶ devices (PG)
-                                    │   /collect/sos/events │                      │
-                                    │   /devices/gas  CRUD  │   X-Api-Key 검증     │
-                                    │   /devices/bands CRUD │   site_id 강제 부착   │
-                                    └──HTTPS + X-Api-Key────┘                      │
-                                                            └─────────┬────────────┘
+┌───────────────┐                                            ┌─────────────────────────────────┐
+│ 가스센서      │──HTTP (인증 없음)─┐                        │ pf-backend (safers)             │
+│ 스마트밴드    │──HTTP (인증 없음)─┤                        │                                 │
+│ SOS 디바이스  │──HTTP (인증 없음)─┤    수집모듈            │  POST /v1/sites/{siteId}/       │──▶ InfluxDB
+│ (벤더 GW)     │                  ├──▶ /collect/gas        │       telemetry                  │
+└───────────────┘                  │   /collect/band        │  POST /v1/sites/{siteId}/        │──▶ PostgreSQL
+                                    │   /collect/sos/events │       events                     │
+                                    │   /devices/gas  CRUD  │  CRUD /v1/sites/{siteId}/        │──▶ device (PG)
+                                    │   /devices/bands CRUD │       devices                    │
+                                    │   /devices/sos  CRUD  │   X-Api-Key 검증                  │
+                                    └──HTTPS + X-Api-Key────┘   path siteId 강제 (위변조 차단) │
+                                                            └─────────┬───────────────────────┘
                                                                       ▼
                                                               보강 + STOMP 브로드캐스트
 ```
@@ -48,7 +49,7 @@
 | 센서 / 벤더 GW → 수집모듈 | 프로토콜·payload·단위·시간 포맷 (벤더별) | — |
 | 수집모듈 내부 | 어댑터 N개 (센서 종류만큼) | — |
 | 수집모듈 → 중앙 | — | 정규화된 envelope 1종 + `sourceType` 디스크리미네이터 |
-| 중앙 ingest API | — | `/v1/telemetry`, `/v1/events`, `/v1/devices` 3개 |
+| 중앙 ingest API | — | `/v1/sites/{siteId}/{telemetry,events,devices}` 3개 |
 | InfluxDB writer | — | 1개. `measurement` 만 envelope 에서 결정 |
 | 디바이스 저장 | — | 단일 `device` 테이블 + `metadata jsonb` |
 
@@ -307,7 +308,7 @@
 ## 6. 수집모듈 API — 디바이스 CRUD (센서별)
 
 > 인증: **없음** (사이트 LAN 격리). 운영자 / 현장 도구가 호출.
-> 수집모듈은 호출을 받으면 ① 자기 `site_id` 를 부착해 ② 중앙 `/v1/devices` 로 forward, ③ 응답 캐시(로컬)도 갱신. 중앙이 SoT(source of truth).
+> 수집모듈은 호출을 받으면 ① 자기 `site_id` 를 부착해 ② 중앙 `/v1/sites/{siteId}/devices` 로 forward, ③ 응답 캐시(로컬)도 갱신. 중앙이 SoT(source of truth).
 
 ### 6.1 가스센서 — `/v1/devices/gas`
 
@@ -386,16 +387,17 @@
 ```
 
 ### 6.x 새 센서 종류 추가 시
-센서별 컨트롤러 1개 추가 — `POST/GET/PATCH/DELETE /v1/devices/<type>`. 내부적으로 통합 envelope 로 변환해 중앙 `/v1/devices` 로 forward. **중앙·DB 무변경**.
+센서별 컨트롤러 1개 추가 — `POST/GET/PATCH/DELETE /v1/devices/<type>`. 내부적으로 통합 envelope 로 변환해 중앙 `/v1/sites/{siteId}/devices` 로 forward (siteId 는 수집모듈 자체 설정값). **중앙·DB 무변경**.
 
 ---
 
 ## 7. 중앙(`safers`) API — 통합
 
-> 인증: **`X-Api-Key`** (사이트별 1키) + HTTPS. Base path: `/v1`.
+> 인증: **`X-Api-Key`** (사이트별 1키) + HTTPS. Base path: `/v1/sites/{siteId}`.
+> URL path 의 `{siteId}` 가 권위. body 에는 `siteId` 를 두지 않음 (위변조 방지).
 > 수집모듈만 호출. 운영자 화면은 별도 사용자 인증 API 사용 (본 문서 범위 외).
 
-### 7.1 데이터수집 — `POST /v1/telemetry`
+### 7.1 데이터수집 — `POST /v1/sites/{siteId}/telemetry`
 
 수집모듈이 정규화한 통합 envelope. `sourceType` 으로 분기.
 
@@ -406,7 +408,6 @@
   "timestamp":  "2026-04-24T10:15:30",
   "measurement": "gas_reading",
   "tags": {
-    "site_id":   "42",
     "device_id": "GAS-MH203-01",
     "gas":       "H2S"
   },
@@ -423,10 +424,14 @@
 | --- | --- |
 | `sourceType` | `GAS`, `BAND`, ... — 라우팅 키 |
 | `sourceId` | 디바이스 식별자 (`deviceId`/`bandId`) |
-| `siteId` | **수집모듈이 부착, 중앙은 X-Api-Key 매핑값으로 검증/덮어쓰기** |
 | `measurement` | 어댑터가 결정 — InfluxDB measurement 이름 |
-| `tags` | InfluxDB tag (인덱싱 대상) |
+| `tags` | InfluxDB tag (인덱싱 대상). **`site_id` 는 보내지 않음** — writer 가 path `{siteId}` 를 자동 주입 |
 | `fields` | InfluxDB field (값) |
+
+**`site_id` 자동 주입 (writer 정책)**
+- InfluxDB writer 는 line protocol 작성 시 path `{siteId}` 를 `tags.site_id` 로 **무조건 덮어씀**.
+- 수집모듈이 envelope.tags 에 `site_id` 를 보내도 무시되거나 path 값으로 교체됨 → 위변조 차단.
+- 인증된 키의 `site.id` ≠ path `{siteId}` 면 사전에 `403` 으로 거부 (§2.4).
 
 **왜 통합 envelope?**
 - writer 1개로 모든 센서 종류 처리 (measurement 만 envelope 에서 가져와서 line protocol 빌드)
@@ -434,7 +439,7 @@
 
 > 가스 측정값 한 sample 에 N 개 가스가 있는 경우, 수집모듈은 가스 단위로 1 envelope 씩 분할해서 N 건 forward. 또는 Influx line protocol 에 다중 field 로 한 번에 보낼 수도 있음 — 운영 협의 (§13).
 
-### 7.2 이벤트수집 — `POST /v1/events`
+### 7.2 이벤트수집 — `POST /v1/sites/{siteId}/events`
 
 ```json
 {
@@ -443,7 +448,6 @@
   "severity":   "CRITICAL",
   "source":     "GAS_SENSOR",
   "occurredAt": "2026-04-24T10:15:30",
-  "siteId":     42,
   "deviceId":   "GAS-MH203-01",
   "bandId":     null,
   "rawPosition": null,
@@ -455,28 +459,28 @@
 }
 ```
 
-- 페이로드 구조는 §5 와 동일하되, 식별자(`deviceId`, `bandId`)와 `siteId` 가 평탄화(top-level)되어 PostgreSQL 컬럼으로 직접 매핑.
+- 페이로드 구조는 §5 와 동일하되, 식별자(`deviceId`, `bandId`)가 평탄화(top-level)되어 PostgreSQL 컬럼으로 직접 매핑.
+- **`site_id` 는 body 에 두지 않음** — INSERT 시 path `{siteId}` 를 컬럼에 직접 사용 (telemetry 와 동일한 정책).
 - `payload` 는 종류별 상세를 그대로 JSONB 로 저장.
 
-### 7.3 디바이스 관리 — `/v1/devices`
+### 7.3 디바이스 관리 — `/v1/sites/{siteId}/devices`
 
 | Method | Path | 설명 |
 | --- | --- | --- |
-| `POST` | `/v1/devices` | 등록 |
-| `GET` | `/v1/devices` | 목록 — 필터: `?siteId=&type=&status=` |
-| `GET` | `/v1/devices/{id}` | 단건 |
-| `PATCH` | `/v1/devices/{id}` | 부분 수정 |
-| `DELETE` | `/v1/devices/{id}` | 폐기/삭제 |
+| `POST` | `/v1/sites/{siteId}/devices` | 등록 |
+| `GET` | `/v1/sites/{siteId}/devices` | 목록 — 필터: `?type=&status=` |
+| `GET` | `/v1/sites/{siteId}/devices/{id}` | 단건 |
+| `PATCH` | `/v1/sites/{siteId}/devices/{id}` | 부분 수정 |
+| `DELETE` | `/v1/sites/{siteId}/devices/{id}` | 폐기/삭제 |
 
-**Body (통합 모델)**
+> **식별 키**: `(id, siteId)` 가 비즈니스 유일 키. **같은 `id` 라도 사이트가 다르면 별개 row 로 등록 가능** (PK 는 surrogate Long, `(device_id, site_id)` 에 unique 제약).
+
+**등록 Body (siteId 는 path 에 있어 body 에 없음)**
 ```json
 {
   "id":        "BAND-A1B2C3",
   "type":      "BAND",
-  "siteId":    42,
   "name":      "1조 작업자",
-  "status":    "ACTIVE",
-  "lastSeenAt": "2026-04-24T10:15:30",
   "metadata": {
     "assignedWorkerId": "W102",
     "vendor": "Acme",
@@ -485,9 +489,22 @@
 }
 ```
 
+**응답 Body (siteId / status / lastSeenAt 포함)**
+```json
+{
+  "id":        "BAND-A1B2C3",
+  "type":      "BAND",
+  "siteId":    42,
+  "name":      "1조 작업자",
+  "status":    "ACTIVE",
+  "lastSeenAt": "2026-04-24T10:15:30",
+  "metadata":  { "assignedWorkerId": "W102", "vendor": "Acme", "firmware": "1.2.3" }
+}
+```
+
 | 필드 | 설명 |
 | --- | --- |
-| `id` | 디바이스 ID (`bandId`/`deviceId` 그대로) |
+| `id` | 디바이스 ID (`bandId`/`deviceId` 그대로) — 사이트 내 유일 |
 | `type` | `GAS`, `BAND`, `SOS` — 디스크리미네이터 |
 | `status` | `ACTIVE`, `OFFLINE`, `RETIRED` |
 | `lastSeenAt` | telemetry/events 수신 시 자동 갱신 |
@@ -568,27 +585,34 @@ CREATE INDEX ix_event_band        ON safety_event (band_id, occurred_at DESC);
 
 ### 9.3 PostgreSQL (디바이스 마스터 — devices)
 
+식별: surrogate Long PK + 비즈니스 키 `(device_id, site_id)` 복합 unique. 같은 `device_id` 라도 사이트가 다르면 별개 row.
+
 ```sql
 CREATE TABLE device (
-  id            VARCHAR(64) PRIMARY KEY,           -- "BAND-A1B2C3", "GAS-MH203-01"
-  type          VARCHAR(16) NOT NULL,              -- GAS | BAND | SOS
-  site_id       BIGINT      NOT NULL REFERENCES site(id),
+  id            BIGINT       GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  device_id     VARCHAR(64)  NOT NULL,             -- "BAND-A1B2C3", "GAS-MH203-01"
+  type          VARCHAR(16)  NOT NULL,             -- GAS | BAND | SOS
+  site_id       BIGINT       NOT NULL,
   name          VARCHAR(128),
-  status        VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
-  last_seen_at  TIMESTAMPTZ,
-  metadata      JSONB       NOT NULL DEFAULT '{}'::jsonb,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+  status        VARCHAR(16)  NOT NULL DEFAULT 'ACTIVE',
+  last_seen_at  TIMESTAMP,
+  metadata      JSONB        NOT NULL DEFAULT '{}'::jsonb,
+  created_at    TIMESTAMP    NOT NULL,
+  updated_at    TIMESTAMP    NOT NULL,
+  created_by    VARCHAR(255),
+  updated_by    VARCHAR(255),
+  CONSTRAINT uk_device_id_site UNIQUE (device_id, site_id)
 );
 
-CREATE INDEX ix_device_site_status ON device (site_id, status);
-CREATE INDEX ix_device_type        ON device (type);
-CREATE INDEX ix_device_metadata    ON device USING GIN (metadata jsonb_path_ops);
+CREATE INDEX idx_device_site_status ON device (site_id, status);
+CREATE INDEX idx_device_type        ON device (type);
+CREATE INDEX idx_device_metadata    ON device USING GIN (metadata jsonb_path_ops);
 ```
 
 - type 별 특이 필드는 `metadata jsonb` — DB 스키마 변경 없이 새 type 도입 가능.
+- API 응답의 `id` 필드는 `device_id` 컬럼값 (사용자 친화 식별자). surrogate Long pk 는 외부에 노출하지 않음.
 - 응답/요청 DTO 에서 `type` 으로 polymorphic 매핑 (Jackson `@JsonTypeInfo`) → 코드 레벨 타입 안전 확보.
-- 6.x 의 센서별 `/devices/<type>` 호출은 내부적으로 이 테이블의 row 1개로 매핑됨.
+- 6.x 의 센서별 `/v1/devices/<type>` (수집모듈) 호출은 내부적으로 이 테이블의 row 1개로 매핑됨.
 
 ---
 
@@ -722,16 +746,16 @@ safety-collector:
 ```
 apps/safers/.../ingest/
 ├── controller/
-│   ├── TelemetryController     POST /v1/telemetry
-│   ├── EventIngestController   POST /v1/events     (기존 /events 조회 API 와 별도)
-│   └── DeviceController        CRUD /v1/devices
+│   ├── TelemetryController     POST /v1/sites/{siteId}/telemetry
+│   ├── EventIngestController   POST /v1/sites/{siteId}/events     (기존 /events 조회 API 와 별도)
+│   └── DeviceController        CRUD /v1/sites/{siteId}/devices
 ├── dto/                        TelemetryRequest, EventIngestRequest, Device*Request/Response, enum
-├── auth/                       X-Api-Key 검증 + site.id 부착
+├── entity/                     Device (IdentityIdEntity 상속, deviceId+siteId 복합 unique)
+├── repository/                 DeviceRepository (existsByDeviceIdAndSiteId 등)
+├── service/                    DeviceService (CRUD + lastSeenAt 자동 갱신)
+├── auth/                       X-Api-Key 검증 + 키→site.id 매핑값 vs path siteId 일치 검증
 ├── persistence/
-│   ├── influx/                 InfluxDB writer (배치, async)
-│   └── postgres/
-│       ├── EventRepository     JSONB payload
-│       └── DeviceRepository    JPA + JSONB metadata
+│   └── influx/                 InfluxDB writer (배치, async). path siteId 를 tags.site_id 로 강제 주입
 └── config/                     influx url/token/bucket, datasource
 ```
 

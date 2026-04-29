@@ -2,18 +2,15 @@ package com.pluxity.safers.ingest.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 import java.time.LocalDateTime
 
 @Schema(description = "정규화 telemetry envelope (수집모듈이 forward)")
 data class TelemetryRequest(
-    @field:NotNull
     @field:Schema(description = "센서 종류 디스크리미네이터", example = "GAS")
     val sourceType: SourceType,
     @field:NotBlank
     @field:Schema(description = "디바이스 식별자", example = "GAS-MH203-01")
     val sourceId: String,
-    @field:NotNull
     @field:Schema(example = "2026-04-24T10:15:30")
     val timestamp: LocalDateTime,
     @field:NotBlank
