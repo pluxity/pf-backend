@@ -3,8 +3,8 @@ package com.pluxity.safers.ingest.persistence.influx
 import com.influxdb.client.WriteApi
 import com.influxdb.client.write.Point
 import com.pluxity.safers.ingest.config.InfluxProperties
-import com.pluxity.safers.ingest.dto.SourceType
 import com.pluxity.safers.ingest.dto.TelemetryRequest
+import com.pluxity.safers.ingest.enums.SourceType
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
