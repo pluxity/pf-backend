@@ -3,7 +3,7 @@ package com.pluxity.safersCollect.v1.devices.controller
 import com.pluxity.safersCollect.v1.devices.dto.BandDeviceCreateRequest
 import com.pluxity.safersCollect.v1.devices.dto.BandDeviceResponse
 import com.pluxity.safersCollect.v1.devices.dto.BandDeviceUpdateRequest
-import com.pluxity.safersCollect.v1.devices.dto.DeviceStatus
+import com.pluxity.safersCollect.v1.devices.enums.DeviceStatus
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag

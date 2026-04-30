@@ -8,7 +8,7 @@ import com.pluxity.safers.cctv.service.CctvSiteCache
 import com.pluxity.safers.event.dto.dummyEventCreateRequest
 import com.pluxity.safers.event.entity.Event
 import com.pluxity.safers.event.entity.dummyEvent
-import com.pluxity.safers.event.listener.EventCreated
+import com.pluxity.safers.event.listener.CctvEventCreated
 import com.pluxity.safers.event.repository.EventRepository
 import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.llm.EventLlmClient
@@ -74,8 +74,8 @@ class EventServiceTest :
                     verify { fileService.finalizeUpload(snapshotFileId, "events/1/") }
                 }
 
-                Then("EventCreated 이벤트가 발행된다") {
-                    verify { eventPublisher.publishEvent(any<EventCreated>()) }
+                Then("CctvEventCreated 이벤트가 발행된다") {
+                    verify { eventPublisher.publishEvent(any<CctvEventCreated>()) }
                 }
             }
 

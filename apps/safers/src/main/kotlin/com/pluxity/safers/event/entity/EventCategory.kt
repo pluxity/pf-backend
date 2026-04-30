@@ -5,4 +5,5 @@ enum class EventCategory(
 ) {
     DETECTION("객체탐지"),
     ROI("영역/경계선 이벤트"),
+    SAFETY("안전 사건"),
 }

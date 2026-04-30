@@ -1,8 +1,8 @@
 package com.pluxity.safers.ingest.entity
 
 import com.pluxity.common.core.entity.IdentityIdEntity
-import com.pluxity.safers.ingest.dto.DeviceStatus
-import com.pluxity.safers.ingest.dto.DeviceType
+import com.pluxity.safers.ingest.enums.DeviceStatus
+import com.pluxity.safers.ingest.enums.DeviceType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType

@@ -1,5 +1,6 @@
 package com.pluxity.safers.ingest.dto
 
+import com.pluxity.safers.ingest.enums.SourceType
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
@@ -31,5 +32,3 @@ data class TelemetryRequest(
     @field:Schema(description = "InfluxDB field (값)", example = "{\"value\":3.1,\"unit\":\"PPM\",\"battery\":87}")
     val fields: Map<String, Any> = emptyMap(),
 )
-
-enum class SourceType { GAS, BAND, SOS }

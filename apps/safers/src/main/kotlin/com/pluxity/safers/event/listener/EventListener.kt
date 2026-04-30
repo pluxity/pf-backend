@@ -12,13 +12,19 @@ class EventListener(
 ) {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun handleEventCreated(event: EventCreated) {
-        stompMessageSender.sendEventCreated(event.eventResponse)
+    fun handleCctvEventCreated(event: CctvEventCreated) {
+        stompMessageSender.sendCctvEventCreated(event.eventResponse)
     }
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun handleEventVideoRegistered(event: EventVideoRegistered) {
-        stompMessageSender.sendEventVideoRegistered(event.eventResponse)
+    fun handleCctvEventVideoRegistered(event: CctvEventVideoRegistered) {
+        stompMessageSender.sendCctvEventVideoRegistered(event.eventResponse)
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun handleSafetyEventCreated(event: SafetyEventCreated) {
+        stompMessageSender.sendSafetyEventCreated(event.eventResponse)
     }
 }

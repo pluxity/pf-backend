@@ -10,8 +10,8 @@ import com.pluxity.safers.event.dto.EventCreateRequest
 import com.pluxity.safers.event.dto.EventResponse
 import com.pluxity.safers.event.dto.toResponse
 import com.pluxity.safers.event.entity.Event
-import com.pluxity.safers.event.listener.EventCreated
-import com.pluxity.safers.event.listener.EventVideoRegistered
+import com.pluxity.safers.event.listener.CctvEventCreated
+import com.pluxity.safers.event.listener.CctvEventVideoRegistered
 import com.pluxity.safers.event.repository.EventRepository
 import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.llm.dto.EventFilterCriteria
@@ -66,7 +66,7 @@ class EventService(
 
         val fileResponse = fileService.getFileResponse(snapshotFileId)
         val siteResponse = siteRepository.findByIdOrNull(siteId)?.toResponse(null)
-        eventPublisher.publishEvent(EventCreated(savedEvent.toResponse(fileResponse, siteResponse = siteResponse)))
+        eventPublisher.publishEvent(CctvEventCreated(savedEvent.toResponse(fileResponse, siteResponse = siteResponse)))
     }
 
     @Transactional
@@ -85,7 +85,7 @@ class EventService(
             val snapshotFileResponse = fileService.getFileResponse(event.snapshotFileId)
             val videoFileResponse = fileService.getFileResponse(it)
             val siteResponse = siteRepository.findByIdOrNull(event.siteId)?.toResponse(null)
-            eventPublisher.publishEvent(EventVideoRegistered(event.toResponse(snapshotFileResponse, videoFileResponse, siteResponse)))
+            eventPublisher.publishEvent(CctvEventVideoRegistered(event.toResponse(snapshotFileResponse, videoFileResponse, siteResponse)))
         }
     }
 

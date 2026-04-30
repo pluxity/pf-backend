@@ -1,5 +1,8 @@
 package com.pluxity.safersCollect.v1.collect.dto
 
+import com.pluxity.safersCollect.v1.collect.enums.GasType
+import com.pluxity.safersCollect.v1.collect.enums.GasUnit
+import com.pluxity.safersCollect.v1.collect.enums.WearState
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
@@ -36,10 +39,6 @@ data class GasMeasurement(
     val unit: GasUnit,
 )
 
-enum class GasType { O2, H2S, CO, CO2, CH4, LEL }
-
-enum class GasUnit { PPM, PERCENT }
-
 // ───────────────────────────────────── 스마트밴드 측정값 ─────────────────────────────────────
 
 @Schema(description = "스마트밴드 측정값 수집 요청")
@@ -64,5 +63,3 @@ data class BandVitals(
     @field:Schema(description = "산소포화도 (%)", example = "97", nullable = true) val spo2: Int? = null,
     @field:Schema(example = "4321", nullable = true) val step: Int? = null,
 )
-
-enum class WearState { WORN, OFF, UNKNOWN }

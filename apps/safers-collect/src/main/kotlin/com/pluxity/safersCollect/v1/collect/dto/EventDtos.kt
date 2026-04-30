@@ -1,16 +1,15 @@
 package com.pluxity.safersCollect.v1.collect.dto
 
+import com.pluxity.safersCollect.v1.collect.enums.BandEventType
+import com.pluxity.safersCollect.v1.collect.enums.EventSeverity
+import com.pluxity.safersCollect.v1.collect.enums.GasType
+import com.pluxity.safersCollect.v1.collect.enums.GasUnit
+import com.pluxity.safersCollect.v1.collect.enums.SosTrigger
+import com.pluxity.safersCollect.v1.collect.enums.ThresholdLevel
+import com.pluxity.safersCollect.v1.collect.enums.VitalMetric
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import java.time.LocalDateTime
-
-enum class EventSeverity { INFO, WARNING, CRITICAL }
-
-enum class ThresholdLevel { WARNING, DANGER }
-
-enum class SosTrigger { BUTTON_LONG_PRESS, MOBILE_APP, MANUAL_DISPATCH }
-
-enum class VitalMetric { HEART_RATE, BODY_TEMP, SPO2 }
 
 // ───────────────────────────────────── 가스 임계 초과 이벤트 ─────────────────────────────────────
 
@@ -54,12 +53,6 @@ data class SosEventPayload(
 )
 
 // ───────────────────────────────────── 스마트밴드 이상 이벤트 ─────────────────────────────────────
-
-enum class BandEventType {
-    BAND_VITAL_ABNORMAL,
-    BAND_FALL_DETECTED,
-    BAND_OFFLINE,
-}
 
 @Schema(description = "스마트밴드 이상 이벤트 (eventType 으로 분기)")
 data class BandEventRequest(
