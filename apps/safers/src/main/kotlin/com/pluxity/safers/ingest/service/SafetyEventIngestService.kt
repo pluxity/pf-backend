@@ -30,9 +30,6 @@ class SafetyEventIngestService(
         if (request.eventType.category != EventCategory.SAFETY) {
             throw CustomException(SafersErrorCode.INVALID_EVENT_TYPE, request.eventType.name)
         }
-        if (eventRepository.findByEventId(request.eventId) != null) {
-            throw CustomException(SafersErrorCode.DUPLICATE_EVENT, request.eventId)
-        }
 
         val event =
             Event(
@@ -56,7 +53,7 @@ class SafetyEventIngestService(
             try {
                 eventRepository.save(event)
             } catch (_: DataIntegrityViolationException) {
-                // uk_events_event_id 등 unique 제약 — 사전 체크와 save 사이의 race 케이스
+                // uk_events_event_id 위반 — 동일 eventId 중복 (재시도 또는 동시 요청)
                 throw CustomException(SafersErrorCode.DUPLICATE_EVENT, request.eventId)
             }
 
