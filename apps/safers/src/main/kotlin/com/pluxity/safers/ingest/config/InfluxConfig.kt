@@ -27,21 +27,24 @@ class InfluxConfig {
         )
 
     @Bean(destroyMethod = "close")
-    fun writeApi(client: InfluxDBClient): WriteApi {
+    fun writeApi(
+        client: InfluxDBClient,
+        props: InfluxProperties,
+    ): WriteApi {
         val writeApi =
             client.makeWriteApi(
                 WriteOptions
                     .builder()
-                    .batchSize(1000) // 1000건 모이면 flush
-                    .flushInterval(1000) // 또는 1초마다 강제 flush (먼저 도달)
-                    .bufferLimit(10_000) // buffer 1만 건 초과 시 백프레셔
-                    .retryInterval(5_000) // 실패 시 5초 후 재시도
-                    .maxRetries(3)
+                    .batchSize(props.batchSize)
+                    .flushInterval(props.flushIntervalMs)
+                    .bufferLimit(props.bufferLimit)
+                    .retryInterval(props.retryIntervalMs)
+                    .maxRetries(props.maxRetries)
                     .build(),
             )
 
-        writeApi.listenEvents(WriteErrorEvent::class.java) {
-            log.error { "[InfluxDB] write failed (final)" }
+        writeApi.listenEvents(WriteErrorEvent::class.java) { event ->
+            log.error(event.throwable) { "[InfluxDB] write failed: ${event.throwable.message}" }
             // dead-letter?
         }
         writeApi.listenEvents(WriteRetriableErrorEvent::class.java) {

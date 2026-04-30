@@ -34,11 +34,7 @@ class InfluxTelemetryWriter(
         value: Any,
     ) {
         when (value) {
-            is Int -> point.addField(key, value)
-            is Long -> point.addField(key, value)
-            is Double -> point.addField(key, value)
-            is Float -> point.addField(key, value.toDouble())
-            is Number -> point.addField(key, value.toDouble())
+            is Number -> point.addField(key, value)
             is Boolean -> point.addField(key, value)
             is String -> point.addField(key, value)
             else -> point.addField(key, value.toString())
