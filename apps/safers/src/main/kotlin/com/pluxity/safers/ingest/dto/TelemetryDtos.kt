@@ -1,8 +1,18 @@
 package com.pluxity.safers.ingest.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Size
 import java.time.LocalDateTime
+
+@Schema(description = "telemetry 배치 수집 요청 — 수집모듈 forwarder 가 1초/100건 단위로 묶어 전송")
+data class TelemetryBatchRequest(
+    @field:Valid
+    @field:Size(min = 1, max = 500)
+    @field:Schema(description = "정규화 envelope 묶음 (1~500건)")
+    val samples: List<TelemetryRequest>,
+)
 
 @Schema(description = "정규화 telemetry envelope (수집모듈이 forward)")
 data class TelemetryRequest(
