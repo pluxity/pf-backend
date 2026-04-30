@@ -31,6 +31,15 @@ fun dummyEventResponse(
         site = null,
         snapshot = snapshot,
         video = video,
+        severity = null,
+        source = null,
+        deviceId = null,
+        bandId = null,
+        lat = null,
+        lon = null,
+        alt = null,
+        accuracyM = null,
+        payload = null,
     )
 
 fun dummyEventCreateRequest(

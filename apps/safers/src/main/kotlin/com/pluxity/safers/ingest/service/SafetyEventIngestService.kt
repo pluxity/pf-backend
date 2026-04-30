@@ -11,6 +11,7 @@ import com.pluxity.safers.ingest.dto.SafetyEventResponse
 import com.pluxity.safers.ingest.dto.toSafetyResponse
 import com.pluxity.safers.ingest.repository.DeviceRepository
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -51,7 +52,13 @@ class SafetyEventIngestService(
                 accuracyM = request.rawPosition?.accuracyM,
                 payload = request.payload,
             )
-        val saved = eventRepository.save(event)
+        val saved =
+            try {
+                eventRepository.save(event)
+            } catch (_: DataIntegrityViolationException) {
+                // uk_events_event_id 등 unique 제약 — 사전 체크와 save 사이의 race 케이스
+                throw CustomException(SafersErrorCode.DUPLICATE_EVENT, request.eventId)
+            }
 
         touchDeviceLastSeen(siteId, request.deviceId, request.bandId, request.occurredAt)
 
