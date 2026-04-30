@@ -19,6 +19,8 @@ enum class SafersErrorCode(
     PLAYBACK_REQUEST_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "재생 요청에 대한 응답을 받지 못했습니다."),
     NOT_FOUND_DEVICE(HttpStatus.NOT_FOUND, "ID가 %s인 디바이스를 찾을 수 없습니다."),
     DUPLICATE_DEVICE(HttpStatus.CONFLICT, "ID가 %s인 디바이스가 이미 존재합니다."),
+    DUPLICATE_EVENT(HttpStatus.CONFLICT, "ID가 %s인 이벤트가 이미 존재합니다."),
+    INVALID_EVENT_TYPE(HttpStatus.BAD_REQUEST, "안전 이벤트 ingest 에 허용되지 않는 EventType 입니다: %s"),
     ;
 
     override fun getHttpStatus(): HttpStatus = httpStatus

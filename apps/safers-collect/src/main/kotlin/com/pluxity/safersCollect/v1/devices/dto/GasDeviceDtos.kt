@@ -1,9 +1,8 @@
 package com.pluxity.safersCollect.v1.devices.dto
 
+import com.pluxity.safersCollect.v1.devices.enums.DeviceStatus
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
-
-enum class DeviceStatus { ACTIVE, OFFLINE }
 
 @Schema(description = "3D 모델 로컬 좌표")
 data class InstallLocal(

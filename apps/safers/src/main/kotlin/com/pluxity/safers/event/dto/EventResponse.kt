@@ -20,8 +20,8 @@ data class EventResponse(
     val category: EventCategory,
     @field:Schema(description = "이벤트 유형", example = "NO_HELMET")
     val type: EventType,
-    @field:Schema(description = "추적 ID", example = "12345")
-    val trackId: Long,
+    @field:Schema(description = "추적 ID", example = "12345", nullable = true)
+    val trackId: Long?,
     @field:Schema(description = "이벤트명", example = "헬멧 미착용 감지")
     val name: String,
     @field:Schema(description = "신뢰도 (0.0 ~ 1.0)", example = "0.95")

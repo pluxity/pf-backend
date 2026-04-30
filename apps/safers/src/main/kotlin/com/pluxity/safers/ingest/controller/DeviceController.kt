@@ -4,9 +4,9 @@ import com.pluxity.common.core.response.DataResponseBody
 import com.pluxity.common.core.response.ErrorResponseBody
 import com.pluxity.safers.ingest.dto.DeviceCreateRequest
 import com.pluxity.safers.ingest.dto.DeviceResponse
-import com.pluxity.safers.ingest.dto.DeviceStatus
-import com.pluxity.safers.ingest.dto.DeviceType
 import com.pluxity.safers.ingest.dto.DeviceUpdateRequest
+import com.pluxity.safers.ingest.enums.DeviceStatus
+import com.pluxity.safers.ingest.enums.DeviceType
 import com.pluxity.safers.ingest.service.DeviceService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter

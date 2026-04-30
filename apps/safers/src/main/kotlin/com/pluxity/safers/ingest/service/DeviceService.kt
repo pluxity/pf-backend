@@ -4,11 +4,11 @@ import com.pluxity.common.core.exception.CustomException
 import com.pluxity.safers.global.constant.SafersErrorCode
 import com.pluxity.safers.ingest.dto.DeviceCreateRequest
 import com.pluxity.safers.ingest.dto.DeviceResponse
-import com.pluxity.safers.ingest.dto.DeviceStatus
-import com.pluxity.safers.ingest.dto.DeviceType
 import com.pluxity.safers.ingest.dto.DeviceUpdateRequest
 import com.pluxity.safers.ingest.dto.toResponse
 import com.pluxity.safers.ingest.entity.Device
+import com.pluxity.safers.ingest.enums.DeviceStatus
+import com.pluxity.safers.ingest.enums.DeviceType
 import com.pluxity.safers.ingest.repository.DeviceRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

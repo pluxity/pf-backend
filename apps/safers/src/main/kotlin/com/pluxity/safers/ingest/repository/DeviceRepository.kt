@@ -1,8 +1,8 @@
 package com.pluxity.safers.ingest.repository
 
-import com.pluxity.safers.ingest.dto.DeviceStatus
-import com.pluxity.safers.ingest.dto.DeviceType
 import com.pluxity.safers.ingest.entity.Device
+import com.pluxity.safers.ingest.enums.DeviceStatus
+import com.pluxity.safers.ingest.enums.DeviceType
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param

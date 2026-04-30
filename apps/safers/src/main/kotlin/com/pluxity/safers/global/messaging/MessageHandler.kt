@@ -13,13 +13,13 @@ class MessageHandler(
     fun testEventCreated(
         @Payload payload: EventResponse,
     ) {
-        messageSender.sendEventCreated(payload)
+        messageSender.sendCctvEventCreated(payload)
     }
 
     @MessageMapping("/test/event-video-registered")
     fun testEventVideoRegistered(
         @Payload payload: EventResponse,
     ) {
-        messageSender.sendEventVideoRegistered(payload)
+        messageSender.sendCctvEventVideoRegistered(payload)
     }
 }
