@@ -16,6 +16,7 @@ dependencies {
     implementation(rootProject.libs.bundles.coroutines)
     implementation(rootProject.libs.logbook)
     implementation(rootProject.libs.spring.boot.starter.data.redis)
+    implementation(rootProject.libs.influxdb)
 
     // Hibernate Spatial + JTS (Site polygon)
     implementation(rootProject.libs.bundles.spatial)

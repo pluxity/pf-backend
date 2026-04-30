@@ -36,6 +36,9 @@ kotest-extensions-spring = "1.1.3"
 mockk = "1.14.5"
 springmockk = "5.0.1"
 
+# Influx
+influxdb = "7.3.0"
+
 [libraries]
 # Spring Boot Starters
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
@@ -64,6 +67,7 @@ kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 # Database
 postgresql = { module = "org.postgresql:postgresql" }
 h2 = { module = "com.h2database:h2" }
+influxdb = {module = "com.influxdb:influxdb-client-java", version.ref = "influxdb"}
 flyway-starter = { module = "org.springframework.boot:spring-boot-starter-flyway" }
 flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }
 

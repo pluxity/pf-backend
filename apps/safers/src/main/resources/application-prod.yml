@@ -53,3 +53,9 @@ llm:
   ollama:
     base-url: http://192.168.10.182:11434
     model: qwen3:14b
+
+influx:
+  url: ${INFLUX_URL}
+  token: ${INFLUX_TOKEN}
+  org: ${INFLUX_ORG:pluxity}
+  bucket: ${INFLUX_BUCKET:safety}
