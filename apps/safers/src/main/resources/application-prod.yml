@@ -59,3 +59,8 @@ influx:
   token: ${INFLUX_TOKEN}
   org: ${INFLUX_ORG:pluxity}
   bucket: ${INFLUX_BUCKET:safety}
+  batch-size: ${INFLUX_BATCH_SIZE:1000}
+  flush-interval-ms: ${INFLUX_FLUSH_INTERVAL_MS:1000}
+  buffer-limit: ${INFLUX_BUFFER_LIMIT:10000}
+  retry-interval-ms: ${INFLUX_RETRY_INTERVAL_MS:5000}
+  max-retries: ${INFLUX_MAX_RETRIES:3}
