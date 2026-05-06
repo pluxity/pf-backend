@@ -1,5 +1,7 @@
 package com.pluxity.safersCollect.v1.collect.controller
 
+import com.pluxity.safersCollect.buffer.TelemetryBuffer
+import com.pluxity.safersCollect.v1.collect.adapter.BandTelemetryAdapter
 import com.pluxity.safersCollect.v1.collect.dto.BandCollectRequest
 import com.pluxity.safersCollect.v1.collect.dto.BandEventRequest
 import io.swagger.v3.oas.annotations.Operation
@@ -13,13 +15,16 @@ import org.springframework.web.bind.annotation.RestController
 @Tag(name = "2. 스마트밴드 수집", description = "근로자 웨어러블 측정값 / 이상 이벤트")
 @RestController
 @RequestMapping("/collect/band")
-class BandCollectController {
+class BandCollectController(
+    val adapter: BandTelemetryAdapter,
+    val buffer: TelemetryBuffer,
+) {
     @Operation(summary = "스마트밴드 측정값 수집", description = "위치/체온/심박수/SpO2 등. 1~500건 batch.")
     @PostMapping
     fun collect(
         @Valid @RequestBody request: BandCollectRequest,
     ) {
-        // TODO
+        buffer.enqueueAll(adapter.toEnvelopes(request))
     }
 
     @Operation(

@@ -7,5 +7,13 @@ logging:
     com: DEBUG
 
 safety-collector:
+  site:
+    id: ${SAFERS_SITE_ID}                           # 사이트별 다름 — 환경변수 필수
+  central:
+    ingest-url: ${CENTRAL_INGEST_URL}
+    api-key: ${INGEST_API_KEY}
   buffer:
     in-memory-max: 10000
+  forwarder:
+    batch-size: 100
+    flush-interval-ms: 1000

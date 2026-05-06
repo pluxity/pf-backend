@@ -13,7 +13,14 @@ class TelemetryBufferTest :
 
         fun props(capacity: Int) =
             SafersCollectProperties(
+                site = SafersCollectProperties.Site(id = 0L),
+                central = SafersCollectProperties.Central(ingestUrl = "http://test", apiKey = "test"),
                 buffer = SafersCollectProperties.Buffer(inMemoryMax = capacity),
+                forwarder =
+                    SafersCollectProperties.Forwarder(
+                        batchSize = 100,
+                        flushIntervalMs = 1000,
+                    ),
             )
 
         fun env(id: String) =
