@@ -1,7 +1,6 @@
 package com.pluxity.safersCollect.v1.collect.controller
 
 import com.pluxity.safersCollect.buffer.TelemetryBuffer
-import com.pluxity.safersCollect.forwarder.TelemetryForwarder
 import com.pluxity.safersCollect.v1.collect.adapter.GasTelemetryAdapter
 import com.pluxity.safersCollect.v1.collect.dto.GasCollectRequest
 import com.pluxity.safersCollect.v1.collect.dto.GasEventRequest
