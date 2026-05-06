@@ -1,8 +1,10 @@
 package com.pluxity.safersCollect
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.boot.runApplication
 
+@ConfigurationPropertiesScan
 @SpringBootApplication
 class SafersCollectApplication
 
