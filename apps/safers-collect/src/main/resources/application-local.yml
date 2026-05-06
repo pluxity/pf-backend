@@ -5,3 +5,8 @@ spring:
 logging:
   level:
     com: DEBUG
+
+safety-collector:
+  buffer:
+    in-memory-max: 10000
+
