@@ -15,3 +15,7 @@ configurations.all {
     exclude(group = "org.postgresql", module = "postgresql")
     exclude(group = "com.github.gavlyukovskiy", module = "p6spy-spring-boot-starter")
 }
+
+dependencies {
+    implementation(rootProject.libs.spring.boot.starter.webflux)
+}
