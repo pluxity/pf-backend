@@ -25,7 +25,7 @@ class BandTelemetryAdapterTest :
                                 rawPosition =
                                     RawPosition(
                                         lat = 37.5665,
-                                        lng = 126.9780,
+                                        lon = 126.9780,
                                         accuracyM = 3.5,
                                     ),
                                 vitals =
@@ -46,11 +46,11 @@ class BandTelemetryAdapterTest :
                 Then("envelope 1개 — Band 는 fan-out 안 함") {
                     envelopes.size shouldBe 1
                 }
-                Then("fields 에 lat/lng/accuracy_m/heart_rate_bpm/body_temp_c/spo2/step/battery 8개 모두") {
+                Then("fields 에 lat/lon/accuracy_m/heart_rate_bpm/body_temp_c/spo2/step/battery 8개 모두") {
                     envelopes.first().fields.keys shouldBe
                         setOf(
                             "lat",
-                            "lng",
+                            "lon",
                             "accuracy_m",
                             "heart_rate_bpm",
                             "body_temp_c",
@@ -76,7 +76,7 @@ class BandTelemetryAdapterTest :
                                 rawPosition =
                                     RawPosition(
                                         lat = 37.5665,
-                                        lng = 126.9780,
+                                        lon = 126.9780,
                                         accuracyM = null,
                                     ),
                                 vitals = null,
@@ -87,8 +87,8 @@ class BandTelemetryAdapterTest :
                 )
             When("toEnvelopes 호출") {
                 val envelopes = adapter.toEnvelopes(request)
-                Then("fields 에 lat/lng 은 있고 accuracy_m 는 없음") {
-                    envelopes.first().fields.keys shouldBe setOf("lat", "lng", "battery")
+                Then("fields 에 lat/lon 은 있고 accuracy_m 는 없음") {
+                    envelopes.first().fields.keys shouldBe setOf("lat", "lon", "battery")
                 }
             }
         }

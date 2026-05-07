@@ -1,6 +1,8 @@
 package com.pluxity.safersCollect.v1.collect.controller
 
 import com.pluxity.safersCollect.buffer.TelemetryBuffer
+import com.pluxity.safersCollect.forwarder.EventForwarder
+import com.pluxity.safersCollect.v1.collect.adapter.BandEventAdapter
 import com.pluxity.safersCollect.v1.collect.adapter.BandTelemetryAdapter
 import com.pluxity.safersCollect.v1.collect.dto.BandCollectRequest
 import com.pluxity.safersCollect.v1.collect.dto.BandEventRequest
@@ -17,7 +19,9 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/collect/band")
 class BandCollectController(
     private val adapter: BandTelemetryAdapter,
+    private val bandEventAdapter: BandEventAdapter,
     private val buffer: TelemetryBuffer,
+    private val eventForwarder: EventForwarder,
 ) {
     @Operation(summary = "스마트밴드 측정값 수집", description = "위치/체온/심박수/SpO2 등. 1~500건 batch.")
     @PostMapping
@@ -29,12 +33,12 @@ class BandCollectController(
 
     @Operation(
         summary = "스마트밴드 이상 이벤트 수집",
-        description = "VITAL_ABNORMAL / FALL_DETECTED / OFFLINE 을 eventType 으로 구분해 단일 엔드포인트에서 처리.",
+        description = "VITAL_ABNORMAL / FALL_DETECTED / OFFLINE 을 eventType 으로 구분해 단일 엔드포인트에서 처리. 즉시 forward.",
     )
     @PostMapping("/events")
     fun event(
         @Valid @RequestBody request: BandEventRequest,
     ) {
-        // TODO
+        eventForwarder.forward(bandEventAdapter.toEnvelope(request))
     }
 }

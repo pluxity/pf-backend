@@ -12,7 +12,7 @@ import java.time.LocalDateTime
 @Schema(description = "기기 측정 raw 위치 (옵션)")
 data class RawPosition(
     @field:Schema(example = "37.501234") val lat: Double,
-    @field:Schema(example = "127.039876") val lng: Double,
+    @field:Schema(example = "127.039876") val lon: Double,
     @field:Schema(description = "측위 정확도 (m)", example = "3.5", nullable = true) val accuracyM: Double? = null,
 )
 

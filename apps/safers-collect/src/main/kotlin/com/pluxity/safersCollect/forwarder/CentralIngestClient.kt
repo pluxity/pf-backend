@@ -1,6 +1,7 @@
 package com.pluxity.safersCollect.forwarder
 
 import com.pluxity.safersCollect.config.SafersCollectProperties
+import com.pluxity.safersCollect.forwarder.dto.EventEnvelope
 import com.pluxity.safersCollect.forwarder.dto.TelemetryBatchRequest
 import com.pluxity.safersCollect.forwarder.dto.TelemetryEnvelope
 import org.springframework.stereotype.Component
@@ -22,6 +23,16 @@ class CentralIngestClient(
             .post()
             .uri("/v1/sites/{siteId}/telemetry", props.site.id)
             .bodyValue(TelemetryBatchRequest(envelopes))
+            .retrieve()
+            .toBodilessEntity()
+            .block()
+    }
+
+    fun postEvent(envelope: EventEnvelope) {
+        webClient
+            .post()
+            .uri("/v1/sites/{siteId}/events", props.site.id)
+            .bodyValue(envelope)
             .retrieve()
             .toBodilessEntity()
             .block()
