@@ -30,7 +30,7 @@ class SosEventAdapter {
                 },
         )
 
-    private fun RawPosition.toWire(): WireRawPosition = WireRawPosition(lat = lat, lon = lon, accuracyM = accuracyM)
+    private fun RawPosition.toWire(): WireRawPosition = WireRawPosition(lat = lat, lon = lon, alt = alt, accuracyM = accuracyM)
 
     private fun BandVitals.toMap(): Map<String, Any> =
         buildMap {

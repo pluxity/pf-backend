@@ -13,6 +13,7 @@ class BandTelemetryAdapter {
         const val WEAR_STATE = "wear_state"
         const val LAT = "lat"
         const val LON = "lon"
+        const val ALT = "alt"
         const val ACCURACY_M = "accuracy_m"
         const val HEART_RATE_BPM = "heart_rate_bpm"
         const val SPO2 = "spo2"
@@ -38,6 +39,7 @@ class BandTelemetryAdapter {
                         sample.rawPosition?.let { position ->
                             put(LAT, position.lat)
                             put(LON, position.lon)
+                            position.alt?.let { put(ALT, it) }
                             position.accuracyM?.let { put(ACCURACY_M, it) }
                         }
                         sample.vitals?.let { vital ->

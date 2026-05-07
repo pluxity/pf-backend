@@ -27,7 +27,7 @@ class BandEventAdapter {
                         ?.takeIf { it.isNotEmpty() }
                         ?.let { put(ABNORMAL, it.map { item -> item.toMap() }) }
                     request.payload.impactG?.let { put(IMPACT_G, it) }
-                    request.payload.lastSeenAt?.let { put(LAST_SEEN_AT, it.toString()) }
+                    request.payload.lastSeenAt?.let { put(LAST_SEEN_AT, it) }
                 },
         )
 
@@ -38,7 +38,7 @@ class BandEventAdapter {
             BandEventType.BAND_OFFLINE -> WireEventType.BAND_OFFLINE
         }
 
-    private fun RawPosition.toWire(): WireRawPosition = WireRawPosition(lat = lat, lon = lon, accuracyM = accuracyM)
+    private fun RawPosition.toWire(): WireRawPosition = WireRawPosition(lat = lat, lon = lon, alt = alt, accuracyM = accuracyM)
 
     private fun BandAbnormal.toMap(): Map<String, Any> =
         buildMap {
