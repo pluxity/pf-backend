@@ -26,9 +26,11 @@ class BackpressurePolicy(
     ) {
         when (policy) {
             DropPolicy.DROP_OLDEST -> {
-                queue.poll()
-                droppedCounter.increment()
-                queue.offer(item)
+                while (!queue.offer(item)) {
+                    if (queue.poll() != null) {
+                        droppedCounter.increment()
+                    }
+                }
             }
         }
     }

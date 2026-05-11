@@ -56,19 +56,19 @@ class BackpressurePolicyTest :
             }
         }
 
-        Given("DROP_OLDEST 정책 + 빈 큐 (overflow 가 아닌 비정상 호출)") {
+        Given("DROP_OLDEST 정책 + 빈 큐 (overflow 가 아닌 호출)") {
             val backpressure = BackpressurePolicy(props(DropPolicy.DROP_OLDEST), SimpleMeterRegistry())
             val queue = LinkedBlockingQueue<TelemetryEnvelope>(3)
 
             When("onOverflow 호출") {
                 backpressure.onOverflow(queue, env("X"))
 
-                Then("poll 은 null 반환하고 offer 는 성공 — 큐에 1개만 남음") {
+                Then("offer 가 즉시 성공 → poll 호출 없음 — 큐에 1개만 남음") {
                     queue.toList().map { it.sourceId } shouldBe listOf("X")
                 }
 
-                Then("dropped 카운터는 호출 자체로 1 증가 (비정상 호출도 drop 시도로 집계)") {
-                    backpressure.droppedTotal() shouldBe 1L
+                Then("dropped 카운터는 0 — 실제 drop 발생 안 함") {
+                    backpressure.droppedTotal() shouldBe 0L
                 }
             }
         }
