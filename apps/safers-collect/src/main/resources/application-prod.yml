@@ -12,8 +12,9 @@ safety-collector:
   central:
     ingest-url: ${CENTRAL_INGEST_URL}
     api-key: ${INGEST_API_KEY}
-  buffer:
-    in-memory-max: 10000
+  queue:
+    normal-capacity: ${QUEUE_NORMAL_CAPACITY:10000}
+    drop-policy: ${QUEUE_DROP_POLICY:DROP_OLDEST}
   forwarder:
-    batch-size: 100
-    flush-interval-ms: 1000
+    batch-size: ${FORWARDER_BATCH_SIZE:100}
+    flush-interval-ms: ${FORWARDER_FLUSH_INTERVAL_MS:1000}

@@ -1,7 +1,7 @@
 package com.pluxity.safersCollect.v1.collect.controller
 
-import com.pluxity.safersCollect.buffer.TelemetryBuffer
 import com.pluxity.safersCollect.forwarder.EventForwarder
+import com.pluxity.safersCollect.queue.ForwardQueue
 import com.pluxity.safersCollect.v1.collect.adapter.BandEventAdapter
 import com.pluxity.safersCollect.v1.collect.adapter.BandTelemetryAdapter
 import com.pluxity.safersCollect.v1.collect.dto.BandCollectRequest
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController
 class BandCollectController(
     private val adapter: BandTelemetryAdapter,
     private val bandEventAdapter: BandEventAdapter,
-    private val buffer: TelemetryBuffer,
+    private val queue: ForwardQueue,
     private val eventForwarder: EventForwarder,
 ) {
     @Operation(summary = "스마트밴드 측정값 수집", description = "위치/체온/심박수/SpO2 등. 1~500건 batch.")
@@ -28,7 +28,7 @@ class BandCollectController(
     fun collect(
         @Valid @RequestBody request: BandCollectRequest,
     ) {
-        buffer.enqueueAll(adapter.toEnvelopes(request))
+        queue.enqueueAll(adapter.toEnvelopes(request))
     }
 
     @Operation(

@@ -1,12 +1,13 @@
 package com.pluxity.safersCollect.config
 
+import com.pluxity.safersCollect.queue.DropPolicy
 import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties(prefix = "safety-collector")
 data class SafersCollectProperties(
     val site: Site,
     val central: Central,
-    val buffer: Buffer,
+    val queue: Queue,
     val forwarder: Forwarder,
 ) {
     data class Site(
@@ -18,8 +19,9 @@ data class SafersCollectProperties(
         val apiKey: String,
     )
 
-    data class Buffer(
-        val inMemoryMax: Int,
+    data class Queue(
+        val normalCapacity: Int,
+        val dropPolicy: DropPolicy = DropPolicy.DROP_OLDEST,
     )
 
     data class Forwarder(
