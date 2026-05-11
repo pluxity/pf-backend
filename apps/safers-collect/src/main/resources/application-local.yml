@@ -12,8 +12,9 @@ safety-collector:
   central:
     ingest-url: ${CENTRAL_INGEST_URL:http://localhost:8080}
     api-key: ${INGEST_API_KEY:pluxity}
-  buffer:
-    in-memory-max: 10000                            # 백프레셔 임계 (drop oldest)
+  queue:
+    normal-capacity: 10000                          # in-memory bounded queue capacity
+    drop-policy: DROP_OLDEST                        # 큐 가득 시 가장 오래된 envelope drop
   forwarder:
     batch-size: 100                                 # 한 번에 forward 할 envelope 수
     flush-interval-ms: 1000                         # @Scheduled fixedDelay (ms)
