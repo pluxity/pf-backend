@@ -1,6 +1,6 @@
 package com.pluxity.safersCollect.v1.collect.adapter
 
-import com.pluxity.safersCollect.v1.collect.dto.BandCollectRequest
+import com.pluxity.safersCollect.v1.collect.dto.BandTelemetry
 import com.pluxity.safersCollect.v1.collect.dto.BandVitals
 import com.pluxity.safersCollect.v1.collect.dto.RawPosition
 import com.pluxity.safersCollect.v1.collect.enums.WearState
@@ -15,7 +15,7 @@ class BandTelemetryAdapterTest :
 
         Given("rawPosition / vitals / wearState / battery 모두 채워진 sample") {
             val request =
-                BandCollectRequest(
+                BandTelemetry(
                     bandId = "BAND-A1B2C3",
                     timestamp = LocalDateTime.of(2026, 4, 24, 10, 15, 30),
                     rawPosition =
@@ -61,7 +61,7 @@ class BandTelemetryAdapterTest :
 
         Given("rawPosition.accuracyM 만 null") {
             val request =
-                BandCollectRequest(
+                BandTelemetry(
                     bandId = "BAND-A1B2C3",
                     timestamp = LocalDateTime.of(2026, 4, 24, 10, 15, 30),
                     rawPosition =
@@ -84,7 +84,7 @@ class BandTelemetryAdapterTest :
 
         Given("optional 필드 전부 null 인 최소 sample") {
             val request =
-                BandCollectRequest(
+                BandTelemetry(
                     bandId = "BAND-MIN",
                     timestamp = LocalDateTime.of(2026, 1, 1, 0, 0, 0),
                     rawPosition = null,

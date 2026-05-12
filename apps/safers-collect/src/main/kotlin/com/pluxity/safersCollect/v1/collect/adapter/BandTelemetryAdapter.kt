@@ -2,7 +2,7 @@ package com.pluxity.safersCollect.v1.collect.adapter
 
 import com.pluxity.safersCollect.forwarder.dto.TelemetryEnvelope
 import com.pluxity.safersCollect.forwarder.enums.SourceType
-import com.pluxity.safersCollect.v1.collect.dto.BandCollectRequest
+import com.pluxity.safersCollect.v1.collect.dto.BandTelemetry
 import org.springframework.stereotype.Component
 
 @Component
@@ -22,7 +22,7 @@ class BandTelemetryAdapter {
         const val BATTERY = "battery"
     }
 
-    fun toEnvelopes(request: BandCollectRequest): List<TelemetryEnvelope> =
+    fun toEnvelopes(request: BandTelemetry): List<TelemetryEnvelope> =
         listOf(
             TelemetryEnvelope(
                 sourceType = SourceType.BAND,

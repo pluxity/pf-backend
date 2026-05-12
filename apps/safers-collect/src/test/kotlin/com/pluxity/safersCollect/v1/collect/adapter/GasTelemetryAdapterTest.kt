@@ -1,7 +1,7 @@
 package com.pluxity.safersCollect.v1.collect.adapter
 
-import com.pluxity.safersCollect.v1.collect.dto.GasCollectRequest
 import com.pluxity.safersCollect.v1.collect.dto.GasMeasurement
+import com.pluxity.safersCollect.v1.collect.dto.GasTelemetry
 import com.pluxity.safersCollect.v1.collect.enums.GasType
 import com.pluxity.safersCollect.v1.collect.enums.GasUnit
 import io.kotest.core.spec.style.BehaviorSpec
@@ -15,7 +15,7 @@ class GasTelemetryAdapterTest :
 
         Given("한 sample 에 O2/H2S/CO/LEL 4개 측정값") {
             val request =
-                GasCollectRequest(
+                GasTelemetry(
                     deviceId = "GAS-MH203-01",
                     measurements =
                         listOf(
@@ -44,7 +44,7 @@ class GasTelemetryAdapterTest :
 
         Given("battery 와 signalRssi 가 모두 null 인 sample") {
             val request =
-                GasCollectRequest(
+                GasTelemetry(
                     deviceId = "GAS-MH203-01",
                     measurements =
                         listOf(
@@ -62,10 +62,27 @@ class GasTelemetryAdapterTest :
             }
         }
 
+        Given("measurements 가 빈 리스트인 sample — validation 통과를 가정한 어댑터 호출") {
+            val request =
+                GasTelemetry(
+                    deviceId = "GAS-MH203-01",
+                    measurements = emptyList(),
+                    battery = null,
+                    signalRssi = null,
+                    timestamp = LocalDateTime.now(),
+                )
+            When("toEnvelopes 호출") {
+                val envelopes = adapter.toEnvelopes(request)
+                Then("envelope 0개 — 어댑터는 throw 없이 빈 리스트 반환 (실제 validation 은 @Size(min=1) 으로 컨트롤러 단에서 차단)") {
+                    envelopes shouldBe emptyList()
+                }
+            }
+        }
+
         Given("타임스탬프 2026-04-24T10:15:30, deviceId GAS-MH203-01 sample") {
             val timestamp = LocalDateTime.of(2026, 4, 24, 10, 15, 30)
             val request =
-                GasCollectRequest(
+                GasTelemetry(
                     deviceId = "GAS-MH203-01",
                     measurements =
                         listOf(

@@ -2,7 +2,7 @@ package com.pluxity.safersCollect.v1.collect.adapter
 
 import com.pluxity.safersCollect.forwarder.dto.TelemetryEnvelope
 import com.pluxity.safersCollect.forwarder.enums.SourceType
-import com.pluxity.safersCollect.v1.collect.dto.GasCollectRequest
+import com.pluxity.safersCollect.v1.collect.dto.GasTelemetry
 import org.springframework.stereotype.Component
 
 @Component
@@ -17,7 +17,7 @@ class GasTelemetryAdapter {
         const val GAS_SIGNAL_RSSI = "signal_rssi"
     }
 
-    fun toEnvelopes(request: GasCollectRequest): List<TelemetryEnvelope> =
+    fun toEnvelopes(request: GasTelemetry): List<TelemetryEnvelope> =
         request.measurements.map { measurement ->
             TelemetryEnvelope(
                 sourceId = request.deviceId,

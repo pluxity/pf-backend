@@ -4,8 +4,8 @@ import com.pluxity.safersCollect.forwarder.EventForwarder
 import com.pluxity.safersCollect.queue.ForwardQueue
 import com.pluxity.safersCollect.v1.collect.adapter.GasEventAdapter
 import com.pluxity.safersCollect.v1.collect.adapter.GasTelemetryAdapter
-import com.pluxity.safersCollect.v1.collect.dto.GasCollectRequest
 import com.pluxity.safersCollect.v1.collect.dto.GasEventRequest
+import com.pluxity.safersCollect.v1.collect.dto.GasTelemetry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
@@ -26,7 +26,7 @@ class GasCollectController(
     @Operation(summary = "유해가스 측정값 수집", description = "정상 범위 측정값 단건 시계열 적재용.")
     @PostMapping
     fun collect(
-        @Valid @RequestBody request: GasCollectRequest,
+        @Valid @RequestBody request: GasTelemetry,
     ) {
         queue.enqueueAll(gasAdapter.toEnvelopes(request))
     }

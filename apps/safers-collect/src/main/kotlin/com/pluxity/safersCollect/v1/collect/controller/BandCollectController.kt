@@ -4,8 +4,8 @@ import com.pluxity.safersCollect.forwarder.EventForwarder
 import com.pluxity.safersCollect.queue.ForwardQueue
 import com.pluxity.safersCollect.v1.collect.adapter.BandEventAdapter
 import com.pluxity.safersCollect.v1.collect.adapter.BandTelemetryAdapter
-import com.pluxity.safersCollect.v1.collect.dto.BandCollectRequest
 import com.pluxity.safersCollect.v1.collect.dto.BandEventRequest
+import com.pluxity.safersCollect.v1.collect.dto.BandTelemetry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
@@ -26,7 +26,7 @@ class BandCollectController(
     @Operation(summary = "스마트밴드 측정값 수집", description = "위치/체온/심박수/SpO2 등 단건.")
     @PostMapping
     fun collect(
-        @Valid @RequestBody request: BandCollectRequest,
+        @Valid @RequestBody request: BandTelemetry,
     ) {
         queue.enqueueAll(adapter.toEnvelopes(request))
     }
