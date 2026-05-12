@@ -6,7 +6,6 @@ import com.pluxity.safersCollect.v1.collect.enums.WearState
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.Size
 import java.time.LocalDateTime
 
 @Schema(description = "기기 측정 raw 위치 (옵션)")
@@ -19,14 +18,8 @@ data class RawPosition(
 
 // ───────────────────────────────────── 가스 측정값 ─────────────────────────────────────
 
-@Schema(description = "가스 측정값 수집 요청")
+@Schema(description = "가스 측정값 단건 수집 요청")
 data class GasCollectRequest(
-    @field:Valid
-    @field:Size(min = 1, max = 500)
-    val samples: List<GasSample>,
-)
-
-data class GasSample(
     @field:NotBlank @field:Schema(example = "GAS-MH203-01") val deviceId: String,
     @field:Schema(example = "2026-04-24T10:15:30") val timestamp: LocalDateTime,
     @field:Valid val measurements: List<GasMeasurement>,
@@ -42,14 +35,8 @@ data class GasMeasurement(
 
 // ───────────────────────────────────── 스마트밴드 측정값 ─────────────────────────────────────
 
-@Schema(description = "스마트밴드 측정값 수집 요청")
+@Schema(description = "스마트밴드 측정값 단건 수집 요청")
 data class BandCollectRequest(
-    @field:Valid
-    @field:Size(min = 1, max = 500)
-    val samples: List<BandSample>,
-)
-
-data class BandSample(
     @field:NotBlank @field:Schema(example = "BAND-A1B2C3") val bandId: String,
     @field:Schema(example = "2026-04-24T10:15:30") val timestamp: LocalDateTime,
     @field:Schema(nullable = true) val rawPosition: RawPosition? = null,

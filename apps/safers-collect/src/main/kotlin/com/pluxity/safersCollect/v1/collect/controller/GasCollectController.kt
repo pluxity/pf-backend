@@ -23,7 +23,7 @@ class GasCollectController(
     private val queue: ForwardQueue,
     private val eventForwarder: EventForwarder,
 ) {
-    @Operation(summary = "유해가스 측정값 수집", description = "정상 범위 측정값 시계열 적재용. 1~500건 batch.")
+    @Operation(summary = "유해가스 측정값 수집", description = "정상 범위 측정값 단건 시계열 적재용.")
     @PostMapping
     fun collect(
         @Valid @RequestBody request: GasCollectRequest,

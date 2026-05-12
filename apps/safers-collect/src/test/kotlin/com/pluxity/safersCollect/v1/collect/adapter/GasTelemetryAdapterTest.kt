@@ -2,7 +2,6 @@ package com.pluxity.safersCollect.v1.collect.adapter
 
 import com.pluxity.safersCollect.v1.collect.dto.GasCollectRequest
 import com.pluxity.safersCollect.v1.collect.dto.GasMeasurement
-import com.pluxity.safersCollect.v1.collect.dto.GasSample
 import com.pluxity.safersCollect.v1.collect.enums.GasType
 import com.pluxity.safersCollect.v1.collect.enums.GasUnit
 import io.kotest.core.spec.style.BehaviorSpec
@@ -17,38 +16,17 @@ class GasTelemetryAdapterTest :
         Given("한 sample 에 O2/H2S/CO/LEL 4개 측정값") {
             val request =
                 GasCollectRequest(
-                    samples =
+                    deviceId = "GAS-MH203-01",
+                    measurements =
                         listOf(
-                            GasSample(
-                                deviceId = "GAS-MH203-01",
-                                measurements =
-                                    listOf(
-                                        GasMeasurement(
-                                            gas = GasType.O2,
-                                            value = 3.1,
-                                            unit = GasUnit.PPM,
-                                        ),
-                                        GasMeasurement(
-                                            gas = GasType.H2S,
-                                            value = 1.2,
-                                            unit = GasUnit.PPM,
-                                        ),
-                                        GasMeasurement(
-                                            gas = GasType.CO,
-                                            value = 1.5,
-                                            unit = GasUnit.PPM,
-                                        ),
-                                        GasMeasurement(
-                                            gas = GasType.LEL,
-                                            value = 1.8,
-                                            unit = GasUnit.PPM,
-                                        ),
-                                    ),
-                                battery = 100,
-                                signalRssi = -68,
-                                timestamp = LocalDateTime.now(),
-                            ),
+                            GasMeasurement(gas = GasType.O2, value = 3.1, unit = GasUnit.PPM),
+                            GasMeasurement(gas = GasType.H2S, value = 1.2, unit = GasUnit.PPM),
+                            GasMeasurement(gas = GasType.CO, value = 1.5, unit = GasUnit.PPM),
+                            GasMeasurement(gas = GasType.LEL, value = 1.8, unit = GasUnit.PPM),
                         ),
+                    battery = 100,
+                    signalRssi = -68,
+                    timestamp = LocalDateTime.now(),
                 )
 
             When("toEnvelopes 호출") {
@@ -65,26 +43,16 @@ class GasTelemetryAdapterTest :
         }
 
         Given("battery 와 signalRssi 가 모두 null 인 sample") {
-
             val request =
                 GasCollectRequest(
-                    samples =
+                    deviceId = "GAS-MH203-01",
+                    measurements =
                         listOf(
-                            GasSample(
-                                deviceId = "GAS-MH203-01",
-                                measurements =
-                                    listOf(
-                                        GasMeasurement(
-                                            gas = GasType.O2,
-                                            value = 3.1,
-                                            unit = GasUnit.PPM,
-                                        ),
-                                    ),
-                                battery = null,
-                                signalRssi = null,
-                                timestamp = LocalDateTime.now(),
-                            ),
+                            GasMeasurement(gas = GasType.O2, value = 3.1, unit = GasUnit.PPM),
                         ),
+                    battery = null,
+                    signalRssi = null,
+                    timestamp = LocalDateTime.now(),
                 )
             When("toEnvelopes 호출") {
                 val envelopes = adapter.toEnvelopes(request)
@@ -96,31 +64,17 @@ class GasTelemetryAdapterTest :
 
         Given("타임스탬프 2026-04-24T10:15:30, deviceId GAS-MH203-01 sample") {
             val timestamp = LocalDateTime.of(2026, 4, 24, 10, 15, 30)
-
             val request =
                 GasCollectRequest(
-                    samples =
+                    deviceId = "GAS-MH203-01",
+                    measurements =
                         listOf(
-                            GasSample(
-                                deviceId = "GAS-MH203-01",
-                                measurements =
-                                    listOf(
-                                        GasMeasurement(
-                                            gas = GasType.O2,
-                                            value = 3.1,
-                                            unit = GasUnit.PPM,
-                                        ),
-                                        GasMeasurement(
-                                            gas = GasType.H2S,
-                                            value = 1.2,
-                                            unit = GasUnit.PPM,
-                                        ),
-                                    ),
-                                battery = 100,
-                                signalRssi = -68,
-                                timestamp = timestamp,
-                            ),
+                            GasMeasurement(gas = GasType.O2, value = 3.1, unit = GasUnit.PPM),
+                            GasMeasurement(gas = GasType.H2S, value = 1.2, unit = GasUnit.PPM),
                         ),
+                    battery = 100,
+                    signalRssi = -68,
+                    timestamp = timestamp,
                 )
             When("toEnvelopes 호출") {
                 val envelopes = adapter.toEnvelopes(request)
@@ -129,64 +83,6 @@ class GasTelemetryAdapterTest :
                         it.timestamp shouldBe timestamp
                         it.sourceId shouldBe "GAS-MH203-01"
                     }
-                }
-            }
-        }
-
-        Given("samples 2건 (각 3 가스, 2 가스)") {
-            val request =
-                GasCollectRequest(
-                    samples =
-                        listOf(
-                            GasSample(
-                                deviceId = "GAS-MH203-01",
-                                measurements =
-                                    listOf(
-                                        GasMeasurement(
-                                            gas = GasType.O2,
-                                            value = 3.1,
-                                            unit = GasUnit.PPM,
-                                        ),
-                                        GasMeasurement(
-                                            gas = GasType.H2S,
-                                            value = 1.2,
-                                            unit = GasUnit.PPM,
-                                        ),
-                                        GasMeasurement(
-                                            gas = GasType.CO,
-                                            value = 1.5,
-                                            unit = GasUnit.PPM,
-                                        ),
-                                    ),
-                                battery = 100,
-                                signalRssi = -68,
-                                timestamp = LocalDateTime.now(),
-                            ),
-                            GasSample(
-                                deviceId = "GAS-MH203-02",
-                                measurements =
-                                    listOf(
-                                        GasMeasurement(
-                                            gas = GasType.H2S,
-                                            value = 1.2,
-                                            unit = GasUnit.PPM,
-                                        ),
-                                        GasMeasurement(
-                                            gas = GasType.CO,
-                                            value = 1.5,
-                                            unit = GasUnit.PPM,
-                                        ),
-                                    ),
-                                battery = 100,
-                                signalRssi = -68,
-                                timestamp = LocalDateTime.now(),
-                            ),
-                        ),
-                )
-            When("toEnvelopes 호출") {
-                val envelopes = adapter.toEnvelopes(request)
-                Then("envelope 총 5개 (3+2) 가 List 로 평탄화되어 반환") {
-                    envelopes.size shouldBe 5
                 }
             }
         }

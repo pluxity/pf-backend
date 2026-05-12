@@ -23,33 +23,33 @@ class BandTelemetryAdapter {
     }
 
     fun toEnvelopes(request: BandCollectRequest): List<TelemetryEnvelope> =
-        request.samples.map { sample ->
+        listOf(
             TelemetryEnvelope(
                 sourceType = SourceType.BAND,
-                sourceId = sample.bandId,
-                timestamp = sample.timestamp,
+                sourceId = request.bandId,
+                timestamp = request.timestamp,
                 measurement = BAND_MEASUREMENT,
                 tags =
                     buildMap {
-                        put(BAND_ID, sample.bandId)
-                        sample.wearState?.let { put(WEAR_STATE, it.name) }
+                        put(BAND_ID, request.bandId)
+                        request.wearState?.let { put(WEAR_STATE, it.name) }
                     },
                 fields =
                     buildMap {
-                        sample.rawPosition?.let { position ->
+                        request.rawPosition?.let { position ->
                             put(LAT, position.lat)
                             put(LON, position.lon)
                             position.alt?.let { put(ALT, it) }
                             position.accuracyM?.let { put(ACCURACY_M, it) }
                         }
-                        sample.vitals?.let { vital ->
+                        request.vitals?.let { vital ->
                             vital.heartRateBpm?.let { put(HEART_RATE_BPM, it) }
                             vital.spo2?.let { put(SPO2, it) }
                             vital.bodyTempC?.let { put(BODY_TEMP_C, it) }
                             vital.step?.let { put(STEP, it) }
                         }
-                        sample.battery?.let { put(BATTERY, it) }
+                        request.battery?.let { put(BATTERY, it) }
                     },
-            )
-        }
+            ),
+        )
 }

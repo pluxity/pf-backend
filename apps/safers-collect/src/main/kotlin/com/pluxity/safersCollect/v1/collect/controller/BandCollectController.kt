@@ -23,7 +23,7 @@ class BandCollectController(
     private val queue: ForwardQueue,
     private val eventForwarder: EventForwarder,
 ) {
-    @Operation(summary = "스마트밴드 측정값 수집", description = "위치/체온/심박수/SpO2 등. 1~500건 batch.")
+    @Operation(summary = "스마트밴드 측정값 수집", description = "위치/체온/심박수/SpO2 등 단건.")
     @PostMapping
     fun collect(
         @Valid @RequestBody request: BandCollectRequest,

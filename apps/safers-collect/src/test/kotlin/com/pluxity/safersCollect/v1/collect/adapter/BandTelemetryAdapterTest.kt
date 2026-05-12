@@ -1,7 +1,6 @@
 package com.pluxity.safersCollect.v1.collect.adapter
 
 import com.pluxity.safersCollect.v1.collect.dto.BandCollectRequest
-import com.pluxity.safersCollect.v1.collect.dto.BandSample
 import com.pluxity.safersCollect.v1.collect.dto.BandVitals
 import com.pluxity.safersCollect.v1.collect.dto.RawPosition
 import com.pluxity.safersCollect.v1.collect.enums.WearState
@@ -17,28 +16,23 @@ class BandTelemetryAdapterTest :
         Given("rawPosition / vitals / wearState / battery 모두 채워진 sample") {
             val request =
                 BandCollectRequest(
-                    samples =
-                        listOf(
-                            BandSample(
-                                bandId = "BAND-A1B2C3",
-                                timestamp = LocalDateTime.of(2026, 4, 24, 10, 15, 30),
-                                rawPosition =
-                                    RawPosition(
-                                        lat = 37.5665,
-                                        lon = 126.9780,
-                                        accuracyM = 3.5,
-                                    ),
-                                vitals =
-                                    BandVitals(
-                                        heartRateBpm = 70,
-                                        bodyTempC = 36.7,
-                                        spo2 = 97,
-                                        step = 4321,
-                                    ),
-                                battery = 100,
-                                wearState = WearState.WORN,
-                            ),
+                    bandId = "BAND-A1B2C3",
+                    timestamp = LocalDateTime.of(2026, 4, 24, 10, 15, 30),
+                    rawPosition =
+                        RawPosition(
+                            lat = 37.5665,
+                            lon = 126.9780,
+                            accuracyM = 3.5,
                         ),
+                    vitals =
+                        BandVitals(
+                            heartRateBpm = 70,
+                            bodyTempC = 36.7,
+                            spo2 = 97,
+                            step = 4321,
+                        ),
+                    battery = 100,
+                    wearState = WearState.WORN,
                 )
 
             When("toEnvelopes 호출") {
@@ -68,22 +62,17 @@ class BandTelemetryAdapterTest :
         Given("rawPosition.accuracyM 만 null") {
             val request =
                 BandCollectRequest(
-                    samples =
-                        listOf(
-                            BandSample(
-                                bandId = "BAND-A1B2C3",
-                                timestamp = LocalDateTime.of(2026, 4, 24, 10, 15, 30),
-                                rawPosition =
-                                    RawPosition(
-                                        lat = 37.5665,
-                                        lon = 126.9780,
-                                        accuracyM = null,
-                                    ),
-                                vitals = null,
-                                battery = 100,
-                                wearState = WearState.WORN,
-                            ),
+                    bandId = "BAND-A1B2C3",
+                    timestamp = LocalDateTime.of(2026, 4, 24, 10, 15, 30),
+                    rawPosition =
+                        RawPosition(
+                            lat = 37.5665,
+                            lon = 126.9780,
+                            accuracyM = null,
                         ),
+                    vitals = null,
+                    battery = 100,
+                    wearState = WearState.WORN,
                 )
             When("toEnvelopes 호출") {
                 val envelopes = adapter.toEnvelopes(request)
@@ -93,43 +82,26 @@ class BandTelemetryAdapterTest :
             }
         }
 
-        Given("samples 3건 (각각 다른 bandId)") {
+        Given("optional 필드 전부 null 인 최소 sample") {
             val request =
                 BandCollectRequest(
-                    samples =
-                        listOf(
-                            BandSample(
-                                bandId = "BAND-01",
-                                timestamp = LocalDateTime.of(2026, 1, 1, 0, 0, 0),
-                                rawPosition = null,
-                                vitals = null,
-                                battery = null,
-                                wearState = null,
-                            ),
-                            BandSample(
-                                bandId = "BAND-02",
-                                timestamp = LocalDateTime.of(2026, 2, 1, 0, 0, 0),
-                                rawPosition = null,
-                                vitals = null,
-                                battery = null,
-                                wearState = null,
-                            ),
-                            BandSample(
-                                bandId = "BAND-03",
-                                timestamp = LocalDateTime.of(2026, 3, 1, 0, 0, 0),
-                                rawPosition = null,
-                                vitals = null,
-                                battery = null,
-                                wearState = null,
-                            ),
-                        ),
+                    bandId = "BAND-MIN",
+                    timestamp = LocalDateTime.of(2026, 1, 1, 0, 0, 0),
+                    rawPosition = null,
+                    vitals = null,
+                    battery = null,
+                    wearState = null,
                 )
 
             When("toEnvelopes 호출") {
                 val envelopes = adapter.toEnvelopes(request)
-                Then("envelope 3개 — Gas 와 달리 fan-out 없이 1:1") {
-                    envelopes.size shouldBe 3
-                    envelopes.map { it.sourceId } shouldBe listOf("BAND-01", "BAND-02", "BAND-03")
+                Then("envelope 1개, sourceId 는 bandId") {
+                    envelopes.size shouldBe 1
+                    envelopes.first().sourceId shouldBe "BAND-MIN"
+                }
+                Then("fields/tags 가 비어 있음 — null 키는 모두 누락") {
+                    envelopes.first().fields shouldBe emptyMap()
+                    envelopes.first().tags shouldBe mapOf("band_id" to "BAND-MIN")
                 }
             }
         }

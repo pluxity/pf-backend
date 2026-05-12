@@ -18,26 +18,24 @@ class GasTelemetryAdapter {
     }
 
     fun toEnvelopes(request: GasCollectRequest): List<TelemetryEnvelope> =
-        request.samples.flatMap { sample ->
-            sample.measurements.map { measurement ->
-                TelemetryEnvelope(
-                    sourceId = sample.deviceId,
-                    sourceType = SourceType.GAS,
-                    measurement = GAS_MEASUREMENT,
-                    tags =
-                        mapOf(
-                            DEVICE_ID to sample.deviceId,
-                            GAS_UNIT to measurement.unit.name,
-                            GAS to measurement.gas.name,
-                        ),
-                    fields =
-                        buildMap {
-                            put(GAS_VALUE, measurement.value)
-                            sample.battery?.let { put(GAS_BATTERY, it) }
-                            sample.signalRssi?.let { put(GAS_SIGNAL_RSSI, it) }
-                        },
-                    timestamp = sample.timestamp,
-                )
-            }
+        request.measurements.map { measurement ->
+            TelemetryEnvelope(
+                sourceId = request.deviceId,
+                sourceType = SourceType.GAS,
+                measurement = GAS_MEASUREMENT,
+                tags =
+                    mapOf(
+                        DEVICE_ID to request.deviceId,
+                        GAS_UNIT to measurement.unit.name,
+                        GAS to measurement.gas.name,
+                    ),
+                fields =
+                    buildMap {
+                        put(GAS_VALUE, measurement.value)
+                        request.battery?.let { put(GAS_BATTERY, it) }
+                        request.signalRssi?.let { put(GAS_SIGNAL_RSSI, it) }
+                    },
+                timestamp = request.timestamp,
+            )
         }
 }

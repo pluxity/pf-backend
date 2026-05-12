@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
-@Tag(name = "4. 가스센서 디바이스 CRUD", description = "현장 등록/수정/삭제 — 중앙 /v1/devices 로 forward")
+@Tag(name = "4. 가스센서 디바이스 관리")
 @RestController
 @RequestMapping("/devices/gas")
 class GasDeviceController {
