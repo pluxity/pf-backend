@@ -2,6 +2,7 @@ package com.pluxity.safersCollect.config
 
 import com.hivemq.client.mqtt.datatypes.MqttQos
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
+import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAck
 import com.pluxity.safersCollect.v1.collect.mqtt.MqttIngressHandler
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.PreDestroy
@@ -39,7 +40,7 @@ class MqttSubscriberStarter(
                                     log.error(ex) { "MQTT handler failed for topic=$topic" }
                                 }
                             }.send()
-                            .whenComplete { _, ex ->
+                            .whenComplete { _: Mqtt5SubAck?, ex: Throwable? ->
                                 if (ex == null) {
                                     log.info { "MQTT subscribed: $topic (QoS 1)" }
                                 } else {
