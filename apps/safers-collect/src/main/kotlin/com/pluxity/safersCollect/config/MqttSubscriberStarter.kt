@@ -24,14 +24,13 @@ class MqttSubscriberStarter(
 ) {
     @EventListener(ApplicationReadyEvent::class)
     fun start() {
-        val mqtt = props.mqtt!!
         client
             .connect()
             .thenCompose {
-                log.info { "MQTT connected to ${mqtt.host}:${mqtt.port} as ${mqtt.clientId}" }
+                log.info { "MQTT connected to ${props.mqtt.host}:${props.mqtt.port} as ${props.mqtt.clientId}" }
                 val subs =
                     handlers.map { handler ->
-                        val topic = "${mqtt.topicPrefix}/${handler.topicSuffix}"
+                        val topic = "${props.mqtt.topicPrefix}/${handler.topicSuffix}"
                         client
                             .subscribeWith()
                             .topicFilter(topic)

@@ -9,7 +9,7 @@ data class SafersCollectProperties(
     val central: Central,
     val queue: Queue,
     val forwarder: Forwarder,
-    val mqtt: Mqtt? = null,
+    val mqtt: Mqtt = Mqtt(),
 ) {
     data class Site(
         val id: Long,
@@ -31,9 +31,9 @@ data class SafersCollectProperties(
     )
 
     data class Mqtt(
-        val host: String,
-        val port: Int,
-        val clientId: String,
-        val topicPrefix: String,
+        val host: String = "",
+        val port: Int = 1883,
+        val clientId: String = "safers-collect",
+        val topicPrefix: String = "safers/collect",
     )
 }

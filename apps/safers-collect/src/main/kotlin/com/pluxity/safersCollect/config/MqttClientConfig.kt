@@ -10,14 +10,12 @@ import org.springframework.context.annotation.Configuration
 @ConditionalOnExpression($$"'${safety-collector.mqtt.host:}' != ''")
 class MqttClientConfig {
     @Bean
-    fun mqtt5AsyncClient(props: SafersCollectProperties): Mqtt5AsyncClient {
-        val mqtt = props.mqtt!!
-        return Mqtt5Client
+    fun mqtt5AsyncClient(props: SafersCollectProperties): Mqtt5AsyncClient =
+        Mqtt5Client
             .builder()
-            .identifier(mqtt.clientId)
-            .serverHost(mqtt.host)
-            .serverPort(mqtt.port)
+            .identifier(props.mqtt.clientId)
+            .serverHost(props.mqtt.host)
+            .serverPort(props.mqtt.port)
             .automaticReconnectWithDefaultConfig()
             .buildAsync()
-    }
 }
