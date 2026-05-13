@@ -19,7 +19,7 @@ safety-collector:
     batch-size: ${FORWARDER_BATCH_SIZE:100}
     flush-interval-ms: ${FORWARDER_FLUSH_INTERVAL_MS:1000}
   mqtt:
-    host: ${MQTT_HOST}                              # MQTT 브로커 호스트 — 환경변수 필수
+    host: ${MQTT_HOST:}                             # 미설정 시 MQTT 구독 비활성 — REST API + Springwolf 문서만 동작
     port: ${MQTT_PORT:1883}
     client-id: ${MQTT_CLIENT_ID:safers-collect}
     topic-prefix: ${MQTT_TOPIC_PREFIX:safers/collect}
