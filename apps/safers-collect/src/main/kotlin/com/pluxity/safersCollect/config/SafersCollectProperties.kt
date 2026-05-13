@@ -9,6 +9,7 @@ data class SafersCollectProperties(
     val central: Central,
     val queue: Queue,
     val forwarder: Forwarder,
+    val mqtt: Mqtt,
 ) {
     data class Site(
         val id: Long,
@@ -27,5 +28,12 @@ data class SafersCollectProperties(
     data class Forwarder(
         val batchSize: Int,
         val flushIntervalMs: Long,
+    )
+
+    data class Mqtt(
+        val host: String,
+        val port: Int,
+        val clientId: String,
+        val topicPrefix: String,
     )
 }
