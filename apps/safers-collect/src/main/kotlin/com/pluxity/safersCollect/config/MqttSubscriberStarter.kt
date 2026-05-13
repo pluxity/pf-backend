@@ -24,7 +24,7 @@ class MqttSubscriberStarter(
 ) {
     @EventListener(ApplicationReadyEvent::class)
     fun start() {
-        val mqtt = checkNotNull(props.mqtt) { "safety-collector.mqtt 설정이 필요합니다." }
+        val mqtt = props.mqtt!!
         client
             .connect()
             .thenCompose {

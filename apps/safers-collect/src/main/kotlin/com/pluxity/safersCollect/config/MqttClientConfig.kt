@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration
 class MqttClientConfig {
     @Bean
     fun mqtt5AsyncClient(props: SafersCollectProperties): Mqtt5AsyncClient {
-        val mqtt = checkNotNull(props.mqtt) { "safety-collector.mqtt 설정이 필요합니다." }
+        val mqtt = props.mqtt!!
         return Mqtt5Client
             .builder()
             .identifier(mqtt.clientId)
