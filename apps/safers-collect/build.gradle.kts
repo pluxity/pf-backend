@@ -20,4 +20,7 @@ dependencies {
     implementation(rootProject.libs.spring.boot.starter.webflux)
     implementation(rootProject.libs.spring.boot.starter.actuator)
     implementation(rootProject.libs.hivemq.mqtt.client)
+    implementation(rootProject.libs.springwolf.core)
+    implementation(rootProject.libs.springwolf.generic.binding)
+    runtimeOnly(rootProject.libs.springwolf.ui)
 }

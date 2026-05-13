@@ -91,6 +91,7 @@ springdoc-common = { module = "org.springdoc:springdoc-openapi-starter-common", 
 # WebSocket
 springwolf-core = { module = "io.github.springwolf:springwolf-core", version.ref = "springwolf" }
 springwolf-stomp = { module = "io.github.springwolf:springwolf-stomp", version.ref = "springwolf" }
+springwolf-generic-binding = { module = "io.github.springwolf:springwolf-generic-binding", version.ref = "springwolf" }
 springwolf-ui = { module = "io.github.springwolf:springwolf-ui", version.ref = "springwolf" }
 
 # Kotlin JDSL
