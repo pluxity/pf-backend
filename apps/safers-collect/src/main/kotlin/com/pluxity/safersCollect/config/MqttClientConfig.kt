@@ -1,5 +1,6 @@
 package com.pluxity.safersCollect.config
 
+import com.hivemq.client.mqtt.MqttGlobalPublishFilter
 import com.hivemq.client.mqtt.datatypes.MqttQos
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
 import com.hivemq.client.mqtt.mqtt5.Mqtt5Client
@@ -20,6 +21,9 @@ class MqttClientConfig {
         props: SafersCollectProperties,
         handlers: List<MqttIngressHandler>,
     ): Mqtt5AsyncClient {
+        val handlersByTopic =
+            handlers.associateBy { "${props.mqtt.topicPrefix}/${it.topicSuffix}" }
+
         lateinit var client: Mqtt5AsyncClient
         client =
             Mqtt5Client
@@ -30,19 +34,12 @@ class MqttClientConfig {
                 .automaticReconnectWithDefaultConfig()
                 .addConnectedListener {
                     log.info { "MQTT connected to ${props.mqtt.host}:${props.mqtt.port} as ${props.mqtt.clientId}" }
-                    handlers.forEach { handler ->
-                        val topic = "${props.mqtt.topicPrefix}/${handler.topicSuffix}"
+                    handlersByTopic.keys.forEach { topic ->
                         client
                             .subscribeWith()
                             .topicFilter(topic)
                             .qos(MqttQos.AT_LEAST_ONCE)
-                            .callback { publish ->
-                                try {
-                                    handler.handle(publish.payloadAsBytes)
-                                } catch (ex: Exception) {
-                                    log.error(ex) { "MQTT handler failed for topic=$topic" }
-                                }
-                            }.send()
+                            .send()
                             .whenComplete { _: Mqtt5SubAck?, ex: Throwable? ->
                                 if (ex == null) {
                                     log.info { "MQTT subscribed: $topic (QoS 1)" }
@@ -52,6 +49,21 @@ class MqttClientConfig {
                             }
                     }
                 }.buildAsync()
+
+        client.publishes(MqttGlobalPublishFilter.SUBSCRIBED) { publish ->
+            val topic = publish.topic.toString()
+            val handler = handlersByTopic[topic]
+            if (handler == null) {
+                log.warn { "No handler registered for topic=$topic" }
+                return@publishes
+            }
+            try {
+                handler.handle(publish.payloadAsBytes)
+            } catch (ex: Exception) {
+                log.error(ex) { "MQTT handler failed for topic=$topic" }
+            }
+        }
+
         return client
     }
 }
