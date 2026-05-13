@@ -18,3 +18,8 @@ safety-collector:
   forwarder:
     batch-size: 100                                 # 한 번에 forward 할 envelope 수
     flush-interval-ms: 1000                         # @Scheduled fixedDelay (ms)
+  mqtt:
+    host: ${MQTT_HOST:localhost}                    # MQTT 브로커 호스트
+    port: ${MQTT_PORT:1883}                         # MQTT 브로커 포트 (평문)
+    client-id: ${MQTT_CLIENT_ID:safers-collect}     # broker 측 식별자
+    topic-prefix: safers/collect                    # 5개 토픽의 공통 prefix

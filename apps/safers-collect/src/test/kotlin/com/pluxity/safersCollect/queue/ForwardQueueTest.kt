@@ -22,6 +22,13 @@ class ForwardQueueTest :
                         batchSize = 100,
                         flushIntervalMs = 1000,
                     ),
+                mqtt =
+                    SafersCollectProperties.Mqtt(
+                        host = "localhost",
+                        port = 1883,
+                        clientId = "test",
+                        topicPrefix = "safers/collect",
+                    ),
             )
 
         fun queueOf(capacity: Int): ForwardQueue {
