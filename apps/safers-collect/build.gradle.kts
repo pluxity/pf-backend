@@ -19,4 +19,5 @@ configurations.all {
 dependencies {
     implementation(rootProject.libs.spring.boot.starter.webflux)
     implementation(rootProject.libs.spring.boot.starter.actuator)
+    implementation(rootProject.libs.hivemq.mqtt.client)
 }
