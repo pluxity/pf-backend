@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-@ConditionalOnExpression("'\${safety-collector.mqtt.host:}' != ''")
+@ConditionalOnExpression($$"'${safety-collector.mqtt.host:}' != ''")
 class MqttClientConfig {
     @Bean
     fun mqtt5AsyncClient(props: SafersCollectProperties): Mqtt5AsyncClient {

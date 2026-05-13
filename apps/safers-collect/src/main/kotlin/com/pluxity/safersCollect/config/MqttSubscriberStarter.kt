@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 private val log = KotlinLogging.logger {}
 
 @Component
-@ConditionalOnExpression("'\${safety-collector.mqtt.host:}' != ''")
+@ConditionalOnExpression($$"'${safety-collector.mqtt.host:}' != ''")
 class MqttSubscriberStarter(
     private val client: Mqtt5AsyncClient,
     private val handlers: List<MqttIngressHandler>,
