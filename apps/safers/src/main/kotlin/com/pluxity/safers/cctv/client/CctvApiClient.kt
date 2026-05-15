@@ -21,31 +21,17 @@ class CctvApiClient(
 ) {
     companion object {
         private val UTC_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        private const val MEDIA_SERVER_PORT = 9997
     }
-
-    private val sitePortMap =
-        mapOf(
-            9L to 9904,
-            11L to 9901,
-            13L to 9902,
-            17L to 9903,
-            16L to 9905,
-            10L to 9906,
-            12L to 9907,
-            15L to 9908,
-            14L to 9909,
-            18L to 9911,
-        )
 
     fun requestPlayback(
         baseUrl: String,
-        siteId: Long,
         nvrId: String,
         channel: Int,
         startTime: LocalDateTime,
         endTime: LocalDateTime,
     ): MediaServerPlaybackResponse {
-        val client = createClientForSite(baseUrl, siteId)
+        val client = createClient(baseUrl)
         return client
             .post()
             .uri("/v3/nvr/$nvrId/playback")
@@ -63,12 +49,11 @@ class CctvApiClient(
 
     fun deletePlayback(
         baseUrl: String,
-        siteId: Long,
         nvrId: String,
         pathName: String,
     ) {
         try {
-            val client = createClientForSite(baseUrl, siteId)
+            val client = createClient(baseUrl)
             client
                 .delete()
                 .uri("/v3/nvr/$nvrId/playback/$pathName")
@@ -80,11 +65,8 @@ class CctvApiClient(
         }
     }
 
-    fun fetchPaths(
-        baseUrl: String,
-        siteId: Long,
-    ): List<MediaServerPathItem> {
-        val client = createClientForSite(baseUrl, siteId)
+    fun fetchPaths(baseUrl: String): List<MediaServerPathItem> {
+        val client = createClient(baseUrl)
         val response =
             client
                 .get()
@@ -95,12 +77,5 @@ class CctvApiClient(
         return response?.items ?: emptyList()
     }
 
-    private fun createClientForSite(
-        baseUrl: String,
-        siteId: Long,
-    ): WebClient {
-        val port = sitePortMap[siteId]
-        val url = if (port != null) "$baseUrl:$port" else baseUrl
-        return webClientFactory.createClient(url)
-    }
+    private fun createClient(baseUrl: String): WebClient = webClientFactory.createClient("$baseUrl:$MEDIA_SERVER_PORT")
 }

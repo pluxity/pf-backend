@@ -34,7 +34,7 @@ class CctvServiceTest :
         val service = CctvService(repository, fileService)
         val facade = CctvFacade(service, siteRepository, apiClient, cctvLlmClient, cctvSiteCache)
 
-        val site = dummySite(id = 1L, baseUrl = "http://media-server:9997")
+        val site = dummySite(id = 1L, baseUrl = "http://media-server")
 
         Given("CCTV 동기화") {
 
@@ -46,7 +46,7 @@ class CctvServiceTest :
                     )
 
                 every { siteRepository.findByIdOrNull(1L) } returns site
-                every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns externalPaths
+                every { apiClient.fetchPaths("http://media-server") } returns externalPaths
                 every { repository.findBySiteId(1L) } returns emptyList()
 
                 facade.sync(siteId = 1L)
@@ -63,7 +63,7 @@ class CctvServiceTest :
                     )
 
                 every { siteRepository.findAll() } returns listOf(site)
-                every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns externalPaths
+                every { apiClient.fetchPaths("http://media-server") } returns externalPaths
                 every { repository.findBySiteId(1L) } returns emptyList()
 
                 facade.sync()
@@ -77,7 +77,7 @@ class CctvServiceTest :
                 val existingCctv = dummyCctv(id = 1L, site = site, streamName = "cam_old")
 
                 every { siteRepository.findByIdOrNull(1L) } returns site
-                every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns
+                every { apiClient.fetchPaths("http://media-server") } returns
                     listOf(
                         MediaServerPathItem(name = "cam_new", nvrId = "nvr-new"),
                     )
@@ -95,7 +95,7 @@ class CctvServiceTest :
                 val existingCctv = dummyCctv(id = 1L, site = site, streamName = "cam1")
 
                 every { siteRepository.findByIdOrNull(1L) } returns site
-                every { apiClient.fetchPaths("http://media-server:9997", 1L) } returns
+                every { apiClient.fetchPaths("http://media-server") } returns
                     listOf(
                         MediaServerPathItem(name = "cam1", nvrId = "nvr-1"),
                     )
