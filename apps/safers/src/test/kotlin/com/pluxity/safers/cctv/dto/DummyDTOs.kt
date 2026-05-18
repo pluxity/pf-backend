@@ -12,7 +12,7 @@ fun dummyCctvResponse(
             constructionEndDate = null,
             description = null,
             address = null,
-            baseUrl = "http://media-server:9997",
+            baseUrl = "http://media-server",
         ),
     streamName: String = "cam1",
     name: String = "1번 카메라",

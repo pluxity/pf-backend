@@ -55,7 +55,7 @@ class CctvFacade(
                     .map { (site, baseUrl) ->
                         async {
                             try {
-                                site to apiClient.fetchPaths(baseUrl, site.requiredId)
+                                site to apiClient.fetchPaths(baseUrl)
                             } catch (e: Exception) {
                                 log.warn(e) { "Site ${site.requiredId}(${site.name})의 미디어서버($baseUrl) 경로 조회 실패" }
                                 null
@@ -103,7 +103,7 @@ class CctvFacade(
         cctvId: Long,
         request: CctvPlaybackRequest,
     ): CctvPlaybackResponse {
-        val (baseUrl, siteId, nvrId, cctv) = resolvePlaybackInfo(cctvId)
+        val (baseUrl, nvrId, cctv) = resolvePlaybackInfo(cctvId)
         val channel =
             cctv.channel
                 ?: throw CustomException(SafersErrorCode.MISSING_NVR_INFO, cctvId)
@@ -111,7 +111,7 @@ class CctvFacade(
         val startTime = parseDateTime(request.startDate)
         val endTime = parseDateTime(request.endDate)
 
-        val response = apiClient.requestPlayback(baseUrl, siteId, nvrId, channel, startTime, endTime)
+        val response = apiClient.requestPlayback(baseUrl, nvrId, channel, startTime, endTime)
         return CctvPlaybackResponse(pathName = response.pathName)
     }
 
@@ -119,8 +119,8 @@ class CctvFacade(
         cctvId: Long,
         pathName: String,
     ) {
-        val (baseUrl, siteId, nvrId) = resolvePlaybackInfo(cctvId)
-        apiClient.deletePlayback(baseUrl, siteId, nvrId, pathName.removePrefix("playback-"))
+        val (baseUrl, nvrId) = resolvePlaybackInfo(cctvId)
+        apiClient.deletePlayback(baseUrl, nvrId, pathName.removePrefix("playback-"))
     }
 
     private fun resolvePlaybackInfo(cctvId: Long): PlaybackInfo {
@@ -134,12 +134,11 @@ class CctvFacade(
             cctv.nvrId
                 ?: throw CustomException(SafersErrorCode.MISSING_NVR_INFO, cctvId)
 
-        return PlaybackInfo(baseUrl, site.requiredId, nvrId, cctv)
+        return PlaybackInfo(baseUrl, nvrId, cctv)
     }
 
     private data class PlaybackInfo(
         val baseUrl: String,
-        val siteId: Long,
         val nvrId: String,
         val cctv: Cctv,
     )
